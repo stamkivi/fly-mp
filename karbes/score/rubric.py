@@ -18,46 +18,86 @@ from karbes.riigikogu.model import Bill
 #: Signed axes, each in [-1, +1]. Chosen for Estonian politics rather than imported
 #: culture-war framings. Whether eight *independent* dimensions actually exist is a
 #: hypothesis the pilot tests: if PC1 explains >70% of variance, it does not.
-AXES: tuple[tuple[str, str, str], ...] = (
+#: Each axis carries an explicit *scope* rule alongside its poles.
+#:
+#: The pilot showed why. Two models almost never disagreed about direction — opposite
+#: signs occurred 0-2 times per axis out of 40 — but disagreed constantly about whether an
+#: axis applied at all: `state_power` 16/40, `market` 12/40. The poles were fine; the
+#: missing definition was "when does this dimension engage". A one-word label plus two
+#: poles leaves that to the model, and two models answer it differently.
+AXES: tuple[tuple[str, str, str, str], ...] = (
     (
         "fiscal",
         "austerity, lower taxes, smaller budgets",
         "higher spending, redistribution, larger budgets",
+        "the bill changes tax rates, benefit levels, budget totals or who bears a cost",
     ),
     (
         "market",
         "deregulation, private provision, competition",
         "state regulation, public provision, worker protection",
+        (
+            "the bill changes what a business or worker may do, or who provides a "
+            "service — NOT merely because it regulates something; administrative "
+            "procedure is not market policy"
+        ),
     ),
     (
         "defence",
         "lower military spending, de-escalation",
         "higher military spending, hard security, deterrence against Russia",
+        "the bill concerns the military, national security, or relations with a hostile state",
     ),
     (
         "eu",
         "national sovereignty, resisting EU competence",
         "deeper EU integration, adopting EU rules",
+        (
+            "the bill transposes EU law, transfers competence, or asserts national "
+            "discretion against it"
+        ),
     ),
     (
         "social",
         "traditional and conservative social policy",
         "liberal and permissive social policy, minority rights",
+        (
+            "the bill concerns family, gender, sexuality, religion, language, "
+            "citizenship, migration, or the rights of a minority group"
+        ),
     ),
     (
         "green",
         "cost and industry first, slower transition",
         "climate ambition, environmental protection",
+        (
+            "the bill changes environmental obligations, emissions, land or resource "
+            "use, or energy policy"
+        ),
     ),
-    ("regional", "urban and central priorities", "rural, regional and peripheral priorities"),
+    (
+        "regional",
+        "urban and central priorities",
+        "rural, regional and peripheral priorities",
+        (
+            "the bill distributes resources or services unevenly across places, or "
+            "changes local government powers — rarely engaged; leave at 0 unless "
+            "geography is at issue"
+        ),
+    ),
     (
         "state_power",
         "civil liberties, privacy, limits on the state",
         "state capacity, enforcement, surveillance powers",
+        (
+            "the bill changes the state's power to compel, penalise, detain, surveil "
+            "or restrict a person — NOT when it merely assigns a duty between agencies, "
+            "creates a register, or reorganises administration"
+        ),
     ),
 )
 
-AXIS_NAMES: tuple[str, ...] = tuple(a for a, _, _ in AXES)
+AXIS_NAMES: tuple[str, ...] = tuple(a for a, _, _, _ in AXES)
 SALIENCE = "salience"
 FIELDS: tuple[str, ...] = (*AXIS_NAMES, SALIENCE)
 
@@ -76,7 +116,7 @@ SCHEMA = {
                     "maximum": 1,
                     "description": f"-1 = {neg}; +1 = {pos}; 0 = neutral or not engaged",
                 }
-                for axis, neg, pos in AXES
+                for axis, neg, pos, _scope in AXES
             },
             SALIENCE: {
                 "type": "number",
@@ -109,9 +149,9 @@ Rules:
   penalty or who holds a power, it is substantive: score the direction of that change.
 - Reserve near-zero salience for bills that change no policy at all — renumbering, corrected
   cross-references, terminology, or a deadline moved to transpose an EU act already agreed.
-- Score 0 on a dimension only when the bill genuinely does not touch it. A bill will usually
-  engage one to three dimensions; engaging none is unusual and means the bill is pure
-  housekeeping.
+- Each dimension lists when it applies. If the bill does not meet that condition, score 0.
+  If it does, score the direction even when the effect is modest.
+- A bill will usually engage one to three dimensions; engaging none means pure housekeeping.
 - Use the full range. A bill that clearly pushes one direction deserves 0.6 or more, not 0.2.
 - Judge the bill on its own terms. Do not speculate about who proposed it or who would
   support it.
@@ -120,7 +160,10 @@ Return only the JSON object."""
 
 
 def system_prompt() -> str:
-    lines = [f"- {axis}: -1 = {neg} / +1 = {pos}" for axis, neg, pos in AXES]
+    lines = [
+        f"- {axis}\n    applies when: {scope}\n    -1 = {neg}\n    +1 = {pos}"
+        for axis, neg, pos, scope in AXES
+    ]
     return SYSTEM_PROMPT.format(axes="\n".join(lines))
 
 

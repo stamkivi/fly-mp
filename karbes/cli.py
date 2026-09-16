@@ -35,7 +35,7 @@ def _pretest(args: argparse.Namespace) -> int:
 def _score(args: argparse.Namespace) -> int:
     from karbes.analysis.pilot import run_pilot
 
-    return run_pilot(DATA, force=args.force, verbose=not args.quiet)
+    return run_pilot(DATA, force=args.force, verbose=not args.quiet, full=args.full)
 
 
 def _unimplemented(stage: str):
@@ -65,6 +65,9 @@ def main() -> int:
 
     p = sub.add_parser("score", help="Stage 1 — rubric pilot (P1-P5); gates the full LLM pass")
     p.add_argument("--force", action="store_true", help="run even if the stage 0 gate failed")
+    p.add_argument(
+        "--full", action="store_true", help="score every bill with text, for statistical power"
+    )
     p.add_argument("--quiet", action="store_true")
     p.set_defaults(func=_score)
 

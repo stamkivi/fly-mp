@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import random
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -36,6 +37,11 @@ STRONG = "openai/gpt-5-mini"
 PILOT_BILLS = 40
 RETEST_BILLS = 12
 LEAK_BILLS = 20
+#: Full-corpus mode. At n=40 the 95% CI on a correlation is +/-0.32 and on an accuracy
+#: near .70 is +/-0.127, so the pilot cannot resolve the gaps it measures. At full corpus
+#: those become +/-0.07 and +/-0.038.
+FULL_LEAK_BILLS = 60
+CONCURRENCY = 8
 
 #: An axis whose repeat-to-repeat SD exceeds this on a [-1,1] scale is noise, not a measurement.
 MAX_RETEST_SD = 0.30
@@ -89,21 +95,36 @@ def stratified_sample(votes, bills, n: int, seed: int = 0) -> list:
     return list(picked.values())
 
 
-def score_bills(scorer: Scorer, bills: list, tag: str = "") -> dict[str, dict]:
+def score_bills(scorer: Scorer, bills: list, tag: str = "", workers: int = 1) -> dict[str, dict]:
+    """Score bills, optionally in parallel. Cache hits cost nothing either way."""
     out: dict[str, dict] = {}
     system = rubric.system_prompt()
-    for i, bill in enumerate(bills, 1):
-        v = scorer.complete(
+    done = 0
+
+    def one(bill):
+        return bill, scorer.complete(
             system, rubric.bill_prompt(bill), schema=rubric.SCHEMA, tag=f"{tag}{bill.uuid}"
         )
+
+    def collect(bill, v):
+        nonlocal done
+        done += 1
         if v is None:
-            continue  # recorded as a failure; never defaulted to zeros
+            return  # recorded as a failure; never defaulted to zeros
         try:
             out[bill.uuid] = {f: float(v[f]) for f in rubric.FIELDS}
         except (KeyError, TypeError, ValueError) as exc:
             scorer.failures[bill.uuid] = f"bad fields: {exc}"
-        if i % 10 == 0:
-            log.info("  scored %d/%d (%s)", i, len(bills), scorer.model)
+        if done % 50 == 0:
+            log.info("  scored %d/%d (%s)", done, len(bills), scorer.model)
+
+    if workers > 1:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            for bill, v in pool.map(one, bills):
+                collect(bill, v)
+    else:
+        for bill in bills:
+            collect(*one(bill))
     return out
 
 
@@ -260,26 +281,37 @@ def p5_leakage(cache: Path, bills: list, votes_by_bill: dict) -> dict:
     }
 
 
-def run_pilot(cache_root: Path, force: bool = False, verbose: bool = True) -> int:
+def run_pilot(
+    cache_root: Path, force: bool = False, verbose: bool = True, full: bool = False
+) -> int:
     require_gate("stage0", force=force)
 
     votes = load_votes(cache_root)
     bills = load_bills(cache_root)
     vm = build(votes).subset(discriminative_mask(votes))
 
-    sample = stratified_sample(vm.votes, bills, PILOT_BILLS)
-    log.info("pilot sample: %d bills", len(sample))
+    if full:
+        # Every bill with text, so the evaluation set is the whole corpus and the
+        # scores are reusable by Stage 3 rather than thrown away.
+        scored_uuids = {v.draft_uuid for v in vm.votes}
+        sample = [b for b in bills.values() if b.has_text and b.uuid in scored_uuids]
+        sample += [b for b in bills.values() if b.has_text and b.uuid not in scored_uuids]
+        leak_n, workers = FULL_LEAK_BILLS, CONCURRENCY
+    else:
+        sample = stratified_sample(vm.votes, bills, PILOT_BILLS)
+        leak_n, workers = LEAK_BILLS, 1
+    log.info("%s sample: %d bills", "full" if full else "pilot", len(sample))
 
     models = resolve_models([CHEAP, STRONG])
     log.info("models: %s", ", ".join(f"{m['id']} (${m['prompt_per_m']}/M)" for m in models))
 
     with Scorer(CHEAP, cache_root, temperature=0.0) as s_cheap:
-        cheap_scores = score_bills(s_cheap, sample, tag="main-")
+        cheap_scores = score_bills(s_cheap, sample, tag="main-", workers=workers)
         cheap_usage = s_cheap.usage
         cheap_fail = dict(s_cheap.failures)
 
     with Scorer(STRONG, cache_root, temperature=0.0) as s_strong:
-        strong_scores = score_bills(s_strong, sample, tag="main-")
+        strong_scores = score_bills(s_strong, sample, tag="main-", workers=workers)
         strong_usage = s_strong.usage
         strong_fail = dict(s_strong.failures)
     if not strong_scores:
@@ -315,7 +347,7 @@ def run_pilot(cache_root: Path, force: bool = False, verbose: bool = True) -> in
     votes_by_bill = {}
     for v in vm.votes:
         votes_by_bill.setdefault(v.draft_uuid, v)
-    p5 = p5_leakage(cache_root, sample[:LEAK_BILLS], votes_by_bill)
+    p5 = p5_leakage(cache_root, sample[:leak_n], votes_by_bill)
 
     passed = all(x.get("passes", False) for x in (p1, p2, p3, p4, p5))
     spend = round(cheap_usage.cost + strong_usage.cost, 4)
@@ -324,6 +356,7 @@ def run_pilot(cache_root: Path, force: bool = False, verbose: bool = True) -> in
         passed,
         {
             "models": models,
+            "mode": "full" if full else "pilot",
             "sample_bills": len(sample),
             "scored_cheap": len(cheap_scores),
             "scored_strong": len(strong_scores),
