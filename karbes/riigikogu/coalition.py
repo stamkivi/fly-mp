@@ -47,6 +47,12 @@ class Era:
     def contains(self, d: date) -> bool:
         return d >= self.start and (self.end is None or d <= self.end)
 
+    def contains_iso(self, iso: str) -> bool:
+        try:
+            return self.contains(date.fromisoformat(iso))
+        except ValueError:
+            return False
+
     @property
     def label(self) -> str:
         end = self.end.isoformat() if self.end else "present"
