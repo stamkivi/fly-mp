@@ -43,8 +43,25 @@ MAX_RETEST_SD = 0.30
 MIN_MODEL_CORR = 0.60
 #: Above this, "eight dimensions" is a false description and the framing must collapse.
 MAX_PC1_SHARE = 0.70
-#: The fly's fair benchmark from Stage 0 T5: content-only features, no initiator.
+#: Fallback only. The real bar is per faction: Isamaa's content ceiling is .658 and
+#: SDE's .611, so judging either against Reform's .74 understates the rubric.
 T5_CONTENT_CEILING = 0.74
+
+
+def content_ceilings() -> dict[str, float]:
+    """Per-faction content-only accuracy from Stage 0 T5 — the fly's fair bar."""
+    from karbes.gates import read_gate
+
+    gate = read_gate("stage0")
+    try:
+        return {
+            f: r["accuracy"]
+            for f, r in gate["measurements"]["t5_metadata_ceiling"]["sets"]["content"].items()
+        }
+    except (TypeError, KeyError):
+        return {}
+
+
 #: If a model can call the vote from bill text this often, the pipeline is contaminated.
 MAX_LEAK_ACCURACY = 0.85
 
@@ -150,7 +167,7 @@ def p3_collinearity(scores: dict[str, dict]) -> dict:
     }
 
 
-def p4_political_signal(vm, scores: dict[str, dict]) -> dict:
+def p4_political_signal(vm, scores: dict[str, dict], fields: tuple[str, ...] | None = None) -> dict:
     """Can the topic scores predict each bloc's line, out of sample?
 
     Compared against two bars: the majority baseline, and Stage 0's content-only ceiling,
@@ -163,18 +180,20 @@ def p4_political_signal(vm, scores: dict[str, dict]) -> dict:
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
 
+    fields = fields or rubric.FIELDS
+    ceilings = content_ceilings()
     rows, keep = [], []
     for j, v in enumerate(vm.votes):
         s = scores.get(v.draft_uuid)
         if s is None:
             continue
-        rows.append([s[f] for f in rubric.FIELDS])
+        rows.append([s[f] for f in fields])
         keep.append(j)
     if len(rows) < 25:
         return {"error": f"only {len(rows)} scored votes", "n": len(rows)}
 
     x = np.array(rows)
-    out: dict = {"n_votes": len(rows), "factions": {}}
+    out: dict = {"n_votes": len(rows), "fields": list(fields), "factions": {}}
     for faction in vm.faction_names():
         line = vm.faction_line(faction)[keep]
         valid = ~np.isnan(line)
@@ -190,12 +209,16 @@ def p4_political_signal(vm, scores: dict[str, dict]) -> dict:
         out["factions"][faction] = {
             "n": int(valid.sum()),
             "majority": round(majority, 3),
+            "content_ceiling": round(ceilings.get(faction, T5_CONTENT_CEILING), 3),
             "rubric": round(acc, 3),
             "over_majority": round(acc - majority, 3),
-            "over_t5_content": round(acc - T5_CONTENT_CEILING, 3),
+            "over_content": round(acc - ceilings.get(faction, T5_CONTENT_CEILING), 3),
         }
     beats = [r for r in out["factions"].values() if r["over_majority"] > 0.05]
     out["beats_majority"] = len(beats)
+    out["beats_content_ceiling"] = sum(
+        1 for r in out["factions"].values() if r["over_content"] > 0.02
+    )
     out["passes"] = len(beats) >= 2
     return out
 
@@ -281,6 +304,13 @@ def run_pilot(cache_root: Path, force: bool = False, verbose: bool = True) -> in
     )
     p3 = p3_collinearity(cheap_scores)
     p4 = p4_political_signal(vm, cheap_scores)
+    # The spec's prescription when two models disagree: drop those axes and re-measure.
+    kept = tuple(f for f in rubric.FIELDS if f not in set(p2.get("weak_axes", ())))
+    p4b = (
+        p4_political_signal(vm, cheap_scores, fields=kept)
+        if kept and len(kept) < len(rubric.FIELDS)
+        else None
+    )
 
     votes_by_bill = {}
     for v in vm.votes:
@@ -304,11 +334,12 @@ def run_pilot(cache_root: Path, force: bool = False, verbose: bool = True) -> in
             "p2_inter_model": p2,
             "p3_collinearity": p3,
             "p4_political_signal": p4,
+            "p4b_agreed_axes_only": p4b,
             "p5_leakage": p5,
         },
     )
     if verbose:
-        _report(models, sample, cheap_scores, p1, p2, p3, p4, p5, spend, passed, gate)
+        _report(models, sample, cheap_scores, p1, p2, p3, p4, p4b, p5, spend, passed, gate)
     return 0 if passed else 1
 
 
@@ -328,7 +359,7 @@ def _ok(flag: bool) -> str:
     return "PASS" if flag else "FAIL"
 
 
-def _report(models, sample, scores, p1, p2, p3, p4, p5, spend, passed, gate) -> None:
+def _report(models, sample, scores, p1, p2, p3, p4, p4b, p5, spend, passed, gate) -> None:
     print("\n" + "=" * 72)
     print("STAGE 1 PILOT — is the rubric worth scaling?")
     print("=" * 72)
@@ -363,14 +394,25 @@ def _report(models, sample, scores, p1, p2, p3, p4, p5, spend, passed, gate) -> 
         print(f"    {p4['error']}")
     else:
         print(
-            f"      {'bloc':>8} {'n':>4} {'majority':>9} {'rubric':>8} {'vs maj':>8} {'vs T5':>7}"
+            f"      {'bloc':>8} {'n':>4} {'major':>7} {'content':>8} {'rubric':>8} "
+            f"{'vs maj':>8} {'vs cont':>8}"
         )
-        for f, r in sorted(p4["factions"].items(), key=lambda kv: -kv[1]["rubric"]):
+        for f, r in sorted(p4["factions"].items(), key=lambda kv: -kv[1]["over_content"]):
             print(
-                f"      {_short(f):>8} {r['n']:>4} {r['majority']:>9.3f} "
-                f"{r['rubric']:>8.3f} {r['over_majority']:>+8.3f} {r['over_t5_content']:>+7.3f}"
+                f"      {_short(f):>8} {r['n']:>4} {r['majority']:>7.3f} "
+                f"{r['content_ceiling']:>8.3f} {r['rubric']:>8.3f} "
+                f"{r['over_majority']:>+8.3f} {r['over_content']:>+8.3f}"
             )
-        print(f"    (T5 content-only ceiling was {T5_CONTENT_CEILING:.2f} — the fly's fair bar)")
+        print("    'content' = Stage 0 descriptors+committee ceiling per bloc, the fair bar")
+    if p4b and "factions" in p4b:
+        print(f"\nP4b same test on the {len(p4b['fields'])} axes both models agreed on")
+        for f, r in sorted(p4b["factions"].items(), key=lambda kv: -kv[1]["over_content"]):
+            base = p4["factions"].get(f, {}).get("rubric")
+            delta = f"{r['rubric'] - base:+.3f}" if base is not None else "  --"
+            print(
+                f"      {_short(f):>8} {r['rubric']:>8.3f}  vs content {r['over_content']:>+7.3f}"
+                f"   change from all axes {delta}"
+            )
 
     print(f"\nP5  leakage audit          {_ok(p5['passes'])}")
     print(
