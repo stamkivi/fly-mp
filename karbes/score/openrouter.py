@@ -164,6 +164,12 @@ class Scorer:
             payload["temperature"] = self.temperature
         elif self.temperature:
             log.debug("%s ignores temperature; sampling variation unavailable", self.model)
+        if "reasoning" in supports:
+            # Reasoning tokens are billed against max_tokens, so a reasoning model can
+            # spend the whole budget thinking and return content: null. Keep effort low
+            # and leave headroom — this is a classification task, not a puzzle.
+            payload["reasoning"] = {"effort": "low"}
+            payload["max_tokens"] = max(max_tokens, 4000)
         if schema:
             payload["response_format"] = {"type": "json_schema", "json_schema": schema}
 
@@ -175,9 +181,16 @@ class Scorer:
 
         self.usage.add(resp.get("usage") or {})
         try:
-            content = resp["choices"][0]["message"]["content"]
+            choice = resp["choices"][0]
+            content = choice["message"]["content"]
         except (KeyError, IndexError) as exc:
             self.failures[tag or key] = f"malformed response: {exc}"
+            return None
+        if not content:
+            # Empty content usually means the token budget went entirely on reasoning,
+            # or the provider truncated. Record it; never fabricate a score.
+            reason = choice.get("finish_reason") or choice.get("native_finish_reason")
+            self.failures[tag or key] = f"empty content (finish_reason={reason})"
             return None
 
         value: Any = content

@@ -258,9 +258,27 @@ def run_pilot(cache_root: Path, force: bool = False, verbose: bool = True) -> in
     with Scorer(STRONG, cache_root, temperature=0.0) as s_strong:
         strong_scores = score_bills(s_strong, sample, tag="main-")
         strong_usage = s_strong.usage
+        strong_fail = dict(s_strong.failures)
+    if not strong_scores:
+        # The comparison model is a nice-to-have; losing it must not abort the gate.
+        log.warning(
+            "comparison model %s scored nothing: %s",
+            STRONG,
+            next(iter(strong_fail.values()), "unknown"),
+        )
 
     p1 = p1_test_retest(cache_root, sample[:RETEST_BILLS])
-    p2 = p2_inter_model(cheap_scores, strong_scores)
+    p2 = (
+        p2_inter_model(cheap_scores, strong_scores)
+        if strong_scores
+        else {
+            "error": f"{STRONG} produced no scores",
+            "passes": False,
+            "bills": 0,
+            "correlations": {},
+            "weak_axes": [],
+        }
+    )
     p3 = p3_collinearity(cheap_scores)
     p4 = p4_political_signal(vm, cheap_scores)
 
@@ -279,7 +297,7 @@ def run_pilot(cache_root: Path, force: bool = False, verbose: bool = True) -> in
             "sample_bills": len(sample),
             "scored_cheap": len(cheap_scores),
             "scored_strong": len(strong_scores),
-            "failures": cheap_fail,
+            "failures": {"cheap": cheap_fail, "strong": strong_fail},
             "spend_usd": spend,
             "calls": cheap_usage.calls + strong_usage.calls,
             "p1_test_retest": p1,
