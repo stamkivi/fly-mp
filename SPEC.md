@@ -702,16 +702,53 @@ Harvest complete: 504 sittings, 910 substantive votings, 784 bills, **zero gaps*
 **Usable corpus: 898 substantive votes, 563 discriminative, 772 bills.** 12 votings dropped for having
 tallies but no per-member list; 33 bills have no `introduction` and cannot be scored.
 
-### T1 fails, and that is the most useful thing it could have done
+### T1 fails because coalition membership is the variable, and it moves
 
-**Reform and Eesti 200 took opposing majority lines on 2 of 563 votes.** As voting objects they are one
-party. "Which of seven factions would the fly join" is not an answerable question and never was — no
-simulator would have fixed it, and the failure is worth more than a spurious answer would have been.
+**Reform and Eesti 200 took opposing majority lines on 2 of 563 votes.** The first reading of
+that — "as voting objects they are one party" — was wrong. They are *coalition partners*, and
+coalition membership is a time-varying fact this spec originally failed to model at all.
 
-T1b merges below-threshold factions and reports what *is* answerable: **five separable blocs** —
-REF+E200, SDE, KESK, Isamaa, EKRE — with a weakest separation of 69. That is the unit of analysis from
-here. The ideal-point scaling in §5 was already label-agnostic, so it needs no change; what changes is
-that the headline is a **bloc**, with REF/E200 reported as jointly indistinguishable rather than ranked.
+The XV term is not one political world. The API describes the parliament, not the cabinet, so the
+timeline is encoded by hand in `karbes/riigikogu/coalition.py` from published sources and
+cross-checked against the voting record:
+
+| Era | Span | Cabinet | Government |
+|---|---|---|---|
+| A | 2023-04-17 → 2025-03-10 | Kallas III, then Michal I from 2024-07-23 | REF + E200 + **SDE** |
+| B | 2025-03-11 → present | Michal I | REF + E200 |
+
+SDE was expelled on 2025-03-11. The government lost its formal majority in August 2026 after MP
+defections, which is where the 22-member crossbench comes from, but the coalition's *composition*
+did not change, so there are two eras rather than three.
+
+**The voting record reproduces that boundary with no external information:**
+
+| pair | Era A (SDE in govt), n=357 | Era B (SDE out), n=205 |
+|---|---|---|
+| REF vs SDE | **4** | **68** |
+| E200 vs SDE | 2 | 67 |
+| REF vs E200 | 1 | 1 |
+
+Blocs are therefore era-specific: **A = {REF+E200+SDE}, KESK, EKRE, Isamaa**; **B = {REF+E200},
+KESK, EKRE, Isamaa, SDE**. A whole-term "SDE" target blends two incompatible behaviours and is
+meaningless; the earlier whole-term merge, which kept SDE separate, was exactly that mistake.
+
+### T1d: the axis is government vs opposition, and it is almost everything
+
+- Government bloc cohesion: **100%**
+- Opposition cohesion: 89%
+- The two sides took **opposite lines on 91% of 551 contested votes**
+
+So "which party would Kärbes join" is not the real question and cannot be rescued — at party level
+Reform and Eesti 200 are separated by one vote in three and a half years. **The answerable question
+is which side it takes**, with party resolution reported only where a bloc is genuinely separable.
+
+**A natural experiment falls out of this, and it is the best validation the project has.** Kärbes is
+coalition-blind by construction: it reads bill content and never learns who is in government. So at
+the 2025-03-11 boundary its agreement with the *government bloc* should hold steady while its
+agreement with *SDE* shifts — SDE moved, the fly did not. That prediction is pre-specifiable, needs
+no extra fitting, and is hard to satisfy by accident. It replaces the rejection-motion sign-flip as
+the primary internal-consistency test.
 
 ### T5: one bit explains Estonian politics, and the fly never sees it
 
@@ -756,7 +793,7 @@ Two consequences, both binding:
 | Repo initialised, skeleton + `.gitignore` | done |
 | `SPEC.md` promoted from plan | done (this file) |
 | `CLAUDE.md` via `/init` | done |
-| Stage 0 — harvest + offline pre-tests (T1–T5) | **done, gate PASS** (see above) |
+| Stage 0 — harvest + offline pre-tests (T1–T5, era-aware) | **done, gate PASS** (see above) |
 | **Stage 1 — LLM rubric pilot, initiator-blind** | **next** |
 
 Stage 0 is the decision point: it runs with no LLM and no simulator, and its T1/T3 kill criteria

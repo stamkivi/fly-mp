@@ -24,6 +24,7 @@ from karbes.analysis.votematrix import (
     discriminative_mask,
 )
 from karbes.gates import write_gate
+from karbes.riigikogu.coalition import ERAS, alignment_at, era_at
 from karbes.riigikogu.corpus import load_bills, load_votes, voterless_votings
 
 log = logging.getLogger(__name__)
@@ -58,6 +59,111 @@ def t1_discordance(vm: VoteMatrix) -> dict:
         "min_pair": worst[0],
         "min_discordance": worst[1],
         "passes": worst[1] >= MIN_DISCORDANCE,
+    }
+
+
+def t1c_by_era(vm: VoteMatrix) -> dict:
+    """Discordance recomputed inside each coalition era.
+
+    Whole-term discordance is misleading whenever a party changes side mid-term. SDE is
+    exactly that case, so a target built across the boundary blends two behaviours.
+    """
+    import datetime as _dt
+
+    out: dict = {"eras": {}}
+    dates = [v.when[:10] for v in vm.votes]
+    for era in ERAS:
+        mask = np.array([bool(d) and era.contains(_dt.date.fromisoformat(d)) for d in dates])
+        if mask.sum() < 30:
+            continue
+        sub = vm.subset(mask)
+        t1 = t1_discordance(sub)
+        out["eras"][era.key] = {
+            "label": era.label,
+            "cabinet": era.cabinet,
+            "coalition": sorted(era.parties),
+            "votes": int(mask.sum()),
+            "min_pair": t1["min_pair"],
+            "min_discordance": t1["min_discordance"],
+            "pairs": t1["pairs"],
+            "blocs": t1b_blocs(t1),
+        }
+
+    # Did any faction change side between eras? That is the finding, not an anomaly.
+    switched = []
+    keys = [e.key for e in ERAS]
+    for f in vm.faction_names():
+        sides = {
+            e.key: ("government" if f in e.parties else "opposition")
+            for e in ERAS
+            if e.key in out["eras"]
+        }
+        if len(set(sides.values())) > 1:
+            switched.append({"faction": f, "sides": sides})
+    out["switched_sides"] = switched
+    out["era_keys"] = [k for k in keys if k in out["eras"]]
+    return out
+
+
+def t1d_government_axis(vm: VoteMatrix) -> dict:
+    """How much of the chamber is explained by government-vs-opposition alone.
+
+    If this is most of it, then "which party would the fly join" is really "which side",
+    and the party-level claim needs the caveat.
+    """
+    import datetime as _dt
+
+    agree_gov, agree_opp, n = 0, 0, 0
+    for j, v in enumerate(vm.votes):
+        if not v.when:
+            continue
+        d = _dt.date.fromisoformat(v.when[:10])
+        if era_at(d) is None:
+            continue
+        gov, opp = [], []
+        for i, _mid in enumerate(vm.member_ids):
+            f = vm.faction[i, j]
+            st = vm.stance[i, j]
+            if not f or np.isnan(st) or st == 0.0:
+                continue
+            side = alignment_at(f, d)
+            if side == "government":
+                gov.append(st)
+            elif side == "opposition":
+                opp.append(st)
+        if len(gov) < 5 or len(opp) < 5:
+            continue
+        n += 1
+        gov_line = SUPPORT if np.mean(gov) > 0 else OPPOSE
+        opp_line = SUPPORT if np.mean(opp) > 0 else OPPOSE
+        agree_gov += float(np.mean(np.array(gov) == gov_line))
+        agree_opp += float(np.mean(np.array(opp) == opp_line))
+        if gov_line != opp_line:
+            pass
+    opposed = 0
+    for j, v in enumerate(vm.votes):
+        if not v.when:
+            continue
+        d = _dt.date.fromisoformat(v.when[:10])
+        if era_at(d) is None:
+            continue
+        gov, opp = [], []
+        for i, _mid in enumerate(vm.member_ids):
+            f = vm.faction[i, j]
+            st = vm.stance[i, j]
+            if not f or np.isnan(st) or st == 0.0:
+                continue
+            side = alignment_at(f, d)
+            (gov if side == "government" else opp if side == "opposition" else []).append(st)
+        if len(gov) < 5 or len(opp) < 5:
+            continue
+        if (np.mean(gov) > 0) != (np.mean(opp) > 0):
+            opposed += 1
+    return {
+        "votes_scored": n,
+        "government_cohesion": round(agree_gov / n, 3) if n else None,
+        "opposition_cohesion": round(agree_opp / n, 3) if n else None,
+        "sides_opposed_share": round(opposed / n, 3) if n else None,
     }
 
 
@@ -276,6 +382,8 @@ def run_pretests(cache_root: Path, verbose: bool = True) -> int:
 
     t1 = t1_discordance(vm)
     t1b = t1b_blocs(t1)
+    t1c = t1c_by_era(vm)
+    t1d = t1d_government_axis(vm)
     t2 = t2_content_blind_sweep(vm)
     t3 = t3_dimensionality(vm)
     t4 = t4_scale(vm)
@@ -302,6 +410,8 @@ def run_pretests(cache_root: Path, verbose: bool = True) -> int:
             },
             "t1_discordance": t1,
             "t1b_blocs": t1b,
+            "t1c_by_era": t1c,
+            "t1d_government_axis": t1d,
             "t2_content_blind": t2,
             "t3_dimensionality": t3,
             "t4_scale": t4,
@@ -310,7 +420,7 @@ def run_pretests(cache_root: Path, verbose: bool = True) -> int:
     )
 
     if verbose:
-        _report(votes, vm, bills, t1, t1b, t2, t3, t4, t5, passed, gate, voterless)
+        _report(votes, vm, bills, t1, t1b, t1c, t1d, t2, t3, t4, t5, passed, gate, voterless)
     return 0 if passed else 1
 
 
@@ -326,7 +436,7 @@ def _short(name: str) -> str:
     )
 
 
-def _report(votes, vm, bills, t1, t1b, t2, t3, t4, t5, passed, gate, voterless) -> None:
+def _report(votes, vm, bills, t1, t1b, t1c, t1d, t2, t3, t4, t5, passed, gate, voterless) -> None:
     print("\n" + "=" * 72)
     print("STAGE 0 PRE-TESTS — is the question answerable?")
     print("=" * 72)
@@ -355,6 +465,27 @@ def _report(votes, vm, bills, t1, t1b, t2, t3, t4, t5, passed, gate, voterless) 
         note = "  <- indistinguishable, merged" if len(b) > 1 else ""
         print(f"      {tag}{note}")
     print(f"    weakest separation between blocs: {t1b['min_separation']}")
+
+    print("\nT1c discordance within coalition eras")
+    for key in t1c["era_keys"]:
+        e = t1c["eras"][key]
+        gov = ", ".join(_short(p) for p in e["coalition"])
+        print(f"    era {e['label']}  n={e['votes']}  government: {gov}")
+        blocs = " | ".join(" + ".join(_short(x) for x in b) for b in e["blocs"]["blocs"])
+        print(f"       blocs: {blocs}")
+    for sw in t1c["switched_sides"]:
+        sides = " -> ".join(f"{k}:{v}" for k, v in sw["sides"].items())
+        print(f"    {_short(sw['faction'])} changed side mid-term ({sides})")
+
+    print("\nT1d government-vs-opposition axis")
+    print(
+        f"    government bloc cohesion {t1d['government_cohesion']:.0%}, "
+        f"opposition {t1d['opposition_cohesion']:.0%}"
+    )
+    print(
+        f"    the two sides took opposite lines on "
+        f"{t1d['sides_opposed_share']:.0%} of {t1d['votes_scored']} votes"
+    )
 
     print("\nT2  content-blind sweep")
     print(
