@@ -120,6 +120,10 @@ class Scorer:
                 body = ""
                 if isinstance(exc, httpx.HTTPStatusError):
                     body = exc.response.text[:300]
+                    code = exc.response.status_code
+                    if 400 <= code < 500 and code != 429:
+                        # A rejected request fails identically on retry.
+                        raise RuntimeError(f"{code}: {body}") from exc
                 log.warning(
                     "%s (attempt %d/%d) %s", type(exc).__name__, attempt + 1, MAX_ATTEMPTS, body
                 )
@@ -143,17 +147,23 @@ class Scorer:
             except (json.JSONDecodeError, KeyError, OSError):
                 path.unlink(missing_ok=True)
 
+        supports = supported_parameters(self.model)
         payload: dict = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-            "temperature": self.temperature,
             "max_tokens": max_tokens,
             # Schema support is per provider endpoint, not per model.
             "provider": {"require_parameters": True},
         }
+        # Only send parameters the model accepts; an unsupported one plus
+        # require_parameters leaves no eligible endpoint and the call 404s.
+        if "temperature" in supports:
+            payload["temperature"] = self.temperature
+        elif self.temperature:
+            log.debug("%s ignores temperature; sampling variation unavailable", self.model)
         if schema:
             payload["response_format"] = {"type": "json_schema", "json_schema": schema}
 
@@ -196,6 +206,30 @@ class Scorer:
         )
         os.replace(tmp, path)
         return value
+
+
+_CATALOGUE: dict[str, dict] | None = None
+
+
+def catalogue() -> dict[str, dict]:
+    """The public model catalogue, fetched once. No key required."""
+    global _CATALOGUE
+    if _CATALOGUE is None:
+        r = httpx.get(f"{BASE}/models", timeout=60.0)
+        r.raise_for_status()
+        _CATALOGUE = {m["id"]: m for m in r.json()["data"]}
+    return _CATALOGUE
+
+
+def supported_parameters(model: str) -> set[str]:
+    """What a model will actually accept.
+
+    Sending an unsupported parameter alongside `require_parameters: true` filters out every
+    endpoint and the request 404s — GPT-5 models reject `temperature`, for instance. The
+    404 is the guard working as intended, so the fix is to send only what fits.
+    """
+    m = catalogue().get(model)
+    return set(m.get("supported_parameters") or []) if m else set()
 
 
 def resolve_models(prefer: list[str]) -> list[dict]:

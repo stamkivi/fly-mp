@@ -100,17 +100,19 @@ Return a score on each dimension in the range -1 to +1:
 
 {axes}
 
-Also return `salience` from 0 to 1: how ideologically contested the bill is at all. Technical
-amendments, ratifications of international agreements, and routine legal housekeeping should
-score near 0 even if they touch a policy area. A bill at the centre of political argument
-scores near 1.
+Also return `salience` from 0 to 1: how ideologically contested the bill is.
 
 Rules:
-- Score what the bill DOES, not the policy area it belongs to. A technical amendment to an
-  environmental law is not a green bill; it is a technical bill.
-- Use 0 on any dimension the bill does not engage. Do not spread small values across every
-  dimension.
-- Use the full range. If a bill clearly pushes one direction, say so with a large magnitude.
+- Almost every Estonian bill is formally an amendment ("... seaduse muutmise seadus"). That
+  says nothing about whether it is substantive. Judge the change it makes, not its form.
+- If a bill changes a tax rate, a benefit, an eligibility rule, a right, an obligation, a
+  penalty or who holds a power, it is substantive: score the direction of that change.
+- Reserve near-zero salience for bills that change no policy at all — renumbering, corrected
+  cross-references, terminology, or a deadline moved to transpose an EU act already agreed.
+- Score 0 on a dimension only when the bill genuinely does not touch it. A bill will usually
+  engage one to three dimensions; engaging none is unusual and means the bill is pure
+  housekeeping.
+- Use the full range. A bill that clearly pushes one direction deserves 0.6 or more, not 0.2.
 - Judge the bill on its own terms. Do not speculate about who proposed it or who would
   support it.
 
