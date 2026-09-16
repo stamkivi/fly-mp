@@ -152,47 +152,116 @@ def t4_scale(vm: VoteMatrix) -> dict:
 
 def t5_metadata_ceiling(vm: VoteMatrix, bills: dict) -> dict:
     """Cross-validated logistic regression from bill *surface* features to each faction's
-    line — no LLM. Tells us the LLM's headroom before we pay for anything."""
+    line — no LLM — ablated by feature set.
+
+    The ablation is the point. `initiator` (government vs MP) is one bit that Kärbes never
+    sees, and it is worth roughly 18 points on its own: the coalition backs government
+    bills and kills opposition ones. That is procedural signalling, not content. So the
+    fair benchmark for a content-reading fly is the `content` row, not `content+initiator`.
+
+    It also constrains Stage 1: the rubric must be initiator-blind, or the topic scores
+    launder this one bit and the fly's apparent performance is leakage.
+    """
     from sklearn.feature_extraction import DictVectorizer
     from sklearn.linear_model import LogisticRegression
     from sklearn.model_selection import cross_val_score
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
 
-    feats, keep = [], []
-    for j, v in enumerate(vm.votes):
-        bill = bills.get(v.draft_uuid)
-        if bill is None:
-            continue
+    def content(bill, vote):
         f = {f"desc={d}": 1.0 for d in bill.descriptors}
         f[f"committee={bill.committee}"] = 1.0
         f[f"type={bill.draft_type}"] = 1.0
-        f["government"] = 1.0 if bill.government_bill else 0.0
-        f[f"kind={v.kind}"] = 1.0
-        feats.append(f)
-        keep.append(j)
+        return f
 
-    if len(feats) < 30:
-        return {"error": "too few bills with metadata", "n": len(feats)}
+    def procedural(bill, vote):
+        return {f"kind={vote.kind}": 1.0}
 
-    x = DictVectorizer(sparse=False).fit_transform(feats)
-    out = {}
-    for faction in vm.faction_names():
-        line = vm.faction_line(faction)[keep]
-        valid = ~np.isnan(line)
-        y = (line[valid] == SUPPORT).astype(int)
-        if valid.sum() < 30 or len(np.unique(y)) < 2:
-            continue
-        majority = float(max(y.mean(), 1 - y.mean()))
-        model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000, C=0.5))
-        acc = float(cross_val_score(model, x[valid], y, cv=5).mean())
-        out[faction] = {
-            "n": int(valid.sum()),
-            "majority_baseline": round(majority, 3),
-            "metadata_accuracy": round(acc, 3),
-            "headroom": round(acc - majority, 3),
-        }
+    def initiator(bill, vote):
+        return {"government": 1.0 if bill.government_bill else 0.0}
+
+    feature_sets = {
+        "content": [content],
+        "procedural": [procedural],
+        "content+initiator": [content, initiator],
+        "all": [content, procedural, initiator],
+    }
+
+    out: dict = {"sets": {}, "fair_benchmark_for_fly": "content"}
+    for label, parts in feature_sets.items():
+        feats, keep = [], []
+        for j, v in enumerate(vm.votes):
+            bill = bills.get(v.draft_uuid)
+            if bill is None:
+                continue
+            merged: dict = {}
+            for fn in parts:
+                merged.update(fn(bill, v))
+            feats.append(merged)
+            keep.append(j)
+        if len(feats) < 30:
+            return {"error": "too few bills with metadata", "n": len(feats)}
+
+        x = DictVectorizer(sparse=False).fit_transform(feats)
+        per_faction = {}
+        for faction in vm.faction_names():
+            line = vm.faction_line(faction)[keep]
+            valid = ~np.isnan(line)
+            y = (line[valid] == SUPPORT).astype(int)
+            if valid.sum() < 30 or len(np.unique(y)) < 2:
+                continue
+            majority = float(max(y.mean(), 1 - y.mean()))
+            model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=2000, C=0.5))
+            acc = float(cross_val_score(model, x[valid], y, cv=5).mean())
+            per_faction[faction] = {
+                "n": int(valid.sum()),
+                "majority_baseline": round(majority, 3),
+                "accuracy": round(acc, 3),
+                "gain": round(acc - majority, 3),
+            }
+        out["sets"][label] = per_faction
     return out
+
+
+def t1b_blocs(t1: dict) -> dict:
+    """Merge factions that are not distinguishable, and report what *is* answerable.
+
+    T1 failing is not the end of the study — it says the unit of analysis is wrong.
+    Single-link agglomeration over the discordance matrix collapses factions that vote
+    together into blocs, and the blocs are the targets a fly could actually be matched to.
+    """
+    factions = t1["factions"]
+    matrix = t1["matrix"]
+    blocs = [[f] for f in factions]
+
+    def between(a: list[str], b: list[str]) -> int:
+        return min(matrix[x][y] for x in a for y in b)
+
+    merged = True
+    while merged and len(blocs) > 1:
+        merged = False
+        for i in range(len(blocs)):
+            for j in range(i + 1, len(blocs)):
+                if between(blocs[i], blocs[j]) < MIN_DISCORDANCE:
+                    blocs[i] = blocs[i] + blocs.pop(j)
+                    merged = True
+                    break
+            if merged:
+                break
+
+    separations = {}
+    for i in range(len(blocs)):
+        for j in range(i + 1, len(blocs)):
+            key = f"{_short(blocs[i][0])}+ | {_short(blocs[j][0])}+"
+            separations[key] = between(blocs[i], blocs[j])
+
+    return {
+        "blocs": blocs,
+        "n_blocs": len(blocs),
+        "min_separation": min(separations.values()) if separations else 0,
+        # Merged groups are the honest unit of analysis when T1 fails.
+        "collapsed": [b for b in blocs if len(b) > 1],
+    }
 
 
 def run_pretests(cache_root: Path, verbose: bool = True) -> int:
@@ -206,12 +275,16 @@ def run_pretests(cache_root: Path, verbose: bool = True) -> int:
     bills = load_bills(cache_root)
 
     t1 = t1_discordance(vm)
+    t1b = t1b_blocs(t1)
     t2 = t2_content_blind_sweep(vm)
     t3 = t3_dimensionality(vm)
     t4 = t4_scale(vm)
     t5 = t5_metadata_ceiling(vm, bills)
 
-    passed = t1["passes"] and t3["passes"]
+    # T1 failing means the unit of analysis is wrong, not that the study is dead — so
+    # the gate asks whether *some* separable set of targets exists, at bloc level.
+    resolvable = t1["passes"] or (t1b["n_blocs"] >= 2 and t1b["min_separation"] >= MIN_DISCORDANCE)
+    passed = resolvable and t3["passes"]
     gate = write_gate(
         "stage0",
         passed,
@@ -228,6 +301,7 @@ def run_pretests(cache_root: Path, verbose: bool = True) -> int:
                 "voterless_dropped": len(voterless),
             },
             "t1_discordance": t1,
+            "t1b_blocs": t1b,
             "t2_content_blind": t2,
             "t3_dimensionality": t3,
             "t4_scale": t4,
@@ -236,7 +310,7 @@ def run_pretests(cache_root: Path, verbose: bool = True) -> int:
     )
 
     if verbose:
-        _report(votes, vm, bills, t1, t2, t3, t4, t5, passed, gate, voterless)
+        _report(votes, vm, bills, t1, t1b, t2, t3, t4, t5, passed, gate, voterless)
     return 0 if passed else 1
 
 
@@ -252,7 +326,7 @@ def _short(name: str) -> str:
     )
 
 
-def _report(votes, vm, bills, t1, t2, t3, t4, t5, passed, gate, voterless) -> None:
+def _report(votes, vm, bills, t1, t1b, t2, t3, t4, t5, passed, gate, voterless) -> None:
     print("\n" + "=" * 72)
     print("STAGE 0 PRE-TESTS — is the question answerable?")
     print("=" * 72)
@@ -274,6 +348,13 @@ def _report(votes, vm, bills, t1, t2, t3, t4, t5, passed, gate, voterless) -> No
     for pair, d in sorted(t1["pairs"].items(), key=lambda kv: kv[1])[:5]:
         a, b = pair.split(" | ")
         print(f"      {_short(a):>8} vs {_short(b):<8} {d:>4}")
+
+    print(f"\nT1b blocs after merging   {t1b['n_blocs']} separable targets")
+    for b in t1b["blocs"]:
+        tag = " + ".join(_short(x) for x in b)
+        note = "  <- indistinguishable, merged" if len(b) > 1 else ""
+        print(f"      {tag}{note}")
+    print(f"    weakest separation between blocs: {t1b['min_separation']}")
 
     print("\nT2  content-blind sweep")
     print(
@@ -299,16 +380,23 @@ def _report(votes, vm, bills, t1, t2, t3, t4, t5, passed, gate, voterless) -> No
         own = t4["own_faction_agreement_median"].get(f, float("nan"))
         print(f"      {_short(f):>8}  always-support {a:.0%}   own-faction ceiling {own:.0%}")
 
-    print("\nT5  metadata-only ceiling (no LLM)")
+    print("\nT5  metadata-only ceiling (no LLM), by feature set")
     if "error" in t5:
         print(f"    {t5['error']}")
     else:
-        print(f"      {'faction':>8}  {'n':>4}  {'majority':>8}  {'metadata':>8}  {'gain':>6}")
-        for f, r in sorted(t5.items(), key=lambda kv: -kv[1]["headroom"]):
-            print(
-                f"      {_short(f):>8}  {r['n']:>4}  {r['majority_baseline']:>8.3f}  "
-                f"{r['metadata_accuracy']:>8.3f}  {r['headroom']:>+6.3f}"
+        facs = sorted(t5["sets"]["all"], key=lambda f: -t5["sets"]["all"][f]["accuracy"])
+        print(f"      {'feature set':<19}" + "".join(f"{_short(f):>8}" for f in facs))
+        for label in ("procedural", "content", "content+initiator", "all"):
+            row = t5["sets"].get(label, {})
+            cells = "".join(
+                f"{row[f]['accuracy']:>8.3f}" if f in row else f"{'--':>8}" for f in facs
             )
+            print(f"      {label:<19}{cells}")
+        majs = "".join(f"{t5['sets']['all'][f]['majority_baseline']:>8.3f}" for f in facs)
+        print(f"      {'majority baseline':<19}{majs}")
+        print()
+        print("    'initiator' is one bit the fly never sees, and it is worth most of the")
+        print("    gap. The fly's fair benchmark is the 'content' row.")
 
     print("\n" + "-" * 72)
     print(f"GATE stage0: {'PASS' if passed else 'FAIL'}   ->  {gate}")

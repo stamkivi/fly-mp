@@ -592,12 +592,20 @@ zero vector produces a confident, plausible, entirely meaningless voting record.
 ## Design — the page and its visuals
 
 Verified live: `GET /api/hallplan` returns all 101 occupied seats with `place`, the MP, and the faction
-including `shortName` and **`colorHex`**. Seat numbers run 1–118 with **twelve genuinely empty seats**
-(6, 7, 10, 14, 16, 17, 18, 20, 65, 77, 90, 100). Composition today (Sept 2026) has already drifted from
-the June sample — REF 34, non-affiliated 22 — confirming the crossbench keeps growing.
+including `shortName` and **`colorHex`**. Place numbers run 1–118, so **seventeen numbers are
+unassigned**: 6, 7, 10, 14, 16, 17, 18, 20, 65, 77, 90, 100, 106–110. Composition today (Sept 2026) has
+already drifted from the June sample — REF 34, non-affiliated 22 — confirming the crossbench keeps
+growing.
 
-**Kärbes does not get an invented 102nd seat. It gets one of the twelve real empty ones.** Seat 65 sits
+*Caveat:* the API gives no coordinates, so whether an unassigned number is a vacant desk, an aisle or a
+reserved position is **unverified**. Do not assert "empty seats" in the published page without checking
+a floor plan; "unassigned place number" is what the data actually supports.
+
+**Kärbes does not get an invented 102nd seat. It gets one of the unassigned numbers** — 65, which sits
 mid-hall. This is the whole visual identity and it costs nothing to be literal.
+
+Seat *geometry* must be reconstructed: the API has only place numbers. Any rendered hall is therefore a
+plausible fan arrangement, not a survey of the room, and should be labelled as a schematic.
 
 ### Official faction palette (from the API, not invented)
 
