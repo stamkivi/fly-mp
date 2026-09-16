@@ -694,6 +694,61 @@ checked against both themes; `#FFC000` and `#C0C0C0` fail as text colours and ar
 
 ---
 
+## Stage 0 results (measured 2026-09-16, full XV term)
+
+Harvest complete: 504 sittings, 910 substantive votings, 784 bills, **zero gaps**. A rerun makes
+**0 requests / 1,699 cache hits in 0.67 s**.
+
+**Usable corpus: 898 substantive votes, 563 discriminative, 772 bills.** 12 votings dropped for having
+tallies but no per-member list; 33 bills have no `introduction` and cannot be scored.
+
+### T1 fails, and that is the most useful thing it could have done
+
+**Reform and Eesti 200 took opposing majority lines on 2 of 563 votes.** As voting objects they are one
+party. "Which of seven factions would the fly join" is not an answerable question and never was — no
+simulator would have fixed it, and the failure is worth more than a spurious answer would have been.
+
+T1b merges below-threshold factions and reports what *is* answerable: **five separable blocs** —
+REF+E200, SDE, KESK, Isamaa, EKRE — with a weakest separation of 69. That is the unit of analysis from
+here. The ideal-point scaling in §5 was already label-agnostic, so it needs no change; what changes is
+that the headline is a **bloc**, with REF/E200 reported as jointly indistinguishable rather than ranked.
+
+### T5: one bit explains Estonian politics, and the fly never sees it
+
+| feature set | E200 | REF | EKRE | Isamaa | SDE | KESK |
+|---|---|---|---|---|---|---|
+| procedural (vote kind) | .777 | .777 | .760 | .637 | .708 | .601 |
+| **content** (descriptors + committee + type) | **.754** | **.735** | **.739** | **.658** | **.611** | **.600** |
+| content + initiator | .891 | .902 | .886 | .743 | .734 | .640 |
+| all | .918 | .918 | .909 | .743 | .736 | .696 |
+| majority baseline | .522 | .519 | .515 | .542 | .522 | .539 |
+
+Adding **whether the government or an MP tabled the bill** — one bit — moves the big blocs from ~.74 to
+~.90. The coalition backs government bills and kills opposition ones; that is procedural signalling,
+not content.
+
+Two consequences, both binding:
+
+1. **The fly's fair benchmark is the `content` row (~.74), not .92.** It reads bill text and never sees
+   the initiator, so .92 is not its target and failing to reach it is not a finding.
+2. **The Stage 1 rubric must be initiator-blind.** If the prompt sees the initiator, the topic scores
+   launder that single bit and the fly's apparent performance is leakage, not comprehension. §1 already
+   passed metadata "as context" — that is now forbidden for `initiators`; it stays a separate feature
+   for the control only.
+
+### T2, T3, T4
+
+- **T2:** a content-blind fly best-matches Eesti 200 across 50% of the marginal grid — concentrated but
+  below the 80% threshold, so the marginal does not fully determine the answer. AUC stays primary.
+- **T3 passes:** 560 distinct split patterns out of 563, dimension 1 explains 56.1% and dimension 2
+  only 7.5%. Strongly one-dimensional, as expected.
+- **T4:** an always-support fly scores 52% against REF/E200 and 33–46% elsewhere — **much weaker than
+  feared**, because the discriminative filter and the rejection-motion inversion balance the set. The
+  always-POOLT confound in §5 is real but far smaller than assumed. Realistic ceilings (own-faction
+  agreement): REF .89, E200 .85, SDE/EKRE .71, KESK .67, Isamaa .60.
+
+---
+
 ## Status
 
 | Step | State |
@@ -701,7 +756,8 @@ checked against both themes; `#FFC000` and `#C0C0C0` fail as text colours and ar
 | Repo initialised, skeleton + `.gitignore` | done |
 | `SPEC.md` promoted from plan | done (this file) |
 | `CLAUDE.md` via `/init` | done |
-| **Stage 0 — harvest + offline pre-tests (T1–T5)** | **next** |
+| Stage 0 — harvest + offline pre-tests (T1–T5) | **done, gate PASS** (see above) |
+| **Stage 1 — LLM rubric pilot, initiator-blind** | **next** |
 
 Stage 0 is the decision point: it runs with no LLM and no simulator, and its T1/T3 kill criteria
 determine whether the 7-faction question is answerable at all or must be reframed as
