@@ -1,0 +1,25 @@
+# Cached Riigikogu API responses and pinned MaleCNS arrays — large, reproducible, CC-licensed upstream
+data/*
+!data/.gitkeep
+
+# Run outputs: audit logs, per-bill scores, per-vote decisions, spend
+runs/*
+!runs/.gitkeep
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
