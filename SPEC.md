@@ -480,6 +480,34 @@ interval — matters more than event-driven propagation alone. Build both.
 
 *Verification:* assert wall-clock per sim is under 5 s on a single bill before launching Stage 3.
 
+### Those hour figures are arithmetic, not measurements
+
+Every compute estimate above is machine-agnostic: raw op counts divided by an assumed 0.5–2 G ops/sec,
+a rough stand-in for one modern CPU core doing numpy-ish work. **No hardware was benchmarked.** Treat
+them as order-of-magnitude. The derived quantities are the op counts, which are solid:
+
+- ~900M ops per event-driven simulation → 0.4–1.8 s → 0.5–2 h for Stage 3's 3,920 sims
+- 256–512M edge swaps per rewiring; 5–10 G across 20 instances
+- 205 MB per connectome in CSR; 4.1 GB if 20 were held at once
+
+**Where to run it.** The laptop (Apple Silicon) is the default and adequate for all of it; the
+MaleCNS-specific MPS simulator flagged in §3 targets exactly this hardware and, if it works, likely
+lands at the fast end. 16 GB is the Stonkfly minimum and needs headroom for the 1 GB weights file plus
+the CSR. The mac mini (`uv-mac-mini`) is the better host for Stage 3 and the null ladder purely because
+it is persistent — these are unattended overnight batch jobs with no interactivity, and nobody closes
+its lid. Its per-core speed relative to the laptop is unknown.
+
+**Cloud is not worth it here, and not on cost grounds.** A mid-size instance would run Stage 3 for
+under $5 and even the pessimistic 70-hour curve for $15–35 (prices from memory, unverified) — trivially
+affordable. But you would pay to move a 1 GB dataset and rebuild an environment for a job that finishes
+overnight locally, and the fly's voting record is needed once, not fast. The **one** case where cloud
+earns its keep: superposition fails at Stage 2 *and* the full 36-pipeline curve is wanted natively.
+That is 18–70 h and parallelises perfectly across 36 independent runs.
+
+**The Stage 2 benchmark — one bill, under 5 s — is the first real measurement of any of this.** Until
+it runs, every hour figure in this document is arithmetic. Catching the 40× kernel error before
+committing to a long run is the entire purpose of that gate.
+
 ### Graph loading and memory
 
 - CSR with `int32` indices + `float32` weights is ~205 MB per connectome. Never hold 20 rewired
