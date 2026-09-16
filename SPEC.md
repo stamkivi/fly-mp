@@ -63,6 +63,12 @@ well under $1 of LLM. N=142 cannot support a 6-faction comparison; N=568 might.
 Checked for the obstruction artefact this term is known for: the 372 discriminative rejection motions
 are **one per bill, 372 distinct bills**. No en-masse duplicate motions inflating N.
 
+**Caveat found during the harvest:** those counts come from the *aggregate* fields on the votings list,
+which are present even when the per-member voter list is not. A known API gap leaves some early-term
+votings with tallies but **zero voters** (~6% of the first tranche fetched). Those cannot be used and
+are dropped, so the usable N is below 568. `karbes pretest` reports the dropped count; take the number
+it prints, not the one in the table above.
+
 ### Three findings that reshape the design
 
 **1. Most parliamentary business carries no factional signal.** 98% of final votes pass; the median

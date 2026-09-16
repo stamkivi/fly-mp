@@ -24,7 +24,7 @@ from karbes.analysis.votematrix import (
     discriminative_mask,
 )
 from karbes.gates import write_gate
-from karbes.riigikogu.corpus import load_bills, load_votes
+from karbes.riigikogu.corpus import load_bills, load_votes, voterless_votings
 
 log = logging.getLogger(__name__)
 
@@ -197,6 +197,7 @@ def t5_metadata_ceiling(vm: VoteMatrix, bills: dict) -> dict:
 
 def run_pretests(cache_root: Path, verbose: bool = True) -> int:
     votes = load_votes(cache_root)
+    voterless = voterless_votings(cache_root)
     if not votes:
         raise SystemExit("no cached votes — run `karbes harvest` first")
 
@@ -222,6 +223,9 @@ def run_pretests(cache_root: Path, verbose: bool = True) -> int:
                 "bills_cached": len(bills),
                 "bills_without_text": sum(1 for b in bills.values() if not b.has_text),
                 "members": vm.shape[0],
+                # SPEC.md's 568 came from aggregate fields, which exist even when the
+                # per-member list does not. Usable N is net of these.
+                "voterless_dropped": len(voterless),
             },
             "t1_discordance": t1,
             "t2_content_blind": t2,
@@ -232,7 +236,7 @@ def run_pretests(cache_root: Path, verbose: bool = True) -> int:
     )
 
     if verbose:
-        _report(votes, vm, bills, t1, t2, t3, t4, t5, passed, gate)
+        _report(votes, vm, bills, t1, t2, t3, t4, t5, passed, gate, voterless)
     return 0 if passed else 1
 
 
@@ -248,7 +252,7 @@ def _short(name: str) -> str:
     )
 
 
-def _report(votes, vm, bills, t1, t2, t3, t4, t5, passed, gate) -> None:
+def _report(votes, vm, bills, t1, t2, t3, t4, t5, passed, gate, voterless) -> None:
     print("\n" + "=" * 72)
     print("STAGE 0 PRE-TESTS — is the question answerable?")
     print("=" * 72)
@@ -257,7 +261,9 @@ def _report(votes, vm, bills, t1, t2, t3, t4, t5, passed, gate) -> None:
         f"{len({v.draft_uuid for v in votes})} bills ({len(bills)} cached)"
     )
     no_text = sum(1 for b in bills.values() if not b.has_text)
-    print(f"        {no_text} bills have no introduction text (cannot be scored)")
+    print(f"        {no_text} bill(s) have no introduction text (cannot be scored)")
+    if voterless:
+        print(f"        {len(voterless)} votings dropped: tallies but no per-member list")
 
     print(f"\nT1  pairwise discordance   {'PASS' if t1['passes'] else 'FAIL'}")
     print(

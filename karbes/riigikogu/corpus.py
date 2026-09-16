@@ -133,11 +133,17 @@ def load_votes(cache_root: Path) -> list[Vote]:
         sittings.extend(json.loads(path.read_text(encoding="utf-8")))
 
     votes: list[Vote] = []
+    empty: list[str] = []
     for voting in _substantive_votings(sittings):
         detail = cache.get("voting", voting["uuid"])
         if detail is None:
             continue  # a recorded gap; counts are re-derived without it
         voters = detail.get("voters") or []
+        if not voters:
+            # Known API gap: some early-term votings carry aggregate tallies but no
+            # per-member list. They cannot be used and must not become empty columns.
+            empty.append(voting["uuid"])
+            continue
         if len(voters) != SEATS:
             log.warning("voting %s has %d voters, expected %d", voting["uuid"], len(voters), SEATS)
         decisions, factions, names = {}, {}, {}
@@ -164,7 +170,27 @@ def load_votes(cache_root: Path) -> list[Vote]:
             )
         )
     votes.sort(key=lambda v: v.when)
+    if empty:
+        log.warning("%d votings carry tallies but no per-member list and were dropped", len(empty))
     return votes
+
+
+def voterless_votings(cache_root: Path) -> list[str]:
+    """Substantive votings whose detail has aggregate tallies but no per-member list.
+
+    A known API gap in the early term. They inflate the corpus counts in SPEC.md, which
+    were derived from aggregate fields, so the usable N must be reported net of these.
+    """
+    cache = Cache(cache_root)
+    sittings: list[dict] = []
+    for path in sorted((cache_root / "votings_range").glob("*.json")):
+        sittings.extend(json.loads(path.read_text(encoding="utf-8")))
+    out = []
+    for voting in _substantive_votings(sittings):
+        detail = cache.get("voting", voting["uuid"])
+        if detail is not None and not (detail.get("voters") or []):
+            out.append(voting["uuid"])
+    return out
 
 
 def load_bills(cache_root: Path, uuids: set[str] | None = None) -> dict[str, Bill]:
