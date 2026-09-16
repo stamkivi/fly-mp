@@ -786,47 +786,58 @@ Two consequences, both binding:
 
 ---
 
-## Stage 1 results (pilot, 40 bills, $0.04)
+## Stage 1 results (full corpus, 725 bills, $0.90)
 
-Gate **FAIL**, on P2. The machinery works; one half of the rubric does not.
+Gate **FAIL**. Decisive this time, not underpowered: n is 370–533 votes per bloc and the 95% CI
+half-width is ±0.04.
 
 | | result |
 |---|---|
-| **P1 test-retest** | **PASS** — SD 0.00 at temperature 0, max 0.13 at 0.7. Fully reproducible. |
-| **P2 inter-model** | **FAIL** — 4 of 9 axes below r=0.60 between Gemini 2.5 Flash Lite and GPT-5 mini |
-| **P3 collinearity** | **PASS** — PC1 27%, PC2 27%, 5 dimensions for 90% of variance. Genuinely multi-dimensional. |
-| **P4 political signal** | **PASS** on the letter of the rule, but see below |
-| **P5 leakage** | **PASS** — the model calls the outcome from bill text 60% of the time, near chance |
+| **P1 test-retest** | **PASS** — SD ≤0.02 at temperature 0, ≤0.10 at 0.7 |
+| **P2 inter-model** | **FAIL** — `regional` .52, `state_power` .55, `social` .57 below the 0.60 bar |
+| **P3 collinearity** | **PASS** — PC1 37%, PC2 20%, six dimensions for 90% of variance |
+| **P4 political signal** | see below — the headline result |
+| **P5 leakage** | **PASS** — the model calls outcomes at 61%, near chance |
 
-**P2 detail.** Agreed: `eu` .78, `defence` .76, `green` .76, `fiscal` .74, `salience` .71.
-Disputed: `state_power` .57, `social` .53, `regional` .44, `market` .42. Two competent models do not
-share a concept of what makes a bill "market" or "social", so those axes are not measurements.
+### The finding: bill text adds nothing over subject tags
 
-**P4 is underpowered, and that is the real result.** At n≈50 votes the 95% CI half-width on an
-accuracy near .70 is **±0.127**, while the largest observed rubric-vs-content gap is **+0.098**.
-Every confidence interval covers the content ceiling:
+The rubric sees a bill's descriptors, committee, type **and its full explanatory summary**. The
+Stage 0 `content` baseline sees everything except the summary. So the comparison isolates exactly
+what reading the text is worth.
 
-| bloc | n | content ceiling | rubric | 95% CI | significant? |
+| bloc | n | tags only | LLM rubric | gap | significant? |
 |---|---|---|---|---|---|
-| SDE | 51 | .611 | .709 | [.584, .834] | no |
-| Isamaa | 46 | .658 | .718 | [.588, .848] | no |
-| REF | 58 | .735 | .741 | [.628, .854] | no |
-| E200 | 57 | .754 | .738 | [.624, .852] | no |
-| KESK | 48 | .600 | .540 | [.399, .681] | no |
-| EKRE | 53 | .739 | .658 | [.530, .786] | no |
+| SDE | 470 | .611 | .657 | **+0.046** | yes, better |
+| EKRE | 492 | .739 | .724 | −0.015 | no |
+| REF | 533 | .735 | .720 | −0.015 | no |
+| KESK | 388 | .600 | .575 | −0.025 | no |
+| E200 | 533 | .754 | .719 | −0.035 | no |
+| Isamaa | 370 | .658 | .584 | **−0.074** | yes, worse |
 
-So the pilot validated the apparatus and cannot answer the question it exists to answer. Scoring the
-full corpus — **772 bills, ~$0.73** — takes n per bloc to ~560 and the CI half-width to **±0.038**,
-which resolves gaps of the size observed. The LLM spend was never the constraint; statistical power is.
+One bloc better, one worse, four indistinguishable. **Reading the explanatory text of an Estonian
+bill carries no predictive signal beyond its curated subject tags.** That is a finding about
+parliament, not a defect in the rubric, and it compounds the Stage 0 result: content is worth ~.74,
+the initiator bit is worth ~.90, and the prose behind the tags is worth nothing at all.
 
-**P4b, dropping the four disputed axes,** is not a clean improvement and must not be reported as one:
-KESK gains +0.149 and Isamaa +0.022, but **SDE loses −0.122**. SDE's distinctiveness lives on exactly
-the `social` and `market` axes the two models disagree about. Dropping them buys reliability and
-costs the one bloc whose signal is most content-driven.
+Dropping the three disputed axes (P4b) makes it worse, not better — every bloc falls except KESK
+and Isamaa by ~0.01. The reliable axes are the topical ones, and topic is what the tags already encode.
 
-Open decision recorded rather than resolved: whether to keep nine axes and accept that four are
-noisy, or cut to the five agreed axes and lose SDE resolution. Re-running P4 at full corpus size
-should come first — at n=560 it may be answerable rather than a judgement call.
+### What this means for the fly
+
+The rubric's job was never to beat the descriptors. It is to give the connectome a **small,
+continuous, interpretable** stimulus — nine named channels a bill can arrive on. It does that,
+reproducibly (P1), multi-dimensionally (P3), without leakage (P5). Parity with the tags is
+information about the chamber, not a reason to discard it.
+
+Recorded honestly for the write-up: Kärbes's input signal is no better than free metadata, so its
+ceiling is ~.72 against ~.90 for anything that knows who tabled the bill. The remaining question —
+whether the *connectome* does anything with the signal it gets — is untouched by this and is what
+the rewired control answers.
+
+**Carried forward as a known limitation:** `regional` (.52), `state_power` (.55) and `social` (.57)
+are not reproducible across models. `regional` fires on few bills; the other two are genuine scope
+disputes that survived an explicit scope rule. They stay in the rubric, flagged, rather than being
+dropped after the fact on a threshold I chose.
 
 ---
 
@@ -838,8 +849,8 @@ should come first — at n=560 it may be answerable rather than a judgement call
 | `SPEC.md` promoted from plan | done (this file) |
 | `CLAUDE.md` via `/init` | done |
 | Stage 0 — harvest + offline pre-tests (T1–T5, era-aware) | **done, gate PASS** (see above) |
-| Stage 1 — LLM rubric pilot | **done, gate FAIL on P2** (see above) |
-| **Decide: 9 noisy axes or 5 reliable ones; score full corpus for power** | **next** |
+| Stage 1 — LLM rubric, full corpus | **done, gate FAIL on P2; finding recorded** |
+| **Stage 2 — LIF kernel + smoke tests** | **next** |
 
 Stage 0 is the decision point: it runs with no LLM and no simulator, and its T1/T3 kill criteria
 determine whether the 7-faction question is answerable at all or must be reframed as
