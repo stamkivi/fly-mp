@@ -1041,6 +1041,27 @@ away into false confidence.
 > cross-validated sparse one, widen the input rather than raise the weight scale, add the
 > adaptation and inhibitory normalisation the kernel lacks, and make the sweep a
 > machine-enforced gate. Everything else in the Stage 2b slice stands.
+>
+> **RETRACTED the same day — the above describes a kernel bug, not the connectome.** Shiu et
+> al.'s model integrates a synaptic variable, `dv/dt = (v_0 - v + g)/t_mbr` with `dg/dt = -g/tau`
+> and `g += w` on arrival. `sim/lif.py` steps the membrane directly instead, so every event
+> lands instantaneously and unfiltered. `TheMrRaGe/flybrain` names this exact error: *"instantaneous
+> voltage jumps produce ~4x excess conductance, forcing a bogus gain fudge."* `weight_scale =
+> 0.05e-3` **is** that fudge. The published model rests at 0 Hz basal and fires sparsely, and
+> `Kisame76/drosophila-brain-mlx` reproduces it on this same MaleCNS v1.0 connectome, checked
+> against Brian2. Every number in the block above — SNR, bistability, the flat sweep, the
+> 22-cell population code — is a measurement of our bug.
+>
+> The readout in §4 is also wrong, and measurably so. flybrain scores three steering readouts on
+> MaleCNS: DNa02 alone d' = 1.11, the **DNa family d' = 4.21**, and **all 1,310 DNs d' = -1.70,
+> significant with the wrong sign** — *"it tracks residual asymmetry, not steering."* Reading
+> every descending neuron, which HANDOFF.md requires, is the one option the literature rules
+> out. The statistic should be a normalised `(R-L)/(R+L)` with the symmetric-stimulus baseline
+> bias subtracted.
+>
+> And §2's bilaterally symmetric ORN drive is incompatible with §4's left-minus-right readout by
+> construction: a symmetric stimulus cannot move an antisymmetric statistic. That contradiction
+> predates any simulation and is the thing to resolve first. See FINDINGS.md for sources.
 
 ---
 

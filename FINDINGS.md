@@ -1,5 +1,76 @@
 # Fly brain, or particle soup?
 
+> ## ⚠ RETRACTION — 2026-09-17, later the same day
+>
+> **Everything in Part 2 below is measured on a kernel that implements the synapse wrongly,
+> and most of it is already answered in published code I should have read first.** It is kept
+> for the record, struck through in intent, but no number in Part 2 should be used or cited.
+>
+> **The implementation error.** Shiu et al.'s model — which `SPEC.md` names as the source of
+> our parameters — integrates a synaptic variable, it does not step the membrane directly:
+>
+> ```
+> dv/dt = (v_0 - v + g) / t_mbr     # g enters divided by the membrane time constant
+> dg/dt = -g / tau                  # tau = 5 ms
+> on_pre: g += w                    # w = contact count x 0.275 mV
+> ```
+>
+> `karbes/sim/lif.py` instead does `v += contacts * weight_scale` — an instantaneous voltage
+> step, no synaptic filtering, no membrane low-pass. A single event therefore delivers its
+> whole amplitude at one instant to all ~153 targets simultaneously, instead of a ~9 ms
+> rise smeared across them. `TheMrRaGe/flybrain` documents this exact failure mode in its own
+> findings: *"instantaneous voltage jumps produce ~4x excess conductance, forcing a bogus gain
+> fudge. The delay is not optional."* Our `weight_scale = 0.05e-3`, which the handoff describes
+> as calibrated, **is that bogus gain fudge** — a factor of 5.5 pulled out of 0.275 to stop a
+> network that was exploding for an unrelated reason.
+>
+> **So the headline diagnosis is void.** "The network is bistable", "0.02 and 0.05 are two
+> sides of a bifurcation", "SNR is zero", "the sweep is flat", "22 cells carry a sparse code" —
+> all of it is a description of the broken kernel, not of the connectome. The published model
+> rests at **0 Hz basal firing** by design and responds sparsely: 455 of 127,400 neurons to a
+> sugar stimulus. `Kisame76/drosophila-brain-mlx` runs the same model on **this same MaleCNS
+> v1.0 connectome**, validated against Brian2 to SHA-256-identical spike counts. The 22 Hz
+> self-ignition is ours alone.
+>
+> **The readout was also already solved, and we chose the one option the literature rules out.**
+> `TheMrRaGe/flybrain` measures three steering readouts on MaleCNS:
+>
+> | readout | d' |
+> |---|---:|
+> | DNa02 alone | 1.11 |
+> | **DNa family** | **4.21** |
+> | all 1,310 descending neurons | **-1.70 — significant with the wrong sign** |
+>
+> Its verdict on the whole-population readout: *"it tracks residual asymmetry, not steering."*
+> `HANDOFF.md` insists on reading all ~1,304 DNs and cites the -4.577 -> +0.011 Hz asymmetry
+> as justification. That fixed the symptom and destroyed the signal. The steering literature
+> (Rayshubskiy et al., *Cell* 2024) is specific: rotational velocity tracks the **left-right
+> firing difference of DNa01/DNa02**, near-linearly across the dynamic range.
+>
+> Two more things it gets right that we did not:
+> * the statistic is a normalised `turn_index = (R-L)/(R+L)`, not a raw rate difference;
+> * the **baseline left/right bias under symmetric stimuli must be subtracted** — theirs
+>   reaches -1.3 against a directional signal of ~0.08.
+>
+> **And the encoder and decoder were never compatible.** `karbes/graph/populations.py` drives
+> ORNs *bilaterally and symmetrically* on the stated grounds that "a bill does not arrive from
+> the left or the right", while `karbes/decode.py` reads a left-minus-right difference. A
+> symmetric stimulus cannot systematically move an antisymmetric readout. flybrain reports the
+> same: get sensory laterality wrong and *"measured turn response to stimulus left vs right was
+> 0.0000, identical to four decimals."* That is a design contradiction, and no amount of
+> simulation was going to resolve it.
+>
+> **What survives** is Part 1 (the render and playback work, though its firing rates will move
+> once the kernel is fixed) and the incidental defects: the additive-render density bug, the
+> raster dedup undercount, the overlapping probe groups, the Jev confidence default, and the
+> ORN/rubric key drift. Those are real and are ours.
+>
+> Sources: [philshiu/Drosophila_brain_model](https://github.com/philshiu/Drosophila_brain_model)
+> · [Shiu et al. 2024](https://pmc.ncbi.nlm.nih.gov/articles/PMC10187186/)
+> · [TheMrRaGe/flybrain](https://github.com/TheMrRaGe/flybrain)
+> · [Kisame76/drosophila-brain-mlx](https://github.com/Kisame76/drosophila-brain-mlx)
+> · [Rayshubskiy et al., *Cell* 2024](https://www.cell.com/cell/fulltext/S0092-8674(24)00962-0)
+
 *Stage 2b, the one-bill replay slice. Measured on uv-mac-mini, 2026-09-17, against MaleCNS
 v1.0 (166,700 neurons / 25,582,938 edges / 124,177,616 synaptic contacts — reproducing the
 published figures to within one synapse) and the XV Riigikogu corpus.*
