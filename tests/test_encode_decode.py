@@ -185,3 +185,33 @@ def test_the_verdict_ignores_the_frames_before_the_network_settles():
     assert race.settled_from == 30
     assert race.delta == pytest.approx(0.0)
     assert race.delta_hz[:20].max() > 0
+
+
+def test_overlapping_probe_groups_both_count():
+    """Probe groups overlap in real use — the descending pools are also part of the atlas
+    sample drawn on screen. An earlier implementation kept one group id per neuron, so the
+    last group written silently claimed the shared cells and the left/right race read zero
+    while the atlas groups looked fine.
+    """
+    from karbes.graph.load import Graph
+    from karbes.sim import lif
+
+    n = 6
+    graph = Graph(
+        indptr=np.zeros(n + 1, dtype=np.int64),
+        indices=np.empty(0, dtype=np.int32),
+        weights=np.empty(0, dtype=np.float32),
+        bodies=np.arange(n, dtype=np.int64),
+        sign=np.ones(n, dtype=np.float32),
+    )
+    shared = np.array([0, 1], dtype=np.int64)
+    probes = lif.Probes(
+        frames=4,
+        groups={"first": shared, "second": np.array([1, 2]), "third": shared},
+    )
+    # Drive every cell hard enough that it certainly fires.
+    result = lif.run(graph, dict.fromkeys(range(n), 500.0), probes=probes)
+    first = result.group_counts["first"].sum()
+    assert first > 0
+    assert result.group_counts["third"].sum() == first, "a later group stole the shared cells"
+    assert result.group_counts["second"].sum() == pytest.approx(first, rel=0.5)

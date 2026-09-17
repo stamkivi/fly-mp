@@ -543,6 +543,8 @@ def _seat(inputs: Inputs, race: decode.Race) -> dict:
         "fly_dim1": fly_dim1,
         "n_like_fly": n_like,
         "explained_dim1": round(float(space.explained[0]), 4),
+        # More than 101: members are replaced during a term, so this is everyone who held
+        # a seat and cast enough votes to be placed, not the chamber at one moment.
         "chamber": chamber,
         "factions": idealpoint.bloc_separation(space, vm),
     }

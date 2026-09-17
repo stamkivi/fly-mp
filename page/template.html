@@ -177,7 +177,7 @@ table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
   <p class="lede" id="smell-note"></p>
   <div class="stage">
     <div class="brainwrap">
-      <canvas id="brain"></canvas>
+      <canvas id="brain" role="img" aria-label="Loading the brain."></canvas>
       <div class="brainlabel" id="brainlabel">MaleCNS v1.0 · real soma coordinates</div>
       <div class="clock" id="clock">0 ms</div>
       <div class="veil" id="veil">Cast your vote above to start the replay.</div>
@@ -188,7 +188,7 @@ table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
 
   <div class="race">
     <div class="racewrap">
-      <canvas id="race"></canvas>
+      <canvas id="race" role="img" aria-label="Loading the descending-neuron race."></canvas>
       <div class="legend">
         <span><i style="background:var(--left)"></i>left descending pool · 656 cells</span>
         <span><i style="background:var(--right)"></i>right descending pool · 648 cells</span>
@@ -212,7 +212,7 @@ table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
 
   <h2>Where that puts it</h2>
   <p class="lede" id="seat-note"></p>
-  <div class="seatline"><canvas id="seat"></canvas></div>
+  <div class="seatline"><canvas id="seat" role="img" aria-label="Loading the chamber's first dimension."></canvas></div>
 
   <h2>What you are actually looking at</h2>
   <div class="panel">
@@ -709,6 +709,7 @@ function tick(now){
         + (f < SLOW_FRAMES ? "  ·  slowed" : "");
       drawRace(f);
       drawMeters(f);
+      describe(f);
     }
     // ~3 playback frames of afterglow, expressed per animation frame so the glow lasts the
     // same number of *simulation* frames whether the run is being held slow or played fast.
@@ -718,7 +719,7 @@ function tick(now){
     const decay = Math.exp(-(now - lastNow) / hold);
     for (let i = 0; i < K; i++) if (heat[i] > 0) heat[i] *= decay;
     lastNow = now;
-    theta += REDUCED ? 0 : 0.0016;
+    theta += REDUCED ? 0 : 0.0016;   // `prefers-reduced-motion` holds the brain still
     drawBrain();
   }
 
@@ -731,8 +732,39 @@ function tick(now){
 }
 
 /* ---------- boot ---------- */
+function describe(f){
+  const rates = GROUPS.map(g => {
+    const series = GHZ[g];
+    const hz = (series && f >= 0 && f < series.length) ? series[f] : 0;
+    return `${g} ${hz.toFixed(0)} hertz`;
+  }).join(", ");
+  const ms = f >= 0 ? (f * B.sim.duration_s * 1000 / FRAMES).toFixed(0) : "0";
+  brain.setAttribute("aria-label",
+    `${K.toLocaleString()} cell bodies of a male Drosophila central nervous system at their `
+    + `measured three-dimensional positions, seen from above and behind: two optic lobes, the `
+    + `central brain between them, and the nerve cord extending away. At ${ms} milliseconds of `
+    + `simulated time the firing rates are ${rates}.`);
+  const upto = Math.max(0, Math.min(f, FRAMES - 1));
+  race.setAttribute("aria-label",
+    `Firing rate of the two descending-neuron pools over 500 milliseconds. At ${ms} `
+    + `milliseconds the left pool is at ${L[upto].toFixed(1)} hertz and the right at `
+    + `${R[upto].toFixed(1)}. Settled difference ${B.race.delta >= 0 ? "plus" : "minus"} `
+    + `${Math.abs(B.race.delta).toFixed(2)} hertz, against a dead band of `
+    + `${B.race.dead_band_hz.toFixed(2)}.`);
+  seat.setAttribute("aria-label", !S.available
+    ? "The chamber's first dimension is not available for this bundle."
+    : `The ${S.chamber.length} people who held a seat in this Riigikogu, placed on the `
+      + `first dimension `
+      + `recovered from their votes, which carries `
+      + `${(S.explained_dim1 * 100).toFixed(0)} per cent of the variance. `
+      + (S.fly_dim1 === null
+        ? "Karbes declined on this bill, so it is not placed on the line."
+        : `Karbes is marked at ${S.fly_dim1.toFixed(2)}, the mean position of the `
+          + `${S.n_like_fly} members who voted the same way on this one bill.`));
+}
+
 function layout(){ sizeBrain(); sizeRace(); sizeSeat(); drawBrain(); drawRace(0);
-  drawSeat(false); drawMeters(-1); }
+  drawSeat(false); drawMeters(-1); describe(-1); }
 addEventListener("resize", layout);
 layout();
 </script>

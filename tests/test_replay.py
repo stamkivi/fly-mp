@@ -187,6 +187,18 @@ def test_group_rates_are_probed_not_derived_from_the_raster(bundle):
     assert max(hz["central"]) > 10 * max(hz["optic"])
 
 
+def test_both_descending_pools_actually_fire(bundle):
+    """A silent race still produces a verdict — "inside the dead band" — and a plausible
+    number next to it, so nothing downstream looks wrong. That is exactly what happened
+    when overlapping probe groups let the atlas sample claim the descending pools."""
+    race = bundle["race"]
+    assert max(race["left_hz"]) > 1.0, "left descending pool never fired"
+    assert max(race["right_hz"]) > 1.0, "right descending pool never fired"
+    # Both sides are the same kind of cell, so neither should dwarf the other.
+    ratio = max(race["left_hz"]) / max(race["right_hz"])
+    assert 0.2 < ratio < 5.0, f"pools wildly unbalanced: {ratio:.2f}"
+
+
 def test_the_bundle_fits_the_page_budget(bundle):
     docs = sorted(FIXTURES.glob("*.json"))
     blobs = sorted(FIXTURES.glob("*.raster.bin"))

@@ -165,14 +165,16 @@ def run(
 
     history = np.zeros(p.steps, dtype=np.float32) if record_history else None
 
-    # Probe bookkeeping: index -> group id, and index -> raster slot, both -1 when the
-    # neuron is not probed. One int32 array each, so the per-step cost is a gather over
-    # the handful of cells that actually spiked rather than a scan over all 166,700.
+    # Probe bookkeeping. Membership is a boolean (n, groups) matrix rather than an
+    # index -> group-id array, because **groups overlap**: the descending pools are also
+    # part of the atlas sample drawn on screen. A single group-id per neuron silently lets
+    # the last group written win, which zeroed the left/right race while the atlas groups
+    # counted fine — a corrupted readout that still looked like a plausible number.
     group_names: list[str] = list(probes.groups) if probes else []
-    group_of = np.full(n, -1, dtype=np.int32)
+    membership = np.zeros((n, len(group_names)), dtype=bool)
     group_counts = np.zeros((probes.frames if probes else 0, len(group_names)), dtype=np.int32)
     for gid, name in enumerate(group_names):
-        group_of[probes.groups[name]] = gid
+        membership[probes.groups[name], gid] = True
     raster_slot = np.full(n, -1, dtype=np.int32)
     raster_frames: list[list[np.ndarray]] = []
     if probes is not None and probes.raster is not None:
@@ -230,10 +232,7 @@ def run(
             if probes is not None:
                 frame = step * probes.frames // p.steps
                 if group_names:
-                    g = group_of[idx]
-                    g = g[g >= 0]
-                    if g.size:
-                        group_counts[frame] += np.bincount(g, minlength=len(group_names))
+                    group_counts[frame] += membership[idx].sum(axis=0, dtype=np.int32)
                 if raster_frames:
                     fired = raster_slot[idx]
                     fired = fired[fired >= 0]
