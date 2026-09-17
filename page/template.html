@@ -190,9 +190,9 @@ table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
     <div class="racewrap">
       <canvas id="race" role="img" aria-label="Loading the descending-neuron race."></canvas>
       <div class="legend">
-        <span><i style="background:var(--left)"></i>left descending pool · 656 cells</span>
-        <span><i style="background:var(--right)"></i>right descending pool · 648 cells</span>
-        <span><i style="background:var(--karbes)"></i>Δ = right − left</span>
+        <span><i style="background:var(--left)"></i>left DNa pool · running total</span>
+        <span><i style="background:var(--right)"></i>right DNa pool · running total</span>
+        <span><i style="background:var(--karbes)"></i>turn = (R−L)/(R+L)</span>
       </div>
     </div>
   </div>
@@ -273,17 +273,27 @@ for (let i = 0; i < K; i++){
 const MX=(minX+maxX)/2, MY=(minY+maxY)/2, MZ=(minZ+maxZ)/2;
 const SPAN = Math.max(maxX-minX, maxY-minY, maxZ-minZ);
 
-/* Base colours for the resting cloud. The optic lobes are half the somas drawn and they
-   receive no input at all in this simulation — they fire at about 2 Hz against the central
-   brain's 54 — so they are the dimmest thing here. An earlier draft drew the resting cloud
-   additively, which turned their packing density into brightness and made the least active
-   part of the brain look like the most active one. */
+/* Base colours for the resting cloud: hue separates the groups, brightness is deliberately
+   uniform across them.
+
+   Two mistakes are being avoided here, and they are opposites. The first draft summed the
+   resting cloud additively, so the optic lobes — half the somas drawn, and packed far more
+   densely in projection than anything else — came out brightest purely from density. The
+   fix for that was to darken them, on a measurement saying they fire at 2 Hz against the
+   central brain's 54. That measurement came from a kernel that implemented the synapse
+   wrongly. On the published engine the ordering is the other way round: the optic lobes are
+   the most active group at ~6 Hz and the descending neurons the least at ~1 Hz.
+
+   So the resting cloud now encodes no assumption about activity at all. It is blended with
+   `max` so density cannot read as brightness, its brightness is flat across groups, and
+   every claim about who is firing is carried by the spike layer and the meters, which are
+   measured per run. */
 const BASE = {
-  optic:      [26, 34, 48],
-  central:    [78, 68, 56],
-  cord:       [40, 62, 54],
-  ascending:  [52, 50, 68],
-  descending: [104, 80, 40]
+  optic:      [44, 58, 84],
+  central:    [88, 76, 58],
+  cord:       [46, 76, 64],
+  ascending:  [64, 60, 86],
+  descending: [104, 82, 44]
 };
 const BASE_RGB = GROUPS.map(g => BASE[g] || [120,120,120]);
 
@@ -409,7 +419,11 @@ function sizeRace(){
   RW = Math.round(r.width*dpr); RH = Math.round(r.height*dpr);
   race.width = RW; race.height = RH;
 }
-const L = B.race.left_hz, R = B.race.right_hz, D = B.race.delta_hz;
+/* The race is drawn as a running spike total per side, not as an instantaneous rate.
+   Sixteen DNa cells firing at about 1 Hz leave most 10 ms frames empty, so a rate series
+   is a comb of zeros; the cumulative count is what the turn index is a ratio of anyway. */
+const L = B.race.left_cum, R = B.race.right_cum;
+const L_HZ = B.race.left_hz, R_HZ = B.race.right_hz;
 const PEAK = Math.max(1, ...L, ...R);
 
 function drawRace(upto){
@@ -419,8 +433,6 @@ function drawRace(upto){
   const y = v => RH-pad - (RH-2*pad) * (v/PEAK);
 
   // settled window: the part of the run the verdict is actually read from
-  rctx.fillStyle = "rgba(255,255,255,.035)";
-  rctx.fillRect(x(B.race.settled_from_frame), pad*0.4, RW-pad-x(B.race.settled_from_frame), RH-pad-pad*0.4);
   rctx.strokeStyle = "#242835"; rctx.lineWidth = 1;
   rctx.beginPath(); rctx.moveTo(pad, RH-pad); rctx.lineTo(RW-pad, RH-pad); rctx.stroke();
 
@@ -438,10 +450,9 @@ function drawRace(upto){
 
   rctx.fillStyle = "#8A8F9E";
   rctx.font = `${11*Math.min(devicePixelRatio||1,2)}px "IBM Plex Mono",monospace`;
-  rctx.fillText(`${PEAK.toFixed(0)} Hz`, 4, pad);
+  rctx.fillText(`${PEAK.toFixed(0)} spikes`, 4, pad);
   rctx.fillText("0", 4, RH-pad+4);
-  rctx.fillText("500 ms", RW-pad-40, RH-pad+16);
-  rctx.fillText("verdict read from here →", x(B.race.settled_from_frame)+6, pad*0.9);
+  rctx.fillText(`${(B.sim.duration_s*1000).toFixed(0)} ms`, RW-pad-52, RH-pad+16);
 }
 
 /* ---------- the seat line ---------- */
@@ -565,7 +576,7 @@ document.getElementById("card-cham").classList.remove("pending");
 /* ---------- the wavering ---------- */
 const W = B.wavering;
 if (W && W.runs){
-  const all = [{seed: B.sim.seed, delta: B.race.delta, code: B.verdict.code, this: true}]
+  const all = [{seed: B.sim.seed, turn: B.race.turn, code: B.verdict.code, this: true}]
     .concat(W.runs).sort((a, b) => a.seed - b.seed);
   const tally = {};
   for (const r of all) tally[r.code] = (tally[r.code] || 0) + 1;
@@ -575,18 +586,18 @@ if (W && W.runs){
   document.getElementById("wave-note").textContent =
     `The bill, the scores and the wiring are identical in all ${all.length} runs below. `
     + `Only the phase of the input spike trains differs — and that alone moves the readout `
-    + `across a ${(W.delta_max_hz - W.delta_min_hz).toFixed(2)} Hz range, far wider than any `
-    + `channel moves it. Read this the careful way round: the fly is not weighing the bill `
-    + `and finding it close. On the measurements below the page, the phase is the only thing `
-    + `the readout responds to at all.`;
+    + `across a ${(W.turn_max - W.turn_min).toFixed(3)} range of turn index. The fly does `
+    + `respond to a bill swung hard enough — see the finding at the top — but a single bill `
+    + `pushes far less hard than that, so treat one verdict as one draw rather than as an `
+    + `opinion.`;
   document.getElementById("wave").innerHTML =
     `<div class="waverow">` + all.map(r =>
       `<div class="wchip ${r.code}${r.this ? " this" : ""}">` +
       `<b>${ET[r.code]}</b>phase ${r.seed}${r.this ? " · shown above" : ""}<br>` +
-      `Δ ${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(2)} Hz</div>`).join("") + `</div>` +
+      `turn ${r.turn >= 0 ? "+" : ""}${r.turn.toFixed(3)}</div>`).join("") + `</div>` +
     `<div class="wtally">${parts.join("  ·  ")} across ${all.length} input phases ` +
-    `· Δ spread ${W.delta_min_hz.toFixed(2)} to ${W.delta_max_hz.toFixed(2)} Hz ` +
-    `· dead band ±${B.race.dead_band_hz.toFixed(2)} Hz</div>`;
+    `· turn spread ${W.turn_min.toFixed(3)} to ${W.turn_max.toFixed(3)} ` +
+    `· dead band ±${B.race.dead_band.toFixed(3)}</div>`;
 } else {
   document.getElementById("wave-note").textContent = "Not measured for this bundle.";
 }
@@ -609,9 +620,10 @@ const facts = [
   ["Sampling", Object.entries(B.atlas.sampled_fraction).map(([k,v]) => `${k} ${(v*100).toFixed(0)}%`).join(" · ")],
   ["Simulated", `${(B.sim.duration_s*1000).toFixed(0)} ms of neural time at ${(B.sim.dt_s*1e3).toFixed(1)} ms steps`],
   ["Spikes", `${B.sim.total_spikes.toLocaleString()} · mean ${B.sim.mean_rate_hz.toFixed(1)} Hz across the network`],
-  ["Synaptic weight", `${(B.sim.weight_scale*1e3).toFixed(3)} mV per contact — calibrated here, not the published 0.275`],
-  ["Readout", `${B.race.dn_left} left and ${B.race.dn_right} right descending neurons — all of them`],
-  ["Settled Δ", `${B.race.delta >= 0 ? "+" : ""}${B.race.delta.toFixed(3)} Hz against a ${B.race.dead_band_hz.toFixed(2)} Hz dead band`],
+  ["Engine", B.sim.engine],
+  ["Drive", `${B.drive.orn_left} left and ${B.drive.orn_right} right receptor neurons, ${B.drive.laterality}`],
+  ["Readout", `the DNa family — ${B.race.dna_left} cells left, ${B.race.dna_right} right`],
+  ["Turn index", `${B.race.turn >= 0 ? "+" : ""}${B.race.turn.toFixed(3)} against a ${B.race.dead_band.toFixed(3)} dead band (bias ${B.race.baseline_bias.toFixed(3)} removed)`],
   ["Scoring", `TypeSafe Jev · nine questions · ${B.audit.jev_input_tokens.toLocaleString()} input tokens`],
   ["Wall clock", `${B.sim.wall_seconds.toFixed(1)} s to simulate, precomputed — nothing runs in your browser`]
 ];
@@ -675,7 +687,7 @@ function reveal(){
   document.getElementById("fly-n").textContent =
     (v.supports_bill === null
       ? "the race stayed inside the brain's own noise floor"
-      : `Δ ${B.race.delta >= 0 ? "+" : ""}${B.race.delta.toFixed(2)} Hz — `
+      : `turn ${B.race.turn >= 0 ? "+" : ""}${B.race.turn.toFixed(3)} — `
         + (agree ? "the same way as the chamber" : "the opposite way to the chamber"))
     + (yourVote ? (yourVote === v.code ? " · you agreed" : " · you did not") : "");
   document.getElementById("card-fly").classList.remove("pending");
@@ -747,10 +759,10 @@ function describe(f){
   const upto = Math.max(0, Math.min(f, FRAMES - 1));
   race.setAttribute("aria-label",
     `Firing rate of the two descending-neuron pools over 500 milliseconds. At ${ms} `
-    + `milliseconds the left pool is at ${L[upto].toFixed(1)} hertz and the right at `
-    + `${R[upto].toFixed(1)}. Settled difference ${B.race.delta >= 0 ? "plus" : "minus"} `
-    + `${Math.abs(B.race.delta).toFixed(2)} hertz, against a dead band of `
-    + `${B.race.dead_band_hz.toFixed(2)}.`);
+    + `milliseconds the left pool is at ${L_HZ[upto].toFixed(1)} hertz and the right at `
+    + `${R_HZ[upto].toFixed(1)}. Turn index ${B.race.turn >= 0 ? "plus" : "minus"} `
+    + `${Math.abs(B.race.turn).toFixed(3)}, against a dead band of `
+    + `${B.race.dead_band.toFixed(3)}.`);
   seat.setAttribute("aria-label", !S.available
     ? "The chamber's first dimension is not available for this bundle."
     : `The ${S.chamber.length} people who held a seat in this Riigikogu, placed on the `

@@ -14,6 +14,7 @@ Two annotation quirks matter:
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -45,16 +46,22 @@ CHANNEL_ORNS: dict[str, tuple[str, str]] = {
     "security": ("ORN_DL5", "ORN_VM3"),
 }
 
-#: The readout is **every** descending neuron with a lateralised soma — 1,304 of the
-#: 1,314 in the annotations, the other 10 sitting on the midline (`somaSide == "M"`)
-#: with no side to contribute to.
-#:
-#: Reading a hand-picked few was a measurement error, not a simplification. With 51
-#: cells the zero-input left-minus-right asymmetry was **-4.577 Hz**, larger than any
-#: stimulus effect, so the "vote" was mostly a fixed anatomical imbalance. With all of
-#: them it is **+0.011 Hz**. Do not narrow this pool again without re-measuring that
-#: floor.
 DN_SUPERCLASS = "descending_neuron"
+
+#: The steering readout: the **DNa family**, 15 types with 16 cells on each side.
+#:
+#: Reading all 1,304 lateralised descending neurons was wrong, and measurably so. It was
+#: adopted because a hand-picked 51 gave a zero-input left-minus-right asymmetry of
+#: -4.577 Hz, and widening the pool drove that to +0.011 Hz. That suppressed the symptom
+#: by averaging the signal away with it. `TheMrRaGe/flybrain` scores the three options on
+#: this same connectome: DNa02 alone d' 1.11, the **DNa family d' 4.21**, and all 1,310
+#: descending neurons **d' -1.70 — significant with the wrong sign**, because a whole-
+#: population average "tracks residual asymmetry, not steering".
+#:
+#: The biology is specific rather than a guess: rotational velocity in walking flies
+#: tracks the left-right firing difference of DNa01/DNa02, near-linearly across the
+#: dynamic range (Rayshubskiy et al., *Cell* 2024).
+DNA_FAMILY = re.compile(r"DNa\d+")
 
 
 @dataclass
@@ -63,8 +70,12 @@ class Populations:
 
     retained: np.ndarray  # sorted int64 body IDs kept in the graph
     orn: dict[str, np.ndarray]  # ORN type -> body IDs
-    dn_left: np.ndarray
+    dn_left: np.ndarray  # every lateralised descending neuron, kept for audit only
     dn_right: np.ndarray
+    dna_left: np.ndarray  # the DNa family — this is what the vote is read from
+    dna_right: np.ndarray
+    orn_left: np.ndarray  # ORNs by rootSide; a bill arrives on one side or the other
+    orn_right: np.ndarray
     types: dict[int, str]  # body ID -> type, for audit logs
 
     @property
@@ -93,11 +104,19 @@ def load(root: Path) -> Populations:
     typ = d["type"]
     cls = d["class"]
     sup = d["superclass"]
-    # DNs are brain neurons and carry somaSide. ORNs do not — their somas sit in the
-    # antenna — but they are stimulated bilaterally anyway: a bill does not arrive from
-    # the left or the right. Keeping input symmetric is also what makes the zero-input
-    # left-right asymmetry test in Stage 2 interpretable.
+    # Descending neurons are brain cells and carry `somaSide`. ORNs carry none at all —
+    # every one of the 2,635 has `somaSide` None, because their somas sit in the antenna —
+    # so their laterality comes from `rootSide`, which resolves 883 left and 1,343 right
+    # and leaves 409 unknown.
+    #
+    # **Sensory laterality is load-bearing, not a detail.** Driving the antennae
+    # symmetrically and then reading a left-minus-right difference cannot work: a
+    # symmetric stimulus has no reason to move an antisymmetric statistic. flybrain
+    # measured exactly that on this connectome — with laterality taken from `somaSide`
+    # the "turn response to stimulus left vs right was 0.0000, identical to four
+    # decimals". Unknown-rootSide ORNs are dropped rather than assigned a side.
     soma_side = d["somaSide"]
+    root_side = d["rootSide"]
 
     # Retention: keep anything with an assigned superclass; drop glia and unresolved.
     keep = np.array([s is not None for s in sup], dtype=bool)
@@ -137,11 +156,40 @@ def load(root: Path) -> Populations:
         len(right),
     )
 
+    dna: dict[str, list[int]] = {"L": [], "R": []}
+    for b, ty, cls_sup, side in zip(body, typ, sup, soma_side, strict=True):
+        if (
+            cls_sup == DN_SUPERCLASS
+            and ty
+            and DNA_FAMILY.fullmatch(ty)
+            and side in dna
+            and b in kept
+        ):
+            dna[side].append(b)
+    if not dna["L"] or not dna["R"]:
+        raise ValueError(f"DNa readout has an empty side: {len(dna['L'])}/{len(dna['R'])}")
+
+    orn_side: dict[str, list[int]] = {"L": [], "R": []}
+    for b, ty, c, side in zip(body, typ, cls, root_side, strict=True):
+        if c == "olfactory" and ty in wanted and b in kept and side in orn_side:
+            orn_side[side].append(b)
+
+    log.info(
+        "readout: DNa family L %d / R %d   drive: ORN rootSide L %d / R %d",
+        len(dna["L"]),
+        len(dna["R"]),
+        len(orn_side["L"]),
+        len(orn_side["R"]),
+    )
     return Populations(
         retained=retained,
         orn=orn,
         dn_left=np.sort(np.array(left, dtype=np.int64)),
         dn_right=np.sort(np.array(right, dtype=np.int64)),
+        dna_left=np.sort(np.array(dna["L"], dtype=np.int64)),
+        dna_right=np.sort(np.array(dna["R"], dtype=np.int64)),
+        orn_left=np.sort(np.array(orn_side["L"], dtype=np.int64)),
+        orn_right=np.sort(np.array(orn_side["R"], dtype=np.int64)),
         types={int(b): t for b, t, k in zip(body, typ, keep, strict=True) if k and t},
     )
 
@@ -152,5 +200,7 @@ def summary(pops: Populations) -> str:
         lines.append(
             f"  {channel:<12} {neg:<10} n={len(pops.orn[neg]):<4} {pos:<10} n={len(pops.orn[pos])}"
         )
-    lines.append(f"  readout      DN left n={len(pops.dn_left)}  right n={len(pops.dn_right)}")
+    lines.append(f"  drive        ORN rootSide L n={len(pops.orn_left)} R n={len(pops.orn_right)}")
+    lines.append(f"  readout      DNa family  L n={len(pops.dna_left)} R n={len(pops.dna_right)}")
+    lines.append(f"  (audit only) all DNs     L n={len(pops.dn_left)} R n={len(pops.dn_right)}")
     return "\n".join(lines)

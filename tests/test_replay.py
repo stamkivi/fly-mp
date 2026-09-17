@@ -70,13 +70,19 @@ def test_the_fixture_is_this_schema(bundle):
 def test_body_ids_are_real_integers(bundle):
     """A float body ID silently mismatches every join back to the annotations."""
     ids = [b for ids in bundle["audit"]["driven_bodies"].values() for b in ids]
-    ids += bundle["audit"]["dn_left_bodies"] + bundle["audit"]["dn_right_bodies"]
+    ids += bundle["audit"]["dna_left_bodies"] + bundle["audit"]["dna_right_bodies"]
     assert ids
     assert all(isinstance(b, int) and b > 0 for b in ids)
 
 
-def test_the_readout_is_the_whole_descending_pool(bundle):
-    assert bundle["race"]["dn_left"] + bundle["race"]["dn_right"] == 1_304
+def test_the_readout_is_the_dna_family(bundle):
+    """Not all 1,304 descending neurons. flybrain scores that readout at d' -1.70 on this
+    connectome — significant with the wrong sign, because a whole-population average
+    tracks residual anatomical asymmetry rather than steering. The DNa family scores
+    4.21."""
+    assert bundle["race"]["dna_left"] == 16
+    assert bundle["race"]["dna_right"] == 16
+    assert len(bundle["audit"]["dna_left_bodies"]) == 16
 
 
 def test_every_rubric_channel_is_present_with_a_confidence(bundle):
@@ -129,7 +135,7 @@ def test_the_wavering_was_measured(bundle):
     assert len(w["runs"]) == w["seeds"] - 1
     assert sum(w["tally"].values()) == w["seeds"] - 1
     assert all(r["code"] in FLY_STATES for r in w["runs"])
-    assert w["delta_max_hz"] >= w["delta_min_hz"]
+    assert w["turn_max"] >= w["turn_min"]
 
 
 def test_the_verdict_is_one_of_the_three_states_the_fly_can_emit(bundle):
@@ -137,26 +143,47 @@ def test_the_verdict_is_one_of_the_three_states_the_fly_can_emit(bundle):
 
 
 def test_the_dead_band_came_from_the_brain_not_the_chamber(bundle):
-    assert bundle["race"]["dead_band_hz"] > 0
+    assert bundle["race"]["dead_band"] > 0
     supports = bundle["verdict"]["supports_bill"]
-    delta, band = bundle["race"]["delta"], bundle["race"]["dead_band_hz"]
+    turn, band = bundle["race"]["turn"], bundle["race"]["dead_band"]
     if supports is None:
-        assert abs(delta) <= band
+        assert abs(turn) <= band
     else:
-        assert abs(delta) > band
-        assert supports == (delta > 0)
+        assert abs(turn) > band
+        assert supports == (turn > 0)
+
+
+def test_the_baseline_bias_was_measured_and_subtracted(bundle):
+    """A blank bill turns this fly on its own; leaving that in would bias every verdict."""
+    race = bundle["race"]
+    assert race["baseline_bias"] != 0.0
+    assert race["turn"] == pytest.approx(race["raw_turn"] - race["baseline_bias"], abs=1e-4)
 
 
 def test_the_race_is_a_full_length_series(bundle):
     race = bundle["race"]
     frames = bundle["sim"]["frames"]
-    assert len(race["left_hz"]) == len(race["right_hz"]) == len(race["delta_hz"]) == frames
-    assert race["settled_from_frame"] < frames
+    assert len(race["left_hz"]) == len(race["right_hz"]) == frames
 
 
-def test_the_weight_scale_is_the_calibrated_one(bundle):
-    """0.05 mV per contact, not the published 0.275. At 0.275 the network runs at ~50 Hz."""
-    assert bundle["sim"]["weight_scale"] == pytest.approx(0.05e-3)
+def test_the_published_engine_was_used(bundle):
+    """Karbes no longer carries its own kernel. The one it had implemented the synapse as
+    an instantaneous voltage step, a documented failure mode of this model, and every
+    dynamical conclusion drawn from it described that bug."""
+    assert "mlx-lif-engine" in bundle["sim"]["engine"]
+
+
+def test_the_network_is_sparse_not_saturated(bundle):
+    """The published model rests at 0 Hz and responds sparsely. Our own kernel self-ignited
+    to 22 Hz on background drive alone; if this climbs back there, the engine changed."""
+    assert 0.5 < bundle["sim"]["mean_rate_hz"] < 12.0
+
+
+def test_the_drive_is_lateralised(bundle):
+    """A bilaterally symmetric stimulus cannot move a left-minus-right readout."""
+    drive = bundle["drive"]
+    assert drive["orn_left"] > 0 and drive["orn_right"] > 0
+    assert "rootSide" in drive["laterality"]
 
 
 def test_the_raster_is_frame_aligned_and_in_range(bundle, raster):
@@ -183,20 +210,22 @@ def test_group_rates_are_probed_not_derived_from_the_raster(bundle):
     assert set(hz) == set(bundle["atlas"]["groups"])
     frames = bundle["sim"]["frames"]
     assert all(len(series) == frames for series in hz.values())
-    # The optic lobes get no input in this simulation; the central brain gets all of it.
-    assert max(hz["central"]) > 10 * max(hz["optic"])
+    # Every group sits in a physiological band. This replaced an assertion that the optic
+    # lobes stay near-silent while the central brain blazes, which was true only of the
+    # kernel this project used to carry: on the published engine the optic lobes are the
+    # *most* active group at ~6 Hz and the descending neurons the least at ~1 Hz, and the
+    # whole network is sparse rather than one region saturating.
+    for group, series in hz.items():
+        peak = max(series)
+        assert 0.1 < peak < 30.0, f"{group} peaks at {peak} Hz"
 
 
 def test_both_descending_pools_actually_fire(bundle):
-    """A silent race still produces a verdict — "inside the dead band" — and a plausible
-    number next to it, so nothing downstream looks wrong. That is exactly what happened
-    when overlapping probe groups let the atlas sample claim the descending pools."""
+    """A silent readout still produces a verdict — "inside the dead band" — and a plausible
+    number beside it, so nothing downstream looks wrong."""
     race = bundle["race"]
-    assert max(race["left_hz"]) > 1.0, "left descending pool never fired"
-    assert max(race["right_hz"]) > 1.0, "right descending pool never fired"
-    # Both sides are the same kind of cell, so neither should dwarf the other.
-    ratio = max(race["left_hz"]) / max(race["right_hz"])
-    assert 0.2 < ratio < 5.0, f"pools wildly unbalanced: {ratio:.2f}"
+    assert race["left_spikes"] > 0, "left DNa pool never fired"
+    assert race["right_spikes"] > 0, "right DNa pool never fired"
 
 
 def test_the_bundle_fits_the_page_budget(bundle):

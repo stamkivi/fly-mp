@@ -63,12 +63,26 @@ def test_channels_are_comparable_in_size(pops):
     assert max(sizes) / min(sizes) < 2.5, f"channel sizes span {min(sizes)}-{max(sizes)}"
 
 
-def test_readout_is_every_lateralised_descending_neuron(pops):
-    """1,304 of the 1,314 descending neurons carry a side; the other 10 sit on the midline.
+def test_the_readout_is_the_dna_family(pops):
+    """15 DNa types, 16 cells a side, balanced. This, not all 1,304 descending neurons,
+    is what the vote is read from: flybrain scores the whole population at d' -1.70 on this
+    connectome, significant with the wrong sign."""
+    assert len(pops.dna_left) == len(pops.dna_right) == 16
+    assert not set(pops.dna_left.tolist()) & set(pops.dna_right.tolist())
+    assert set(pops.dna_left.tolist()) <= set(pops.dn_left.tolist())
 
-    Narrowing this pool is how the zero-input left-right asymmetry reached -4.577 Hz, which
-    was larger than any stimulus effect. If this count drops, that floor moved with it.
-    """
+
+def test_orns_are_lateralised_by_rootside(pops):
+    """ORNs carry no somaSide at all — their somas sit in the antenna — so rootSide is the
+    only laterality available. Without it the fly is spatially blind and a left-minus-right
+    readout cannot move."""
+    assert len(pops.orn_left) > 0 and len(pops.orn_right) > 0
+    assert not set(pops.orn_left.tolist()) & set(pops.orn_right.tolist())
+    driven = {b for ids in pops.orn.values() for b in ids.tolist()}
+    assert set(pops.orn_left.tolist()) | set(pops.orn_right.tolist()) <= driven
+
+
+def test_all_descending_neurons_are_still_resolved_for_audit(pops):
     assert len(pops.dn_left) + len(pops.dn_right) == 1_304
 
 
@@ -81,7 +95,7 @@ def test_readout_has_both_sides_and_is_balanced(pops):
 def test_readout_and_input_do_not_overlap(pops):
     """If a stimulated cell were also read out, the readout would echo the input."""
     stim = {b for ids in pops.orn.values() for b in ids.tolist()}
-    read = set(pops.dn_left.tolist()) | set(pops.dn_right.tolist())
+    read = set(pops.dna_left.tolist()) | set(pops.dna_right.tolist())
     assert not stim & read
 
 

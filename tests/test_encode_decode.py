@@ -1,8 +1,8 @@
 """The engineered I/O mapping, guarded at both ends.
 
-Nothing here needs the connectome: the encoder turns scores into rates and the decoder
-turns rates into a vote, and both are pure. The properties tested are the ones that would
-silently produce a confident, meaningless voting record if they broke.
+The encoder turns scores into per-antenna rates and the decoder turns descending-neuron
+spikes into a vote. The properties tested are the ones that would silently produce a
+confident, meaningless voting record if they broke.
 """
 
 from __future__ import annotations
@@ -17,19 +17,35 @@ from karbes.score import rubric2
 from karbes.score.jev import Scored
 
 EVERY_ORN = [name for pair in CHANNEL_ORNS.values() for name in pair]
+PER_SIDE = 10
+
+
+class FakeEngine:
+    """Positions are body IDs; the pack ordering does not matter to these tests."""
+
+    def positions(self, bodies):
+        return np.asarray(bodies, dtype=np.int32)
 
 
 @pytest.fixture
 def pops() -> Populations:
-    """Equal-sized stand-in populations, so size normalisation is a no-op here."""
+    """Equal-sized stand-in populations with a clean left/right split."""
+    orn, left, right = {}, [], []
+    for i, name in enumerate(EVERY_ORN):
+        base = i * 2 * PER_SIDE
+        ids = np.arange(base, base + 2 * PER_SIDE, dtype=np.int64)
+        orn[name] = ids
+        left.extend(ids[:PER_SIDE].tolist())
+        right.extend(ids[PER_SIDE:].tolist())
     return Populations(
-        retained=np.arange(len(EVERY_ORN) * 10, dtype=np.int64),
-        orn={
-            name: np.arange(i * 10, (i + 1) * 10, dtype=np.int64)
-            for i, name in enumerate(EVERY_ORN)
-        },
+        retained=np.arange(len(EVERY_ORN) * 2 * PER_SIDE, dtype=np.int64),
+        orn=orn,
         dn_left=np.array([], dtype=np.int64),
         dn_right=np.array([], dtype=np.int64),
+        dna_left=np.array([0], dtype=np.int64),
+        dna_right=np.array([1], dtype=np.int64),
+        orn_left=np.array(sorted(left), dtype=np.int64),
+        orn_right=np.array(sorted(right), dtype=np.int64),
         types={},
     )
 
@@ -42,176 +58,128 @@ def scored(**overrides: float) -> Scored:
     return Scored(scores=scores, confidence=conf, input_tokens=0)
 
 
-def test_a_zero_score_leaves_both_poles_at_background(pops):
-    rates = encode.orn_rates(scored(), pops)
-    assert set(rates) == set(EVERY_ORN)
-    assert all(hz == pytest.approx(encode.BACKGROUND_HZ) for hz in rates.values())
+def rates_by_body(s, pops):
+    targets, rates = encode.stimulus(s, pops, FakeEngine())
+    return dict(zip(targets.tolist(), rates.tolist(), strict=True))
 
 
-def test_a_positive_score_drives_the_positive_pole_only(pops):
-    neg, pos = CHANNEL_ORNS["security"]
-    rates = encode.orn_rates(scored(security=1.0), pops)
-    assert rates[pos] == pytest.approx(encode.BACKGROUND_HZ + encode.PEAK_HZ)
-    assert rates[neg] == pytest.approx(encode.BACKGROUND_HZ)
-    # The other seven channels are untouched.
-    others = [n for n in EVERY_ORN if n not in (neg, pos)]
-    assert all(rates[n] == pytest.approx(encode.BACKGROUND_HZ) for n in others)
+def test_a_zero_score_drives_both_antennae_equally(pops):
+    """The sign picks a side, so a score of zero must not pick one."""
+    r = rates_by_body(scored(), pops)
+    assert set(r) == set(range(len(EVERY_ORN) * 2 * PER_SIDE))
+    assert all(hz == pytest.approx(encode.BACKGROUND_HZ) for hz in r.values())
 
 
-def test_a_negative_score_drives_the_negative_pole(pops):
-    neg, pos = CHANNEL_ORNS["pay"]
-    rates = encode.orn_rates(scored(pay=-1.0), pops)
-    assert rates[neg] > rates[pos] == pytest.approx(encode.BACKGROUND_HZ)
+def test_a_positive_score_leads_with_the_right_antenna(pops):
+    r = rates_by_body(scored(security=1.0), pops)
+    ids = pops.orn[CHANNEL_ORNS["security"][0]]
+    left, right = ids[:PER_SIDE], ids[PER_SIDE:]
+    assert all(r[int(b)] == pytest.approx(encode.BACKGROUND_HZ + encode.PEAK_HZ) for b in right)
+    assert all(r[int(b)] == pytest.approx(encode.BACKGROUND_HZ) for b in left)
+
+
+def test_a_negative_score_leads_with_the_left_antenna(pops):
+    r = rates_by_body(scored(pay=-1.0), pops)
+    ids = pops.orn[CHANNEL_ORNS["pay"][0]]
+    left, right = ids[:PER_SIDE], ids[PER_SIDE:]
+    assert all(r[int(b)] == pytest.approx(encode.BACKGROUND_HZ + encode.PEAK_HZ) for b in left)
+    assert all(r[int(b)] == pytest.approx(encode.BACKGROUND_HZ) for b in right)
 
 
 def test_confidence_scales_the_drive_and_zero_confidence_silences_it(pops):
-    """The whole reason Jev replaced the LLM rubric. A channel the model could not read
+    """The whole reason Jev replaced the LLM rubric: a channel the model could not read
     must drive the fly weakly, not drive it with noise dressed as signal."""
     s = scored(security=1.0)
     s.confidence["security"] = 0.25
-    quarter = encode.orn_rates(s, pops)[CHANNEL_ORNS["security"][1]]
-    assert quarter == pytest.approx(encode.BACKGROUND_HZ + 0.25 * encode.PEAK_HZ)
+    right = pops.orn[CHANNEL_ORNS["security"][0]][PER_SIDE:]
+    r = rates_by_body(s, pops)
+    assert r[int(right[0])] == pytest.approx(encode.BACKGROUND_HZ + 0.25 * encode.PEAK_HZ)
 
     s.confidence["security"] = 0.0
-    assert encode.orn_rates(s, pops)[CHANNEL_ORNS["security"][1]] == pytest.approx(
-        encode.BACKGROUND_HZ
-    )
+    assert rates_by_body(s, pops)[int(right[0])] == pytest.approx(encode.BACKGROUND_HZ)
 
 
 def test_salience_scales_the_stimulus_but_never_the_background(pops):
     s = scored(security=1.0)
     s.scores["salience"] = 0.0
-    rates = encode.orn_rates(s, pops)
-    pos = CHANNEL_ORNS["security"][1]
-    assert rates[pos] == pytest.approx(
+    right = pops.orn[CHANNEL_ORNS["security"][0]][PER_SIDE:]
+    r = rates_by_body(s, pops)
+    assert r[int(right[0])] == pytest.approx(
         encode.BACKGROUND_HZ + encode.SALIENCE_FLOOR * encode.PEAK_HZ
     )
-    assert rates[CHANNEL_ORNS["security"][0]] == pytest.approx(encode.BACKGROUND_HZ)
 
 
 def test_every_rate_stays_inside_the_measured_orn_range(pops):
     """Pre-registered, not tuned: ORNs are measured firing at roughly 5-200 Hz."""
-    extremes = [scored(**{k: v}) for k in rubric2.KEYS for v in (-1.0, 1.0)]
-    for s in extremes:
-        for hz in encode.orn_rates(s, pops).values():
-            assert 5.0 <= hz <= 200.0
+    for key in rubric2.KEYS:
+        for value in (-1.0, 1.0):
+            for hz in rates_by_body(scored(**{key: value}), pops).values():
+                assert 5.0 <= hz <= 200.0
 
 
-def test_larger_populations_are_driven_more_gently_per_neuron():
-    """No channel gets weight purely from having more cells."""
-    sizes = {name: 40 + 10 * i for i, name in enumerate(EVERY_ORN)}
-    start = 0
-    orn = {}
-    for name, size in sizes.items():
-        orn[name] = np.arange(start, start + size, dtype=np.int64)
-        start += size
-    pops = Populations(
-        retained=np.arange(start, dtype=np.int64),
-        orn=orn,
-        dn_left=np.array([], dtype=np.int64),
-        dn_right=np.array([], dtype=np.int64),
-        types={},
+def test_an_uneven_side_is_not_itself_a_stimulus(pops):
+    """rootSide gives 363 left ORNs against 525 right. If drive were a flat per-neuron
+    rate, the right antenna would shout permanently and the fly would always turn."""
+    name = CHANNEL_ORNS["pay"][0]
+    ids = pops.orn[name]
+    # Make this glomerulus lopsided: 3 left, 17 right.
+    pops.orn_left = np.array(
+        sorted(set(pops.orn_left.tolist()) - set(ids[3:PER_SIDE].tolist())), dtype=np.int64
     )
-    rates = encode.orn_rates(scored(), pops)
-    biggest, smallest = max(sizes, key=sizes.get), min(sizes, key=sizes.get)
-    assert rates[biggest] < rates[smallest]
-    # Population drive, not per-neuron rate, is what is equalised.
-    assert rates[biggest] * sizes[biggest] == pytest.approx(rates[smallest] * sizes[smallest])
+    pops.orn_right = np.array(
+        sorted(set(pops.orn_right.tolist()) | set(ids[3:PER_SIDE].tolist())), dtype=np.int64
+    )
+    r = rates_by_body(scored(), pops)
+    left_total = sum(r[int(b)] for b in ids[:3])
+    right_total = sum(r[int(b)] for b in ids[3:])
+    assert left_total == pytest.approx(right_total)
 
 
-def race_of(delta: float, dead_band: float = 1.0) -> decode.Race:
-    """A race whose settled readout is exactly `delta` Hz."""
-    frames = 100
-    left = np.zeros(frames)
-    right = np.full(frames, delta)
-    return decode.Race(
-        left_hz=left,
-        right_hz=right,
-        delta_hz=right - left,
-        delta=delta,
-        settled_from=30,
-        dead_band=dead_band,
+def turn_of(value: float, dead_band: float = 0.1) -> decode.Turn:
+    """A Turn whose baseline-subtracted index is exactly `value`."""
+    total = 1000
+    right = round(total * (1 + value) / 2)
+    return decode.Turn(
+        left_spikes=total - right, right_spikes=right, baseline=0.0, dead_band=dead_band
     )
 
 
 @pytest.mark.parametrize(
-    ("delta", "inverted", "expected"),
+    ("value", "inverted", "expected"),
     [
-        # A normal final vote: right wins -> the fly wants the bill -> POOLT.
-        (5.0, False, POOLT),
-        (-5.0, False, VASTU),
+        (0.5, False, POOLT),
+        (-0.5, False, VASTU),
         # A rejection motion: wanting the bill means voting against killing it.
-        (5.0, True, VASTU),
-        (-5.0, True, POOLT),
-        # Inside the fly's own noise floor, either way round.
-        (0.5, False, EI_HAALETANUD),
-        (-0.5, True, EI_HAALETANUD),
+        (0.5, True, VASTU),
+        (-0.5, True, POOLT),
+        (0.05, False, EI_HAALETANUD),
+        (-0.05, True, EI_HAALETANUD),
     ],
 )
-def test_the_rejection_flip_lives_in_the_decoder(delta, inverted, expected):
+def test_the_rejection_flip_lives_in_the_decoder(value, inverted, expected):
     """`Tagasi lukkamine` inverts polarity, and the flip must be in one place so every
     control arm inherits it identically."""
-    assert race_of(delta).vote(inverted) == expected
+    assert turn_of(value).vote(inverted) == expected
 
 
-def test_a_race_inside_the_dead_band_is_not_a_decision():
-    assert race_of(0.9, dead_band=1.0).supports_bill is None
-    assert race_of(1.1, dead_band=1.0).supports_bill is True
-    assert race_of(-1.1, dead_band=1.0).supports_bill is False
+def test_a_turn_inside_the_dead_band_is_not_a_decision():
+    assert turn_of(0.09, dead_band=0.1).supports_bill is None
+    assert turn_of(0.11, dead_band=0.1).supports_bill is True
+    assert turn_of(-0.11, dead_band=0.1).supports_bill is False
 
 
-def test_the_race_compares_rates_so_the_pool_imbalance_cannot_vote():
-    """656 left cells against 648 right: counting spikes rather than rates would hand the
-    fly a permanent lean that has nothing to do with the bill."""
-    frames, duration = 100, 0.5
-    counts = {
-        "dn_left": np.full(frames, 656 // 8, dtype=np.int32),
-        "dn_right": np.full(frames, 648 // 8, dtype=np.int32),
-    }
-    sizes = {"dn_left": 656, "dn_right": 648}
-    race = decode.race(counts, sizes, duration)
-    assert abs(race.delta) < 0.5
+def test_the_baseline_bias_is_subtracted():
+    """A blank bill still turns this fly, because the wiring is not symmetric. If that
+    bias were left in, every verdict would inherit it."""
+    t = decode.Turn(left_spikes=600, right_spikes=400, baseline=-0.2, dead_band=0.1)
+    assert t.raw == pytest.approx(-0.2)
+    assert t.turn == pytest.approx(0.0)
+    assert t.supports_bill is None
 
 
-def test_the_verdict_ignores_the_frames_before_the_network_settles():
-    frames, duration = 100, 0.5
-    # A burst in the first 100 ms, then silence. The settled readout must not see it.
-    left = np.zeros(frames, dtype=np.int32)
-    right = np.zeros(frames, dtype=np.int32)
-    right[:20] = 500
-    race = decode.race(
-        {"dn_left": left, "dn_right": right}, {"dn_left": 1, "dn_right": 1}, duration
-    )
-    assert race.settled_from == 30
-    assert race.delta == pytest.approx(0.0)
-    assert race.delta_hz[:20].max() > 0
-
-
-def test_overlapping_probe_groups_both_count():
-    """Probe groups overlap in real use — the descending pools are also part of the atlas
-    sample drawn on screen. An earlier implementation kept one group id per neuron, so the
-    last group written silently claimed the shared cells and the left/right race read zero
-    while the atlas groups looked fine.
-    """
-    from karbes.graph.load import Graph
-    from karbes.sim import lif
-
-    n = 6
-    graph = Graph(
-        indptr=np.zeros(n + 1, dtype=np.int64),
-        indices=np.empty(0, dtype=np.int32),
-        weights=np.empty(0, dtype=np.float32),
-        bodies=np.arange(n, dtype=np.int64),
-        sign=np.ones(n, dtype=np.float32),
-    )
-    shared = np.array([0, 1], dtype=np.int64)
-    probes = lif.Probes(
-        frames=4,
-        groups={"first": shared, "second": np.array([1, 2]), "third": shared},
-    )
-    # Drive every cell hard enough that it certainly fires.
-    result = lif.run(graph, dict.fromkeys(range(n), 500.0), probes=probes)
-    first = result.group_counts["first"].sum()
-    assert first > 0
-    assert result.group_counts["third"].sum() == first, "a later group stole the shared cells"
-    assert result.group_counts["second"].sum() == pytest.approx(first, rel=0.5)
+def test_a_silent_readout_decides_nothing():
+    """Sixteen DNa cells a side are sparse. No spikes must not read as a tie."""
+    t = decode.Turn(left_spikes=0, right_spikes=0, baseline=0.0, dead_band=0.1)
+    assert not np.isfinite(t.raw)
+    assert t.supports_bill is None
+    assert t.vote(inverted=False) == EI_HAALETANUD

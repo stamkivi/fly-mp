@@ -20,21 +20,20 @@ import json
 import logging
 import os
 import struct
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
 
 from karbes import decode, encode
+from karbes import engine as E
 from karbes.analysis import idealpoint, votematrix
 from karbes.atlas import Atlas
-from karbes.graph.load import Graph
 from karbes.graph.populations import CHANNEL_ORNS, Populations
 from karbes.riigikogu.model import Bill, Vote
 from karbes.score import rubric2
 from karbes.score.jev import Scored
-from karbes.sim import lif
 
 log = logging.getLogger(__name__)
 
@@ -105,7 +104,13 @@ def _epoch(when: str) -> float:
 
 
 def blank_score() -> Scored:
-    """A bill that says nothing: every channel zero, at full confidence."""
+    """A bill that says nothing: every channel zero, at full confidence.
+
+    Salience is zero too, which is right for a baseline — a blank bill changes nothing —
+    but wrong for a sweep. `salience_gain` floors at 0.25, so probing a channel on top of
+    this delivers a quarter of the drive it should and the measurement lands under the
+    noise. Use `probe_score` for that.
+    """
     keys = (*rubric2.KEYS, "salience")
     return Scored(
         scores=dict.fromkeys(keys, 0.0),
@@ -114,162 +119,160 @@ def blank_score() -> Scored:
     )
 
 
-def noise_floor(
-    graph: Graph, pops: Populations, seeds: int = 10, params: lif.Params | None = None
-) -> dict:
-    """|delta| across seeds on a blank bill: the dead band, measured on the brain itself.
+def probe_score(**channels: float) -> Scored:
+    """A synthetic bill at full salience, for measuring what a channel can actually do.
 
-    **Not zero input.** With no drive at all this network is perfectly silent — it is
-    quiescent without input at every weight scale tested — so a zero-input baseline
-    measures nothing and returns exactly 0.0. The honest baseline is the fly smelling its
-    own background: all sixteen ORN populations at `encode.BACKGROUND_HZ`, every channel
-    scored zero. Changing `seed` then changes only the input phase, which is precisely the
-    source of the run-to-run variation the SNR is about.
-
-    This is the only place a threshold comes from. It never looks at the chamber, so it
-    cannot be tuned to make the voting record agree with anyone.
+    Salience at 1.0 rather than 0.0: the sweep asks how far a channel moves the fly at its
+    strongest, and a quarter-strength probe answers a different question. Getting this
+    wrong once already produced a full-scale contrast of the wrong sign.
     """
-    p = params or lif.DEFAULTS
-    probes = lif.Probes(
-        frames=FRAMES,
-        groups={
-            "dn_left": graph.index_of(pops.dn_left),
-            "dn_right": graph.index_of(pops.dn_right),
-        },
-    )
-    sizes = {"dn_left": len(pops.dn_left), "dn_right": len(pops.dn_right)}
-    background = encode.drive(blank_score(), pops, graph)
-    deltas, rates = [], []
+    scored = blank_score()
+    scored.scores["salience"] = 1.0
+    for channel, value in channels.items():
+        scored.scores[channel] = value
+    return scored
+
+
+def baseline(
+    engine: E.Engine, pops: Populations, seeds: int = 12, duration: float = E.DURATION
+) -> dict:
+    """The turn index on a bill that says nothing: the bias, and the spread around it.
+
+    **Both are required and neither is optional.** A blank bill drives both antennae
+    equally, so the turn index it produces is pure anatomy — the left/right asymmetry of
+    the wiring plus the 363/525 rootSide imbalance in how many receptor neurons each side
+    has. flybrain measured that bias at up to -1.3 against a directional signal of ~0.08
+    and had to subtract it; here it is about -0.08 against an effect of ~0.38.
+
+    The spread across input phases sets the dead band. It is measured on the network
+    alone and never looks at the chamber, so it cannot be tuned to make the voting record
+    agree with anybody.
+    """
+    dna_l, dna_r = engine.positions(pops.dna_left), engine.positions(pops.dna_right)
+    targets, rates = encode.stimulus(blank_score(), pops, engine)
+    turns, spikes = [], []
     for seed in range(seeds):
-        result = lif.run(graph, background, params=p, seed=seed, probes=probes)
-        deltas.append(decode.race(result.group_counts, sizes, p.duration).delta)
-        rates.append(result.mean_rate())
-    arr = np.array(deltas)
+        run = E.run(engine, targets, rates, seed=seed, duration=duration)
+        turns.append(decode.turn_index(run.counts, dna_l, dna_r).raw)
+        spikes.append(int(run.counts.sum()))
+    arr = np.array(turns, dtype=float)
     return {
         "seeds": seeds,
-        "baseline": "all 16 ORN populations at background, every channel scored zero",
-        "background_hz": encode.BACKGROUND_HZ,
-        "mean_delta_hz": float(arr.mean()),
-        "sd_delta_hz": float(arr.std(ddof=1)) if seeds > 1 else 0.0,
-        "max_abs_delta_hz": float(np.abs(arr).max()),
-        "mean_network_rate_hz": float(np.mean(rates)),
-        "deltas_hz": [float(d) for d in arr],
+        "stimulus": "blank bill: every channel zero, both antennae driven equally",
+        "bias": round(float(arr.mean()), 5),
+        "sd": round(float(arr.std(ddof=1)), 5) if seeds > 1 else 0.0,
+        "se": round(float(arr.std(ddof=1) / np.sqrt(seeds)), 5) if seeds > 1 else 0.0,
+        "mean_network_hz": round(float(np.mean(spikes)) / (engine.n * duration), 4),
+        "turns": [round(float(t), 5) for t in arr],
     }
 
 
-def _deltas(
-    graph: Graph,
-    pops: Populations,
-    scored: Scored,
-    seeds: int,
-    p: lif.Params,
-    probes: lif.Probes,
-    sizes: dict[str, int],
-) -> np.ndarray:
-    """The readout under one stimulus, across `seeds` input phases."""
-    drive = encode.drive(scored, pops, graph)
-    return np.array(
-        [
-            decode.race(
-                lif.run(graph, drive, params=p, seed=seed, probes=probes).group_counts,
-                sizes,
-                p.duration,
-            ).delta
-            for seed in range(seeds)
-        ]
-    )
-
-
 def sweep(
-    graph: Graph, pops: Populations, params: lif.Params | None = None, seeds: int = 8
+    engine: E.Engine, pops: Populations, seeds: int = 12, duration: float = E.DURATION
 ) -> dict:
-    """Each channel driven to -1 and +1 in turn, everything else at zero.
+    """Each channel driven fully right and fully left in turn, everything else at zero.
 
-    SPEC's Stage 2 verification: a flat line here means the connectome is not converting
-    the stimulus into anything, and the whole readout is decoration.
-
-    **Every point is averaged over `seeds` input phases, and reports its standard error.**
-    A single run per pole is not a measurement here. Run-to-run spread on this readout is
-    about 1.6 Hz, and — measured — a different stimulus at the *same* seed decorrelates
-    completely (r = -0.11), because changing a channel's rate reshuffles every subsequent
-    spike time. So the seed is not a shared noise term that cancels in a difference: the
-    only way to see a channel effect is to average it out, and a span quoted without its
-    error is indistinguishable from noise.
+    SPEC's Stage 2 verification. Every point is averaged over `seeds` input phases and
+    reports its standard error: run-to-run spread is real here, and a span quoted without
+    an error bar is what produced the retracted Stage 2b numbers.
     """
-    p = params or lif.DEFAULTS
-    probes = lif.Probes(
-        frames=FRAMES,
-        groups={
-            "dn_left": graph.index_of(pops.dn_left),
-            "dn_right": graph.index_of(pops.dn_right),
-        },
-    )
-    sizes = {"dn_left": len(pops.dn_left), "dn_right": len(pops.dn_right)}
-    out: dict[str, dict[str, float]] = {}
+    dna_l, dna_r = engine.positions(pops.dna_left), engine.positions(pops.dna_right)
+    base = baseline(engine, pops, seeds=seeds, duration=duration)
+    out: dict[str, dict] = {}
     for channel in CHANNEL_ORNS:
         poles = {}
         for pole in (-1.0, 1.0):
-            scored = blank_score()
-            scored.scores[channel] = pole
-            poles[pole] = _deltas(graph, pops, scored, seeds, p, probes, sizes)
+            targets, rates = encode.stimulus(probe_score(**{channel: pole}), pops, engine)
+            poles[pole] = np.array(
+                [
+                    decode.turn_index(
+                        E.run(engine, targets, rates, seed=s, duration=duration).counts,
+                        dna_l,
+                        dna_r,
+                        baseline=base["bias"],
+                    ).turn
+                    for s in range(seeds)
+                ]
+            )
         lo, hi = poles[-1.0], poles[1.0]
         span = float(hi.mean() - lo.mean())
         se = float(np.sqrt(hi.var(ddof=1) / seeds + lo.var(ddof=1) / seeds))
         out[channel] = {
-            "-1": round(float(lo.mean()), 4),
-            "+1": round(float(hi.mean()), 4),
-            "span": round(span, 4),
-            "se": round(se, 4),
+            "left": round(float(lo.mean()), 5),
+            "right": round(float(hi.mean()), 5),
+            "span": round(span, 5),
+            "se": round(se, 5),
             "t": round(span / se, 3) if se else None,
         }
-        log.info(
-            "sweep %-12s span %+6.3f Hz  se %.3f  t %+.2f", channel, span, se, span / se if se else 0
+        log.info("sweep %-12s span %+.4f  se %.4f  t %+.2f", channel, span, se, span / se if se else 0)
+    return {"baseline": base, "channels": out}
+
+
+def full_scale(
+    engine: E.Engine, pops: Populations, bias: float, seeds: int, duration: float
+) -> dict:
+    """Every channel to one extreme against every channel to the other.
+
+    The most stimulus this encoding can deliver, and therefore the test of whether the
+    instrument is alive at all. A single channel drives two glomeruli of sixteen, so its
+    effect is roughly an eighth of this and needs correspondingly more phases to resolve —
+    a flat per-channel sweep at low `seeds` is a power statement, not a null result.
+    """
+    dna_l, dna_r = engine.positions(pops.dna_left), engine.positions(pops.dna_right)
+    sides = {}
+    for label, pole in (("right", 1.0), ("left", -1.0)):
+        scored = probe_score(**dict.fromkeys(CHANNEL_ORNS, pole))
+        targets, rates = encode.stimulus(scored, pops, engine)
+        sides[label] = np.array(
+            [
+                decode.turn_index(
+                    E.run(engine, targets, rates, seed=s, duration=duration).counts,
+                    dna_l,
+                    dna_r,
+                    baseline=bias,
+                ).turn
+                for s in range(seeds)
+            ]
         )
-    return out
+    r, left = sides["right"], sides["left"]
+    diff = float(r.mean() - left.mean())
+    se = float(np.sqrt(r.var(ddof=1) / seeds + left.var(ddof=1) / seeds))
+    pooled = float(np.sqrt((r.var(ddof=1) + left.var(ddof=1)) / 2))
+    log.info("full scale: %+.4f +/- %.4f  t %+.2f  d' %+.2f", diff, se, diff / se, diff / pooled)
+    return {
+        "right": round(float(r.mean()), 5),
+        "left": round(float(left.mean()), 5),
+        "difference": round(diff, 5),
+        "se": round(se, 5),
+        "t": round(diff / se, 3) if se else None,
+        "d_prime": round(diff / pooled, 3) if pooled else None,
+    }
 
 
 def calibrate(
-    graph: Graph,
-    pops: Populations,
-    seeds: int = 20,
-    params: lif.Params | None = None,
-    sweep_seeds: int = 8,
+    engine: E.Engine, pops: Populations, seeds: int = 12, duration: float = E.DURATION
 ) -> dict:
-    """Measure the dead band and the signal-to-noise ratio, and report both.
-
-    **The dead band is one standard deviation of the blank-bill readout.** A race closer
-    than the spread this brain produces on a bill that says nothing is not a decision.
-    The rule is fixed here, on the network alone; no part of it can see the chamber.
-
-    SNR is the stimulus effect over that spread. **Measured with enough seeds it is
-    consistent with zero** — the full-scale contrast, every channel +1 against every
-    channel -1, comes to -0.09 +/- 0.38 Hz. SPEC's 0.5 and this module's earlier 0.88 were
-    both artefacts of one simulation per sweep point. `channels_resolved_above_noise` is
-    the number that matters: it is how many channels the fly can be shown to smell at all,
-    and on the current model it is none. See FINDINGS.md.
-    """
-    floor = noise_floor(graph, pops, seeds=seeds, params=params)
-    swept = sweep(graph, pops, params=params, seeds=sweep_seeds)
-    spans = [abs(v["span"]) for v in swept.values()]
-    resolved = [c for c, v in swept.items() if v["t"] is not None and abs(v["t"]) >= 2.0]
-    signal = float(np.mean(spans))
-    noise = floor["sd_delta_hz"]
+    """Measure the bias, the dead band and whether any channel moves the fly at all."""
+    swept = sweep(engine, pops, seeds=seeds, duration=duration)
+    base = swept["baseline"]
+    spans = [abs(v["span"]) for v in swept["channels"].values()]
+    resolved = [c for c, v in swept["channels"].items() if v["t"] and abs(v["t"]) >= 2.0]
     return {
         "measured": datetime.now(tz=UTC).isoformat(),
-        "weight_scale": (params or lif.DEFAULTS).weight_scale,
-        "noise_floor": floor,
-        "sweep": swept,
-        "sweep_seeds": sweep_seeds,
-        "signal_hz": round(signal, 4),
-        "widest_channel_hz": round(float(np.max(spans)), 4),
-        "narrowest_channel_hz": round(float(np.min(spans)), 4),
-        # Channels whose full-scale effect is separable from the run-to-run spread at all.
-        # A channel missing here is one the fly demonstrably cannot smell.
+        "engine": "mlx-lif-engine (Shiu et al. equations, Brian2-validated)",
+        "readout": "DNa family, turn = (R-L)/(R+L), baseline-subtracted",
+        "duration_s": duration,
+        "seeds": seeds,
+        "baseline_bias": base["bias"],
+        "noise_sd": base["sd"],
+        "dead_band": base["sd"],
+        "dead_band_rule": "one SD of the blank-bill turn index, measured on the network alone",
+        "signal": round(float(np.mean(spans)), 5),
+        "snr": round(float(np.mean(spans)) / base["sd"], 4) if base["sd"] else None,
         "channels_resolved_above_noise": resolved,
-        "noise_hz": round(noise, 4),
-        "snr": round(signal / noise, 4) if noise else None,
-        "dead_band_hz": round(noise, 4),
-        "dead_band_rule": "one SD of the blank-bill readout, measured on the network alone",
+        "full_scale": full_scale(engine, pops, base["bias"], seeds, duration),
+        "sweep": swept["channels"],
+        "network_hz": base["mean_network_hz"],
     }
 
 
@@ -280,13 +283,14 @@ class Inputs:
     bill: Bill
     vote: Vote
     scored: Scored
-    graph: Graph
+    engine: E.Engine
     pops: Populations
     atlas: Atlas
     space: idealpoint.Space | None = None
     vm: votematrix.VoteMatrix | None = None
-    dead_band: float = decode.DEAD_BAND_HZ
-    params: lif.Params = field(default_factory=lambda: lif.DEFAULTS)
+    bias: float = 0.0
+    dead_band: float = decode.DEAD_BAND
+    duration: float = E.DURATION
     seed: int = 0
     #: How many input phases to run the same bill under. The replay plays `seed`; the rest
     #: exist so the page can state how often this bill comes out the other way.
@@ -295,35 +299,44 @@ class Inputs:
 
 def build(inputs: Inputs) -> Bundle:
     """Simulate one bill and freeze the result."""
-    p = inputs.params
-    drive = encode.drive(inputs.scored, inputs.pops, inputs.graph)
-    atlas_idx = inputs.graph.index_of(inputs.atlas.bodies)
-    # Per-group counts are probed separately rather than derived from the raster. The
-    # raster is deduplicated per frame — the page only asks whether a cell lit up — and at
-    # 5 ms frames a cell firing at 100 Hz often spikes twice inside one. Counting raster
-    # entries therefore understates the rate, and understates it worst exactly where the
-    # rate is highest: measured, it reports the central brain at 53 Hz when it is at 101.
-    groups = {
-        "dn_left": inputs.graph.index_of(inputs.pops.dn_left),
-        "dn_right": inputs.graph.index_of(inputs.pops.dn_right),
-    }
-    for gid, name in enumerate(inputs.atlas.group_names()):
-        members = atlas_idx[inputs.atlas.group == gid]
-        if len(members):
-            groups[f"atlas:{name}"] = members
-    probes = lif.Probes(frames=FRAMES, groups=groups, raster=atlas_idx)
+    eng, pops, atlas = inputs.engine, inputs.pops, inputs.atlas
+    dna_l, dna_r = eng.positions(pops.dna_left), eng.positions(pops.dna_right)
+    atlas_idx = eng.positions(atlas.bodies)
+    targets, rates = encode.stimulus(inputs.scored, pops, eng)
+
     started = datetime.now(tz=UTC)
-    result = lif.run(inputs.graph, drive, params=p, seed=inputs.seed, probes=probes)
+    run = E.run(eng, targets, rates, seed=inputs.seed, duration=inputs.duration)
     elapsed = (datetime.now(tz=UTC) - started).total_seconds()
 
-    sizes = {"dn_left": len(inputs.pops.dn_left), "dn_right": len(inputs.pops.dn_right)}
-    race = decode.race(result.group_counts, sizes, p.duration, dead_band=inputs.dead_band)
-    code = race.vote(inputs.vote.inverted)
+    turn = decode.turn_index(
+        run.counts, dna_l, dna_r, baseline=inputs.bias, dead_band=inputs.dead_band
+    )
+    code = turn.vote(inputs.vote.inverted)
     chamber_advances = inputs.vote.in_favor > inputs.vote.against
     if inputs.vote.inverted:
         chamber_advances = not chamber_advances
 
-    wavering = _wavering(inputs, drive, probes, sizes)
+    frame_s = inputs.duration / FRAMES
+    race = {
+        side: [
+            round(float(c) / (n * frame_s), 4)
+            for c in run.frame_counts(idx, FRAMES)
+        ]
+        for side, idx, n in (
+            ("left_hz", dna_l, len(dna_l)),
+            ("right_hz", dna_r, len(dna_r)),
+        )
+    }
+    # Cumulative spikes per side. Sixteen DNa cells at ~1 Hz put 0 or 1 spikes in most
+    # 10 ms frames, so a per-frame rate series is mostly zeros and reads as a comb. The
+    # running total is both legible and closer to the statistic, which is a ratio of the
+    # totals rather than anything instantaneous.
+    cum = {
+        f"{side}_cum": np.cumsum(run.frame_counts(idx, FRAMES)).tolist()
+        for side, idx in (("left", dna_l), ("right", dna_r))
+    }
+    raster = run.raster(atlas_idx, FRAMES)
+    wavering = _wavering(inputs, targets, rates, dna_l, dna_r)
 
     doc = {
         "schema": SCHEMA,
@@ -351,116 +364,122 @@ def build(inputs: Inputs) -> Bundle:
             "advances_bill": chamber_advances,
         },
         "channels": _channels(inputs.scored),
-        "orn": {
-            name: round(hz, 3) for name, hz in encode.orn_rates(inputs.scored, inputs.pops).items()
+        "drive": {
+            "encoding": "score sign picks the antenna; magnitude sets its rate",
+            "background_hz": encode.BACKGROUND_HZ,
+            "peak_hz": encode.PEAK_HZ,
+            "orn_left": len(pops.orn_left),
+            "orn_right": len(pops.orn_right),
+            "laterality": "rootSide; ORNs carry no somaSide and unknown-side cells are dropped",
         },
         "sim": {
+            "engine": "mlx-lif-engine (Shiu et al. equations, Brian2-validated)",
             "frames": FRAMES,
-            "duration_s": p.duration,
-            "dt_s": p.dt,
-            "weight_scale": p.weight_scale,
+            "duration_s": inputs.duration,
+            "dt_s": E.DT,
             "seed": inputs.seed,
-            "neurons": inputs.graph.n,
-            "edges": inputs.graph.nnz,
-            "total_spikes": result.total_spikes,
-            "mean_rate_hz": round(result.mean_rate(), 4),
-            "input_spikes": result.input_spikes,
+            "neurons": eng.n,
+            "edges": eng.edges,
+            "total_spikes": int(run.counts.sum()),
+            "mean_rate_hz": round(float(run.counts.sum()) / (eng.n * inputs.duration), 4),
             "wall_seconds": round(elapsed, 2),
         },
         "race": {
-            "left_hz": [round(float(x), 4) for x in race.left_hz],
-            "right_hz": [round(float(x), 4) for x in race.right_hz],
-            "delta_hz": [round(float(x), 4) for x in race.delta_hz],
-            "delta": round(race.delta, 4),
-            "settled_from_frame": race.settled_from,
-            "dead_band_hz": round(race.dead_band, 4),
-            "dn_left": sizes["dn_left"],
-            "dn_right": sizes["dn_right"],
+            **race,
+            **cum,
+            "turn": round(turn.turn, 5),
+            "raw_turn": round(turn.raw, 5),
+            "baseline_bias": round(inputs.bias, 5),
+            "dead_band": round(inputs.dead_band, 5),
+            "dna_left": len(dna_l),
+            "dna_right": len(dna_r),
+            "left_spikes": turn.left_spikes,
+            "right_spikes": turn.right_spikes,
         },
         "verdict": {
-            "supports_bill": race.supports_bill,
+            "supports_bill": turn.supports_bill,
             "code": code,
             "chamber_advances": chamber_advances,
             "agrees_with_chamber": (
-                None if race.supports_bill is None else race.supports_bill == chamber_advances
+                None if turn.supports_bill is None else turn.supports_bill == chamber_advances
             ),
         },
         "wavering": wavering,
-        "seat": _seat(inputs, race),
-        "raster": _raster_meta(result.raster),
+        "seat": _seat(inputs, turn),
+        "raster": _raster_meta(raster),
         "atlas": {
-            "somas": inputs.atlas.k,
-            "groups": list(inputs.atlas.fractions()),
-            "group_hz": _group_hz(inputs, result),
-            "sampled_fraction": {k: round(v, 4) for k, v in inputs.atlas.fractions().items()},
-            # Atlas slots of the two racing pools, so the page can show the race in the
-            # brain itself rather than only in the chart beside it.
-            "dn_left_slots": _slots(inputs.atlas, inputs.pops.dn_left),
-            "dn_right_slots": _slots(inputs.atlas, inputs.pops.dn_right),
+            "somas": atlas.k,
+            "groups": list(atlas.fractions()),
+            "sampled_fraction": {k: round(v, 4) for k, v in atlas.fractions().items()},
+            "group_hz": _group_hz(atlas, atlas_idx, run, inputs.duration),
+            "dn_left_slots": _slots(atlas, pops.dna_left),
+            "dn_right_slots": _slots(atlas, pops.dna_right),
         },
         "audit": {
             "driven_bodies": {
-                name: [int(b) for b in inputs.pops.orn[name]]
+                name: [int(b) for b in pops.orn[name]]
                 for pair in CHANNEL_ORNS.values()
                 for name in pair
             },
-            "dn_left_bodies": [int(b) for b in inputs.pops.dn_left],
-            "dn_right_bodies": [int(b) for b in inputs.pops.dn_right],
+            "dna_left_bodies": [int(b) for b in pops.dna_left],
+            "dna_right_bodies": [int(b) for b in pops.dna_right],
             "jev_input_tokens": inputs.scored.input_tokens,
         },
     }
     name = f"{inputs.bill.uuid[:8]}-{inputs.vote.uuid[:8]}"
-    return Bundle(doc=doc, raster=pack_raster(result.raster), name=name)
+    return Bundle(doc=doc, raster=pack_raster(raster), name=name)
 
 
 def _wavering(
-    inputs: Inputs, drive: dict[int, float], probes: lif.Probes, sizes: dict[str, int]
+    inputs: Inputs,
+    targets: np.ndarray,
+    rates: np.ndarray,
+    dna_l: np.ndarray,
+    dna_r: np.ndarray,
 ) -> dict:
-    """The same bill under other input phases. **This is the finding, not a robustness
-    check.**
+    """The same bill under other input phases.
 
-    SNR on this readout is below 1, so which way the fly goes is genuinely uncertain. That
-    has to be stated on the page with a number beside it rather than hidden behind a single
-    confident verdict. The extra runs record only the descending pools, not the raster, so
-    they cost a simulation each and nothing else.
+    Run-to-run spread on this readout is real and comparable to a weak bill's effect, so a
+    single verdict is not the whole truth and the bundle carries the distribution.
     """
     if inputs.seeds <= 1:
         return {"seeds": 1, "note": "not measured"}
-    bare = lif.Probes(frames=FRAMES, groups=probes.groups)
     runs = []
     for seed in range(inputs.seeds):
         if seed == inputs.seed:
             continue
-        result = lif.run(inputs.graph, drive, params=inputs.params, seed=seed, probes=bare)
-        race = decode.race(
-            result.group_counts, sizes, inputs.params.duration, dead_band=inputs.dead_band
+        counts = E.run(inputs.engine, targets, rates, seed=seed, duration=inputs.duration).counts
+        t = decode.turn_index(
+            counts, dna_l, dna_r, baseline=inputs.bias, dead_band=inputs.dead_band
         )
-        runs.append({"seed": seed, "delta": round(race.delta, 4), "code": race.vote(inputs.vote.inverted)})
+        runs.append({"seed": seed, "turn": round(t.turn, 5), "code": t.vote(inputs.vote.inverted)})
     tally: dict[str, int] = {}
     for r in runs:
         tally[r["code"]] = tally.get(r["code"], 0) + 1
-    deltas = np.array([r["delta"] for r in runs])
+    turns = np.array([r["turn"] for r in runs])
     return {
         "seeds": inputs.seeds,
         "note": "the same bill, same scores, different input phase",
         "runs": runs,
         "tally": tally,
-        "delta_sd_hz": round(float(deltas.std(ddof=1)), 4) if len(deltas) > 1 else 0.0,
-        "delta_min_hz": round(float(deltas.min()), 4),
-        "delta_max_hz": round(float(deltas.max()), 4),
+        "turn_sd": round(float(turns.std(ddof=1)), 5) if len(turns) > 1 else 0.0,
+        "turn_min": round(float(turns.min()), 5),
+        "turn_max": round(float(turns.max()), 5),
     }
 
 
-def _group_hz(inputs: Inputs, result: lif.Result) -> dict[str, list[float]]:
+def _group_hz(
+    atlas: Atlas, atlas_idx: np.ndarray, run: E.Run, duration: float
+) -> dict[str, list[float]]:
     """Per drawn group, the true firing rate in each frame. Never raster-derived."""
-    frame_seconds = inputs.params.duration / FRAMES
+    frame_s = duration / FRAMES
     out = {}
-    for gid, name in enumerate(inputs.atlas.group_names()):
-        counts = result.group_counts.get(f"atlas:{name}")
-        size = int((inputs.atlas.group == gid).sum())
-        if counts is None or not size:
+    for gid, name in enumerate(atlas.group_names()):
+        members = atlas_idx[atlas.group == gid]
+        if not len(members):
             continue
-        out[name] = [round(float(c) / (size * frame_seconds), 2) for c in counts]
+        counts = run.frame_counts(members, FRAMES)
+        out[name] = [round(float(c) / (len(members) * frame_s), 2) for c in counts]
     return out
 
 
@@ -502,7 +521,7 @@ def _channels(scored: Scored) -> list[dict]:
     return out
 
 
-def _seat(inputs: Inputs, race: decode.Race) -> dict:
+def _seat(inputs: Inputs, turn: decode.Turn) -> dict:
     """Where this one vote puts the fly on the chamber's first dimension.
 
     **One vote does not identify a position**, and the estimate says so. `fly_dim1` is the
@@ -519,7 +538,7 @@ def _seat(inputs: Inputs, race: decode.Race) -> dict:
         for mid, c in zip(space.member_ids, space.coords, strict=True)
     ]
 
-    supports = race.supports_bill
+    supports = turn.supports_bill
     fly_dim1, n_like = None, 0
     try:
         column = [v.uuid for v in vm.votes].index(inputs.vote.uuid)

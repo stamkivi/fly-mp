@@ -42,18 +42,21 @@ MALECNS = Path("data/malecns")
 RUNS = Path("runs")
 
 
-def _load_graph():
-    """Populations and the compiled CSR, or a clear instruction if they are missing."""
-    from karbes.graph import load as L
+def _load_engine():
+    """Populations and the published LIF engine pack, or a clear instruction."""
+    from karbes import engine as E
     from karbes.graph import populations as P
 
-    graph = L.load_compiled(MALECNS)
-    if graph is None:
+    try:
+        engine = E.load()
+    except Exception as exc:  # pack missing, or mlx not installed
         raise SystemExit(
-            f"no compiled connectome in {MALECNS}. Run ./bootstrap.sh, or fetch the "
-            "feathers with scripts_fetch.sh and compile."
-        )
-    return P.load(MALECNS), graph
+            f"cannot load the engine pack ({exc}).\n"
+            "Install the engine and build the MaleCNS pack:\n"
+            "  uv pip install -e ../drosophila-brain-mlx\n"
+            "  cd ../drosophila-brain-mlx && python -m lif.compile_pack_malecns"
+        ) from exc
+    return P.load(MALECNS), engine
 
 
 def _calibrate(args: argparse.Namespace) -> int:
@@ -61,17 +64,19 @@ def _calibrate(args: argparse.Namespace) -> int:
 
     from karbes import replay
 
-    pops, graph = _load_graph()
-    result = replay.calibrate(graph, pops, seeds=args.seeds, sweep_seeds=args.sweep_seeds)
+    pops, engine = _load_engine()
+    result = replay.calibrate(engine, pops, seeds=args.seeds)
     RUNS.mkdir(exist_ok=True)
     (RUNS / "calibration.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
-    print(f"\nsignal (mean channel span)  {result['signal_hz']:>8.3f} Hz")
-    print(f"noise (blank-bill SD)       {result['noise_hz']:>8.3f} Hz")
+    print(f"\nbaseline bias (blank bill)  {result['baseline_bias']:>+8.4f}")
+    print(f"noise (blank-bill SD)       {result['noise_sd']:>8.4f}")
+    print(f"signal (mean channel span)  {result['signal']:>8.4f}")
     print(f"SNR                         {result['snr']:>8.3f}")
-    print(f"dead band                   {result['dead_band_hz']:>8.3f} Hz")
+    print(f"dead band                   {result['dead_band']:>8.4f}")
+    print(f"network rate                {result['network_hz']:>8.3f} Hz")
     resolved = result["channels_resolved_above_noise"]
     print(
-        f"\nchannels separable from the noise at all: "
+        f"\nchannels separable from the noise: "
         f"{len(resolved)} of {len(result['sweep'])}"
         + (f"  ({', '.join(resolved)})" if resolved else "")
     )
@@ -88,7 +93,7 @@ def _replay(args: argparse.Namespace) -> int:
     from karbes.riigikogu.corpus import load_bills, load_votes
     from karbes.score.jev import JevScorer
 
-    pops, graph = _load_graph()
+    pops, engine = _load_engine()
     soma = A.load(MALECNS)
     if soma is None:
         soma = A.build(MALECNS)
@@ -132,19 +137,20 @@ def _replay(args: argparse.Namespace) -> int:
     calibration = RUNS / "calibration.json"
     if not calibration.exists():
         raise SystemExit(f"no {calibration}; run `karbes calibrate` first")
-    dead_band = json.loads(calibration.read_text(encoding="utf-8"))["dead_band_hz"]
+    cal = json.loads(calibration.read_text(encoding="utf-8"))
 
     bundle = replay.build(
         replay.Inputs(
             bill=bill,
             vote=vote,
             scored=scores[bill.uuid],
-            graph=graph,
+            engine=engine,
             pops=pops,
             atlas=soma,
             space=space,
             vm=vm,
-            dead_band=dead_band,
+            bias=cal["baseline_bias"],
+            dead_band=cal["dead_band"],
             seed=args.seed,
             seeds=args.seeds,
         )
@@ -162,8 +168,8 @@ def _replay(args: argparse.Namespace) -> int:
     print(f"\nbill      {bill.title[:72]}")
     print(f"chamber   {'advances' if v['chamber_advances'] else 'rejects'} the bill")
     print(
-        f"Karbes    {v['code']}  (delta {bundle.doc['race']['delta']:+.3f} Hz, "
-        f"dead band {dead_band:.3f})"
+        f"Karbes    {v['code']}  (turn {bundle.doc['race']['turn']:+.4f}, "
+        f"dead band {cal['dead_band']:.4f})"
     )
     print(f"agrees    {v['agrees_with_chamber']}")
     print(f"\n{doc} ({doc.stat().st_size:,} B)")
@@ -206,10 +212,7 @@ def main() -> int:
     p.set_defaults(func=_score)
 
     p = sub.add_parser("calibrate", help="Stage 2b — measure the dead band and the SNR")
-    p.add_argument("--seeds", type=int, default=20, help="blank-bill runs behind the dead band")
-    p.add_argument(
-        "--sweep-seeds", type=int, default=8, help="input phases averaged per sweep point"
-    )
+    p.add_argument("--seeds", type=int, default=12, help="input phases averaged per point")
     p.set_defaults(func=_calibrate)
 
     p = sub.add_parser("replay", help="Stage 2b — build one bill's replay bundle")

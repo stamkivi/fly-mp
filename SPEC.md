@@ -972,8 +972,8 @@ dropped after the fact on a threshold I chose.
 | Stage 0 — harvest + pre-tests (T1–T5, era-aware) | **done**, gate PASS |
 | Stage 1 — scoring | **done**; LLM rubric superseded by Jev, 751/751 bills, $0.042 |
 | Stage 2 — connectome + LIF kernel | **done**; see measurements below |
-| **Stage 2b — one-bill replay slice** | **done** — bundle, atlas and page built; **stimulus sweep fails**, see FINDINGS.md |
-| Stage 3 — full run · Stage 4 — null ladder · Stage 5 — deliverables | **blocked** on the flat sweep |
+| **Stage 2b — one-bill replay slice** | **done** — rebuilt on the published engine; lateralised drive, DNa readout, full-scale d' 2.63. See FINDINGS.md |
+| Stage 3 — full run · Stage 4 — null ladder · Stage 5 — deliverables | not started; Stage 4's degree-preserving shuffle ships with the engine |
 
 ### Stage 2 measurements (2026-09-16/17)
 
@@ -1041,6 +1041,27 @@ away into false confidence.
 > cross-validated sparse one, widen the input rather than raise the weight scale, add the
 > adaptation and inhibitory normalisation the kernel lacks, and make the sweep a
 > machine-enforced gate. Everything else in the Stage 2b slice stands.
+>
+> **Resolved 2026-09-18 — rebuilt on the published engine, and the fly steers.** Kärbes no
+> longer carries its own kernel: it runs `mlx-lif-engine` (MIT, Kisame76/drosophila-brain-mlx),
+> Shiu et al.'s equations validated against Brian2 to identical per-neuron spike counts, whose
+> MaleCNS pack `neuron_ids` are identical to the retained set this spec defines. On that engine
+> the network is silent with no input, runs at 2.9 Hz with 5 Hz on the ORNs and 4.9 Hz at
+> 150 Hz, and 6% of neurons are active — sparse and graded, where our kernel self-ignited.
+>
+> §2's encoding and §4's readout are both replaced, and the contradiction between them is
+> resolved: **the side now carries the sign.** A positive score drives the right antenna
+> harder, a negative score the left, with laterality from `rootSide` (ORNs carry no
+> `somaSide` at all) and per-side rates normalised by cell count so the 363/525 imbalance is
+> not itself a stimulus. The readout is the **DNa family**, `turn = (R-L)/(R+L)`, with the
+> symmetric-stimulus baseline subtracted.
+>
+> Measured, 12 input phases per condition: full-scale contrast **+0.276 ± 0.043, t = 6.45,
+> d' = 2.63**; blank-bill bias **-0.081**; dead band **0.104**; **2 of 8 channels** separable
+> from the run-to-run spread, the rest needing ~40 phases per pole rather than being null.
+> The stimulus sweep in §Verification is therefore no longer flat, and Stage 3 is unblocked
+> on the instrument — though a per-bill verdict remains a weak, noisy draw and should be
+> reported as one. See FINDINGS.md.
 >
 > **RETRACTED the same day — the above describes a kernel bug, not the connectome.** Shiu et
 > al.'s model integrates a synaptic variable, `dv/dt = (v_0 - v + g)/t_mbr` with `dg/dt = -g/tau`

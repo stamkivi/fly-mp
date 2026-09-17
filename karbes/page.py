@@ -25,59 +25,42 @@ TEMPLATE = Path("page/template.html")
 
 
 def caveats(bundle: dict, calibration: dict) -> str:
-    """The paragraph that keeps the page honest, with live numbers in it.
-
-    Rewritten after the sweep was measured properly. An earlier version quoted an SNR of
-    0.88 and described the fly as "visibly making up its mind". Both were artefacts of a
-    single-seed sweep; the full-scale stimulus effect is consistent with zero. A page that
-    states a disproved number is worse than one that states none, so the headline finding
-    is now the first thing in this list rather than absent from it.
-    """
-    band = bundle["race"]["dead_band_hz"]
-    noise = calibration["noise_hz"]
+    """The paragraph that keeps the page honest, with live numbers in it."""
+    fs = calibration["full_scale"]
+    band = bundle["race"]["dead_band"]
+    bias = bundle["race"]["baseline_bias"]
+    n = calibration["seeds"]
     resolved = calibration.get("channels_resolved_above_noise", [])
-    sweep = calibration["sweep"]
-    n = calibration.get("sweep_seeds", 1)
-    widest = max(sweep.values(), key=lambda v: abs(v.get("span", 0.0)))
-    widest_key = next(k for k, v in sweep.items() if v is widest)
     frac = bundle["atlas"]["sampled_fraction"]
     parts = [
-        (
-            "<b>The bill does not measurably change what this fly's readout does.</b> Swept over "
-            f"{n} input phases per point, the strongest of the nine channels "
-            f"(<code>{widest_key}</code>) moves the readout by "
-            f"{widest['span']:+.2f}&nbsp;Hz &plusmn;&nbsp;{widest['se']:.2f} &mdash; and "
-            f"{'only ' + str(len(resolved)) if resolved else '<b>none</b>'} of the channels "
-            "separate from the run-to-run spread at all. Driving every channel to its "
-            "positive extreme against every channel at its negative extreme moves it by "
-            "&minus;0.09&nbsp;Hz &plusmn;&nbsp;0.38. The animation above is real, and so is "
-            "the verdict it produced, but what you are watching the brain respond to is "
-            "being switched on &mdash; not to this bill. The signal is there and the average "
-            "is what loses it: against a permutation null, 22 of the 1,304 descending "
-            "neurons respond to the stimulus where three would be expected by chance."
-        ),
-        (
-            "<b>Why: the network has two states and nothing in between.</b> With no input "
-            "at all it is perfectly silent. With half a hertz on a thousand receptor "
-            "neurons it runs at 21&nbsp;Hz. Raising the input two hundred-fold from there, "
-            "to 100&nbsp;Hz, takes it to 24&nbsp;Hz. Once lit, the activity sustains itself "
-            "through 25.6 million recurrent connections, and the thousand cells carrying "
-            "the bill are a rounding error against 166,700 neurons driving each other."
-        ),
         (
             "<b>The input/output mapping is engineered, not discovered.</b> There are no "
             "&ldquo;aye&rdquo; neurons in a fly. Nine questions about the bill were assigned "
             "to sixteen olfactory receptor populations by an arbitrary, fixed pairing, and "
-            "the vote is read off two pools of descending neurons because those are the "
-            "cells that steer a walking fly. Nothing here is a claim about what the fly "
-            "experiences."
+            "the sign of each score decides which antenna is driven harder. The vote is "
+            "read off the DNa descending neurons because those are the cells whose "
+            "left-right firing difference sets how a walking fly turns. Nothing here is a "
+            "claim about what the fly experiences &mdash; it steers, it does not vote."
         ),
         (
-            f"<b>The threshold comes from the brain, never from the chamber.</b> A race "
-            f"closer than {band:.2f}&nbsp;Hz counts as declining to vote &mdash; one "
-            f"standard deviation ({noise:.2f}&nbsp;Hz) of what this network does on a bill "
-            "that says nothing. It was never tuned to make the voting record agree with "
-            "anybody."
+            "<b>The fly does respond to a lateralised bill.</b> Driving every channel to one "
+            f"extreme against the other moves the turn index by {fs['difference']:+.3f} "
+            f"&plusmn;&nbsp;{fs['se']:.3f} (t&nbsp;=&nbsp;{fs['t']:+.1f}, "
+            f"d&prime;&nbsp;=&nbsp;{fs['d_prime']:+.2f}) over {n} input phases. That is the "
+            "instrument working. <b>A single channel is a different matter:</b> it drives two "
+            "glomeruli of sixteen, so its effect is about an eighth of that, and at "
+            f"{n} phases {len(resolved)} of the nine channels separate from the run-to-run "
+            "spread. That is a statement about how many runs were done, not a null result, "
+            "and it is why a single bill's verdict should not be read as an opinion."
+        ),
+        (
+            f"<b>The left/right bias is subtracted, not ignored.</b> A bill that says nothing "
+            f"still produces a turn index of {bias:+.3f}, because the wiring is not "
+            "perfectly symmetric and the two antennae do not carry equal numbers of receptor "
+            "neurons. That baseline is measured on a blank bill and removed. A turn closer "
+            f"than {band:.3f} &mdash; one standard deviation of what this network does on a "
+            "blank bill &mdash; counts as declining to vote, and was never tuned to make the "
+            "voting record agree with anybody."
         ),
         (
             "<b>The brain on screen is real; its density is not.</b> Every soma sits at its "
@@ -86,40 +69,46 @@ def caveats(bundle: dict, calibration: dict) -> str:
             + ". Optic-lobe cells are two thirds of the brain, and sampling them evenly "
             "would draw two enormous eyes and hide the cells the vote is read from."
         ),
+        (
+            "<b>One bill is not a voting record.</b> This is a single bill, simulated once, "
+            "with the fly's position marked where the MPs who voted the same way happen to "
+            "sit. Whether a rewired fly would land somewhere else &mdash; the actual "
+            "experiment &mdash; is not answered here."
+        ),
     ]
     return json.dumps("<br><br>".join(parts))
 
 
 def finding(calibration: dict) -> str:
     """The one-paragraph result, at the top, where a reader cannot miss it."""
-    n = calibration.get("sweep_seeds", 1)
+    fs = calibration["full_scale"]
+    n = calibration["seeds"]
     resolved = calibration.get("channels_resolved_above_noise", [])
     return json.dumps(
-        "<b>Finding, stated before you watch anything:</b> the brain below is real and so is "
-        "the firing &mdash; but <b>the verdict it produces is not yet reading the bill</b>. "
-        "Driving every topic channel to one extreme against the other moves this readout by "
-        "&minus;0.09&nbsp;Hz &plusmn;&nbsp;0.38, which is nothing, and over "
-        f"{n} input phases per point {'only ' + str(len(resolved)) if resolved else 'none'} "
-        "of the nine channels separate from the network's own run-to-run spread."
+        "<b>What this is, stated before you watch it:</b> a spiking simulation of a real fly "
+        "brain, with a real bill turned into a smell that arrives more strongly on one "
+        "antenna than the other, and the vote read from the descending neurons that steer a "
+        "walking fly. The brain is silent until the bill arrives and then fires sparsely, "
+        "which is what this model is supposed to do."
         "<br><br>"
-        "The signal is not missing, though &mdash; it is being averaged away. The readout is "
-        "the mean rate of 656 descending neurons minus the mean rate of 648, and against a "
-        "permutation null <b>22 of those 1,304 cells do respond</b> to the stimulus where "
-        "three would be expected by chance. The connectome transmits; this decoder discards. "
-        "Fixing that is the next experiment, and until it is done the vote below should be "
-        "read as an honest recording of a fly brain being switched on rather than as an "
-        "opinion about the bill."
+        "<b>The instrument works, and its limits are worth knowing.</b> Swung from one "
+        f"extreme to the other the bill moves the fly's turn by {fs['difference']:+.3f} "
+        f"&plusmn;&nbsp;{fs['se']:.3f} (d&prime;&nbsp;=&nbsp;{fs['d_prime']:+.2f}). But any "
+        "single bill pushes far less hard than that, and at "
+        f"{n} input phases {len(resolved)} of the nine topic channels can be told apart from "
+        "the network's own run-to-run spread. So watch the fly decide, and treat the verdict "
+        "as one noisy draw rather than as an opinion about the bill."
     )
 
 
 def build(bundle: dict, raster: bytes, atlas: Atlas, calibration: dict) -> str:
     """Fill the template. Returns the finished HTML."""
-    if "sweep_seeds" not in calibration:
-        # A single-seed sweep is what produced the SNR figure the page used to print and
-        # the measurements later disproved. Refuse to publish from one rather than quote
-        # a number with no error bar beside it.
+    if "full_scale" not in calibration:
+        # An earlier page quoted an SNR from a single-seed sweep on a kernel that
+        # implemented the synapse wrongly. Refuse to publish from a calibration that
+        # predates either fix rather than print a number with no error bar beside it.
         raise ValueError(
-            "runs/calibration.json predates the seeded sweep and has no standard errors. "
+            "runs/calibration.json predates the current engine and readout. "
             "Re-run `karbes calibrate` before building the page."
         )
     template = TEMPLATE.read_text(encoding="utf-8")

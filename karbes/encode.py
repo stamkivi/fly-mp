@@ -1,21 +1,25 @@
-"""Topic scores to currents into named ORN populations.
+"""Topic scores to lateralised olfactory drive.
 
-Three properties of this mapping matter more than its details, and all three are fixed
-before any agreement with the chamber is measured:
+**The side carries the sign.** Scores are signed and firing rates are not, so the earlier
+encoder gave each channel a pole pair — one glomerulus for negative, one for positive —
+and drove both antennae identically. That was incompatible with a left-minus-right readout
+by construction: a bilaterally symmetric stimulus has no reason to move an antisymmetric
+statistic, and flybrain measured exactly that on this connectome, a turn response to a
+left-vs-right stimulus of "0.0000, identical to four decimals".
 
-1. **It is engineered, not discovered.** No glomerulus in a fly means "taxes". The
-   channel-to-ORN assignment in `graph.populations.CHANNEL_ORNS` is arbitrary and fixed;
-   this module only decides how hard each one is driven.
-2. **Drive is weighted by confidence.** A channel Jev could not read drives the fly
-   weakly rather than driving it with noise dressed as signal. That is the whole reason
-   Jev replaced the LLM rubric, so it has to show up here and not just in the JSON.
-3. **Nothing here is tuned against an outcome.** The rates below are pre-registered: they
-   place drive inside the 5-200 Hz range ORNs are measured to fire in, and that is their
-   entire justification.
+So a positive score now drives the **right** antenna harder and a negative score the left,
+which is a stimulus the steering circuit is actually built to resolve. Two consequences:
 
-Rates cannot be negative, so each channel is a pole pair: a positive score drives the
-positive-pole population and a negative score the negative one, both poles idling at a
-background rate so a score of zero is symmetric rather than silent.
+* `CHANNEL_ORNS` keeps its pole pairs, but the pair no longer carries the sign. Both
+  members are driven identically. The table is left alone rather than re-drawn, because
+  the channel-to-glomerulus assignment is pre-registered and re-drawing it to suit a new
+  encoder is the kind of thing this project exists not to do.
+* Laterality comes from `rootSide`, the only side ORNs carry. The 409 whose rootSide is
+  unknown are dropped rather than guessed.
+
+Three properties are fixed before any agreement with the chamber is measured, as before:
+the mapping is engineered rather than discovered, drive is weighted by Jev's confidence so
+an unreadable channel drives weakly, and no rate here is tuned against an outcome.
 """
 
 from __future__ import annotations
@@ -24,36 +28,33 @@ import logging
 
 import numpy as np
 
-from karbes.graph.load import Graph
+from karbes.engine import Engine
 from karbes.graph.populations import CHANNEL_ORNS, Populations
 from karbes.score.jev import Scored
 
 log = logging.getLogger(__name__)
 
-#: Spontaneous background on every ORN population, driven or not. Keeps a zero score
-#: symmetric across the pole pair instead of silencing both sides of it.
-BACKGROUND_HZ = 5.0
+#: Background on every driven ORN. A channel scored zero leaves its glomerulus at this on
+#: both sides, so zero is symmetric rather than silent.
+BACKGROUND_HZ = 15.0
 
-#: Peak additional drive on the active pole at |score x confidence| == 1 and full
-#: salience. 5 + 95 lands at the top of the measured ORN range without exceeding it.
-PEAK_HZ = 95.0
+#: Additional drive on the leading side at |score x confidence| == 1 and full salience.
+#: 150 Hz is the published default input rate for this model.
+PEAK_HZ = 135.0
 
-#: Salience scales the stimulus, never the background. A housekeeping bill still smells
-#: of something; it just does not shout. The floor keeps a low-salience bill legible on
-#: screen rather than indistinguishable from baseline.
+#: Salience scales the stimulus, never the background.
 SALIENCE_FLOOR = 0.25
 
 
 def salience_gain(salience: float) -> float:
-    """Map Jev's [0, 1] salience onto the stimulus multiplier."""
     return SALIENCE_FLOOR + (1.0 - SALIENCE_FLOOR) * float(np.clip(salience, 0.0, 1.0))
 
 
 def channel_drive(scored: Scored) -> dict[str, float]:
-    """Per channel, the signed drive in [-1, +1] that the fly actually receives.
+    """Per channel, the signed drive in [-1, +1]: positive leads right, negative left.
 
     This is `score x confidence x salience gain` — the number the page draws as bar
-    length, so what is on screen is what went into the neurons.
+    length, so what is on screen is what reached the antennae.
     """
     gain = salience_gain(scored.scores.get("salience", 0.0))
     return {
@@ -62,34 +63,41 @@ def channel_drive(scored: Scored) -> dict[str, float]:
     }
 
 
-def orn_rates(scored: Scored, pops: Populations) -> dict[str, float]:
-    """Per ORN *type*, the per-neuron input rate in Hz.
+def stimulus(
+    scored: Scored, pops: Populations, engine: Engine
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return `(targets, rates_hz)` for `engine.run`, one entry per driven ORN.
 
-    Rates are normalised by population size against the mean, so a channel does not get
-    weight purely from having more cells. Sizes span 43-84, so the correction stays
-    inside 0.7-1.4x and every rate remains inside the measured ORN range.
+    Per-side rates are normalised by that side's cell count, so the 363/525 rootSide
+    imbalance does not itself act as a permanent stimulus. What is equalised is the drive
+    delivered to each antenna, not the rate delivered to each cell.
     """
-    sizes = {name: len(ids) for name, ids in pops.orn.items()}
-    mean_size = float(np.mean(list(sizes.values())))
+    drive = channel_drive(scored)
+    left = set(pops.orn_left.tolist())
+    right = set(pops.orn_right.tolist())
 
-    rates: dict[str, float] = {}
-    for channel, signed in channel_drive(scored).items():
-        neg, pos = CHANNEL_ORNS[channel]
-        active, quiet = (pos, neg) if signed >= 0 else (neg, pos)
-        rates[active] = BACKGROUND_HZ + PEAK_HZ * abs(signed)
-        rates[quiet] = BACKGROUND_HZ
-    return {name: hz * mean_size / sizes[name] for name, hz in rates.items()}
+    bodies: list[int] = []
+    rates: list[float] = []
+    for channel, signed in drive.items():
+        for name in CHANNEL_ORNS[channel]:
+            ids = pops.orn[name]
+            side_ids = {"L": [b for b in ids.tolist() if b in left],
+                        "R": [b for b in ids.tolist() if b in right]}
+            n_l, n_r = len(side_ids["L"]), len(side_ids["R"])
+            if not n_l or not n_r:
+                raise ValueError(f"ORN type {name!r} has an empty side: L={n_l} R={n_r}")
+            mean_n = (n_l + n_r) / 2
+            hz = {
+                "R": (BACKGROUND_HZ + PEAK_HZ * max(signed, 0.0)) * mean_n / n_r,
+                "L": (BACKGROUND_HZ + PEAK_HZ * max(-signed, 0.0)) * mean_n / n_l,
+            }
+            for side in ("L", "R"):
+                bodies.extend(side_ids[side])
+                rates.extend([hz[side]] * len(side_ids[side]))
 
-
-def drive(scored: Scored, pops: Populations, graph: Graph) -> dict[int, float]:
-    """The kernel's `drive` argument: graph index -> input rate in Hz.
-
-    Bilateral by construction. ORN somas sit in the antenna and carry no `somaSide`, and
-    a bill does not arrive from the left or the right — keeping the input symmetric is
-    also what makes the zero-input left-right asymmetry floor interpretable.
-    """
-    out: dict[int, float] = {}
-    for name, hz in orn_rates(scored, pops).items():
-        for index in graph.index_of(pops.orn[name]):
-            out[int(index)] = hz
-    return out
+    order = np.argsort(np.asarray(bodies))
+    ordered = np.asarray(bodies)[order]
+    targets = engine.positions(ordered)
+    if len(targets) != len(ordered):
+        raise ValueError("an ORN body is missing from the engine pack")
+    return targets, np.asarray(rates)[order]
