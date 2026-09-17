@@ -59,13 +59,23 @@ class MissingKey(RuntimeError):
 
 
 def api_key() -> str:
-    """Read from the environment only. The key lives in ~/.config/typesafe/.env and is
-    never copied into this repo."""
+    """Environment first, then the project's gitignored `.env`.
+
+    `.env` is in .gitignore and never committed, so the key stays local without depending
+    on a file outside the project.
+    """
     key = os.environ.get("TYPESAFE_API_KEY", "").strip()
     if not key:
+        env = Path(".env")
+        if env.exists():
+            for line in env.read_text(encoding="utf-8").splitlines():
+                if line.startswith("TYPESAFE_API_KEY="):
+                    key = line.split("=", 1)[1].strip().strip("'\"")
+                    break
+    if not key:
         raise MissingKey(
-            "TYPESAFE_API_KEY is not set. Load it at runtime with:\n"
-            "  set -a; . ~/.config/typesafe/.env; set +a"
+            "TYPESAFE_API_KEY is not set. Put it in .env (gitignored) as\n"
+            "  TYPESAFE_API_KEY=..."
         )
     return key
 
