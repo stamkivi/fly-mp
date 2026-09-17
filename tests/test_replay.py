@@ -45,9 +45,9 @@ def test_raster_round_trips():
 
 
 def test_an_empty_raster_still_packs():
-    assert unpack(replay.pack_raster([np.empty(0, dtype=np.uint16)] * 4)) == pytest.approx(
-        [[], [], [], []]
-    )
+    got = unpack(replay.pack_raster([np.empty(0, dtype=np.uint16)] * 4))
+    assert len(got) == 4
+    assert all(len(f) == 0 for f in got)
 
 
 @pytest.fixture(scope="module")
@@ -99,9 +99,37 @@ def test_drive_is_the_confidence_weighted_score(bundle):
 
 def test_no_channel_was_defaulted_to_zero(bundle):
     """A rubric failure that silently scores zeros produces a confident, plausible,
-    meaningless vote. An unscored bill is excluded, never bundled."""
+    meaningless vote. An unscored bill is excluded, never bundled.
+
+    Note what this does *not* assert: a confidence of exactly 0.0 is a real answer, not a
+    missing one. Jev returns it when it genuinely cannot read a channel from the text, and
+    the confidence weighting then turns that channel's drive off, which is the intended
+    behaviour. `jev.py` raises on an *absent* confidence rather than defaulting it, so the
+    two cases cannot be confused upstream of here.
+    """
+    assert len(bundle["channels"]) == len(rubric2.KEYS) + 1
     assert any(c["score"] != 0.0 for c in bundle["channels"])
-    assert all(c["confidence"] > 0.0 for c in bundle["channels"])
+    assert any(c["confidence"] > 0.5 for c in bundle["channels"])
+    assert all(c["confidence"] is not None for c in bundle["channels"])
+
+
+def test_an_unreadable_channel_drives_nothing(bundle):
+    """The whole reason Jev replaced the LLM rubric: a channel it cannot read must drive
+    the fly weakly rather than driving it with noise dressed as signal."""
+    for channel in bundle["channels"]:
+        if channel["key"] != "salience" and channel["confidence"] == 0.0:
+            assert channel["drive"] == 0.0
+
+
+def test_the_wavering_was_measured(bundle):
+    """SNR is below 1, so a single verdict is not the whole truth about this bill and the
+    bundle has to carry the distribution rather than just the point estimate."""
+    w = bundle["wavering"]
+    assert w["seeds"] > 1
+    assert len(w["runs"]) == w["seeds"] - 1
+    assert sum(w["tally"].values()) == w["seeds"] - 1
+    assert all(r["code"] in FLY_STATES for r in w["runs"])
+    assert w["delta_max_hz"] >= w["delta_min_hz"]
 
 
 def test_the_verdict_is_one_of_the_three_states_the_fly_can_emit(bundle):

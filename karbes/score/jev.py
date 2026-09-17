@@ -189,9 +189,18 @@ class JevScorer:
             for k, a in answers.items():
                 raw = float(a["score"])
                 scores[k] = raw / 4.0 if k == "salience" else (raw - 2.0) / 2.0
-                conf[k] = float(a.get("confidence", 0.0))
+                # Not `.get(..., 0.0)`. Confidence weights the ORN drive, so a missing
+                # field would silently turn a channel off and look identical to Jev
+                # honestly answering "I cannot read this" — which it does return, as a
+                # real 0.0. An absent field is a broken response and must say so.
+                conf[k] = float(a["confidence"])
         except (KeyError, TypeError, ValueError) as exc:
             self.failures[bill.uuid] = f"bad answer shape: {exc}"
+            return None
+        missing = {*rubric2.KEYS, "salience"} - set(scores)
+        if missing:
+            # A partially-answered bill is not a bill scored zero on the rest of it.
+            self.failures[bill.uuid] = f"missing channels: {sorted(missing)}"
             return None
 
         tokens = int((d.get("usage") or {}).get("input_tokens", 0))
