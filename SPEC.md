@@ -589,6 +589,106 @@ zero vector produces a confident, plausible, entirely meaningless voting record.
 
 ---
 
+## Scoring: TypeSafe Jev replaces the LLM rubric
+
+Measured head-to-head on the real corpus, September 2026.
+
+| | LLM rubric (Gemini + GPT-5) | **Jev** |
+|---|---|---|
+| Bills scored | 725 / 751 | **751 / 751** |
+| Cost | $0.90 | **$0.042** |
+| Wall clock | ~20 min | **27 s** |
+| Self-consistency (mean abs diff) | n/a across models; r 0.66 | **0.039** |
+| Per-channel confidence | none | **calibrated** |
+| Signal vs content ceiling | −0.016 | **+0.005** |
+
+**The confidence is the reason, not the price.** Stage 1's failure mode was that two models
+disagreed on abstract channels and nothing in the output said so — the disagreement was only
+visible by running a second model and correlating. Jev states its own uncertainty per question.
+On a nuclear-safety bill it returned `place` at 0.99 confidence (correctly: not a geographic
+bill) and `who_decides` at 0.26 (honestly unsure). That lets ORN drive be **weighted by
+confidence**, so a channel the model cannot read drives the fly weakly instead of driving it
+with noise dressed as signal.
+
+It is also the right instrument for the replay: a channel can be drawn with intensity from the
+score and sharpness from the confidence. The fly smells some things clearly and others faintly,
+which is both true and legible.
+
+Spot checks were semantically correct where it matters: a VAT cut scores `pay` −0.76, the
+Weapons Act scores `security` +0.90 with every other channel near zero, and the Family Law
+amendment scores `power_over` −0.34 (it removes a restriction).
+
+**What did not change, and was never going to.** Prediction of faction lines still sits at
+roughly the content ceiling — mean +0.005 against the descriptor baseline. Bill content does not
+predict Estonian parliamentary votes better than ~.74 no matter what reads it, because the votes
+are driven by who tabled the bill. Jev buys a better *instrument* and a better *picture*, not a
+better *prediction*. Recorded so nobody re-runs this hoping for a different answer.
+
+Credentials live in `~/.config/typesafe/.env` and are loaded at runtime only — never copied into
+this repo, `.env.example`, or settings.
+
+---
+
+## The deliverable is a replay, not a report
+
+**Direction change, recorded deliberately.** The page was becoming a set of asserted
+conclusions with a decorative animation attached. The original ask was something with a wow
+effect that shows the fly *in action* — watchable for thirty seconds to a few minutes, in the
+spirit of the community's Doom and Mario builds. A precomputed claim is not that.
+
+### The noise is the show
+
+Stage 2 measured a signal-to-noise ratio of **0.5** on the descending-neuron readout: moving an
+axis from −1 to +1 shifts it about 1.1 Hz, while re-running the same stimulus with a different
+input phase shifts it about 2.3 Hz. An hour went into trying to engineer that away.
+
+That was the wrong instinct. **A deterministic instant verdict is boring; a brain visibly making
+up its mind is the entire appeal**, and the wavering is real rather than staged. The left and
+right descending pools genuinely race for 500 ms and the outcome is genuinely uncertain until
+late. Keep it, show it, and report the SNR honestly beside it.
+
+### Precompute, then play back
+
+No LLM call and no simulation at view time — the page must survive being public. Everything is
+generated offline into a **replay bundle** and shipped as data.
+
+Per bill: the real title and summary · its nine topic scores (already computed for 725 bills) ·
+the sixteen ORN channel activations · a **spike raster** downsampled to ~100 frames · the
+left/right DN race as a time series · the vote · the fly's updated position on the political line.
+
+*Assets already verified to exist:* **139,662 neurons carry real 3-D soma coordinates** in the
+annotations, so the brain on screen is the actual fly brain rather than a schematic. A 16,000-soma
+atlas is 94 KB as uint16; the full set is under 1 MB.
+
+*Size budget* against the 16 MB artifact limit: shared soma atlas ~94 KB · spikes stored sparse at
+3 bytes each, ~45 KB per bill · **30 bills ≈ 1.4 MB**. Comfortable.
+
+### One bill, about twenty seconds
+
+1. **The bill arrives** — real Estonian title, committee, date.
+2. **It becomes a smell** — sixteen channel bars light from the actual topic scores.
+3. **The brain fires** — real soma positions, activity spreading antennal lobe → central brain →
+   nerve cord. The money shot.
+4. **The race** — two curves, left DN against right DN, close on contested bills and decisive on
+   obvious ones.
+5. **The verdict** — a cell flips on the tabulaator; the fly's dot slides along the political line.
+
+Then a **season mode**: two hundred votes in sixty seconds, the position converging out of nothing,
+with the rewired flies running the same bills alongside and landing somewhere else. That is the
+experiment, made watchable instead of described.
+
+### What this changes
+
+The project becomes an experience with a study underneath, rather than a study with a page
+attached. Every finding in this document stays true and stays on the page; they stop being the
+opening argument. **The fly's seat has to emerge on screen rather than be asserted in a sentence.**
+
+Open: whether to incorporate a 3-D fly body model — the community reuses one (flybody / FlyGym) —
+so the fly can be seen considering a bill and pressing one of the three voting buttons. Pending a
+check on browser-loadable formats and licences.
+
+---
+
 ## Design — the page and its visuals
 
 Verified live: `GET /api/hallplan` returns all 101 occupied seats with `place`, the MP, and the faction
