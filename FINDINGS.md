@@ -116,8 +116,20 @@ because changing a channel's rate reshuffles every subsequent spike time. The se
 shared noise term that cancels in a difference. Averaging is the only lever, and `sweep` now
 runs every pole over `--sweep-seeds` phases and reports span, standard error and t.
 
-`nature`, the channel that looked like a 4.12 Hz effect, is **+0.37 ± 0.43 Hz** over 24 phases
-per pole.
+Re-measured at 12 phases per pole (`runs/calibration.json`, 2026-09-17):
+
+| channel | span (Hz) | se | t | | channel | span (Hz) | se | t |
+|---|---:|---:|---:|---|---|---:|---:|---:|
+| pay | −0.514 | 0.462 | −1.11 | | power_over | −0.757 | 0.543 | −1.39 |
+| spend | +0.248 | 0.643 | +0.39 | | who_decides | −0.025 | 0.532 | −0.05 |
+| burden | +0.810 | 0.607 | +1.33 | | nature | −0.328 | 0.470 | −0.70 |
+| place | −0.659 | 0.662 | −1.00 | | security | +0.177 | 0.434 | +0.41 |
+
+**Not one channel reaches |t| = 1.4.** `nature`, which looked like a 4.12 Hz effect on one
+seed, is −0.33 ± 0.47 — and has changed sign. Mean |span| is 0.44 Hz against a 1.65 Hz noise
+floor, so the SNR that `karbes calibrate` now prints is **0.27**; treat even that as an upper
+bound, because |span| is biased upward when the true span is near zero and the measurement is
+noisy.
 
 ### 2.2 Nor will a longer simulation help
 
@@ -130,7 +142,7 @@ So the variance is a per-phase *run-level offset*, not within-run drift. Doublin
 simulated duration would take the noise from 1.61 Hz to about 1.55 Hz. Only averaging across
 seeds reduces it, as 1/√n.
 
-### 2.3 The stimulus does not move anything
+### 2.3 No scalar readout moves
 
 24 phases per condition, full-scale contrast:
 
@@ -170,9 +182,11 @@ correlated and the independent-tests expectation is badly wrong):
 **The connectome does carry the stimulus to the descending neurons.** It reaches a small
 number of them — on the order of twenty out of 1,304 — and SPEC's readout, the mean rate of
 one side minus the mean rate of the other, averages those twenty into 1,284 that do not
-respond. That is why every scalar is flat. It is a readout-design failure, not proof that
-the network transmits nothing, and the earlier sentence in this document claiming otherwise
-was wrong.
+respond. That is why every scalar is flat.
+
+The obvious inference from §2.3 — that the network transmits nothing — is therefore wrong,
+and it is worth naming because it is the inference a reader will otherwise draw. This is a
+readout-design failure.
 
 Held deliberately short of a claim: **which** cells is not established. They were selected
 on the same runs that tested them, so their identity is not validated — the permutation null
