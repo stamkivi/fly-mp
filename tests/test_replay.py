@@ -175,6 +175,18 @@ def test_the_brain_actually_fires(bundle, raster):
     assert bundle["sim"]["total_spikes"] > 0
 
 
+def test_group_rates_are_probed_not_derived_from_the_raster(bundle):
+    """The raster is deduplicated per frame, so counting it understates the rate — and
+    understates it worst where the rate is highest. The bundle carries separately probed
+    per-group counts so the page does not have to."""
+    hz = bundle["atlas"]["group_hz"]
+    assert set(hz) == set(bundle["atlas"]["groups"])
+    frames = bundle["sim"]["frames"]
+    assert all(len(series) == frames for series in hz.values())
+    # The optic lobes get no input in this simulation; the central brain gets all of it.
+    assert max(hz["central"]) > 10 * max(hz["optic"])
+
+
 def test_the_bundle_fits_the_page_budget(bundle):
     docs = sorted(FIXTURES.glob("*.json"))
     blobs = sorted(FIXTURES.glob("*.raster.bin"))

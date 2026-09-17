@@ -1,29 +1,29 @@
 {
  "schema": "karbes-replay/1",
- "generated": "2026-09-17T09:29:08.189923+00:00",
+ "generated": "2026-09-17T10:00:37.600338+00:00",
  "bill": {
-  "uuid": "34d1d8c3-e610-45ed-9682-73a4c82bec24",
-  "title": "Rahvahääletuse seaduse muutmise seadus",
-  "mark": 86,
-  "summary": "Rahvahääletuse seaduse muutmise seaduse eelnõuga tunnistatakse kehtetuks rahvahääletuste läbiviimisel e-hääletamise võimalus.",
+  "uuid": "5b84ceea-e292-4fcb-8e44-8c34487a77c4",
+  "title": "Riigikogu otsus „Ettepaneku tegemine Vabariigi Valitsusele eemaldada nn. Pronkssõduri kuju avalikust ruumist\"",
+  "mark": 104,
+  "summary": "Soovitakse valitsuse otsust, et kõik okupatsioonivõimude punamonumendid, sh. Pronkssõdur, tuleb tervel Eesti territooriumil koheselt maha võtta. Otsus tuleb viivitamatult ellu viia.",
   "committee": "Põhiseaduskomisjon",
-  "draft_type": "SE",
-  "initiated": "2023-05-08",
+  "draft_type": "OE",
+  "initiated": "2023-05-10",
   "descriptors": [
-   "rahvahääletus",
-   "e-hääletamine"
+   "mälestis",
+   "riigi julgeoleku ohustamine"
   ],
   "government_bill": false
  },
  "chamber": {
-  "voting_uuid": "609faed2-c18d-4d56-9db6-a77d38d7f34b",
-  "kind": "Tagasi lükkamine",
-  "when": "2023-12-20T18:19:27.98",
-  "inverted": true,
-  "in_favor": 50,
-  "against": 15,
+  "voting_uuid": "65812b3c-721d-4210-ad47-037fc621fbc7",
+  "kind": "Lõpphääletus",
+  "when": "2024-01-16T11:05:02.01",
+  "inverted": false,
+  "in_favor": 14,
+  "against": 54,
   "neutral": 0,
-  "abstained": 36,
+  "abstained": 33,
   "advances_bill": false
  },
  "channels": [
@@ -36,9 +36,9 @@
     "ORN_VM5d",
     "ORN_VA2"
    ],
-   "score": 0.0,
-   "confidence": 0.96,
-   "drive": 0.0
+   "score": 0.005,
+   "confidence": 0.99,
+   "drive": 0.0049
   },
   {
    "key": "spend",
@@ -49,9 +49,9 @@
     "ORN_DL1",
     "ORN_VL1"
    ],
-   "score": -0.29,
-   "confidence": 0.36,
-   "drive": -0.0907
+   "score": 0.355,
+   "confidence": 0.51,
+   "drive": 0.179
   },
   {
    "key": "burden",
@@ -62,9 +62,9 @@
     "ORN_VM4",
     "ORN_DM1"
    ],
-   "score": -0.14,
-   "confidence": 0.63,
-   "drive": -0.0766
+   "score": 0.045,
+   "confidence": 0.78,
+   "drive": 0.0347
   },
   {
    "key": "place",
@@ -75,9 +75,9 @@
     "ORN_VA6",
     "ORN_DM3"
    ],
-   "score": 0.045,
-   "confidence": 0.0,
-   "drive": 0.0
+   "score": 0.005,
+   "confidence": 0.77,
+   "drive": 0.0038
   },
   {
    "key": "power_over",
@@ -88,9 +88,9 @@
     "ORN_DL4",
     "ORN_DM6"
    ],
-   "score": -0.07,
-   "confidence": 0.0,
-   "drive": -0.0
+   "score": 0.305,
+   "confidence": 0.29,
+   "drive": 0.0875
   },
   {
    "key": "who_decides",
@@ -101,9 +101,9 @@
     "ORN_V",
     "ORN_DM2"
    ],
-   "score": -0.505,
-   "confidence": 0.17,
-   "drive": -0.0746
+   "score": 0.69,
+   "confidence": 0.48,
+   "drive": 0.3275
   },
   {
    "key": "nature",
@@ -114,9 +114,9 @@
     "ORN_DA2",
     "ORN_VL2p"
    ],
-   "score": 0.26,
-   "confidence": 0.26,
-   "drive": 0.0587
+   "score": 0.07,
+   "confidence": 0.86,
+   "drive": 0.0595
   },
   {
    "key": "security",
@@ -127,9 +127,9 @@
     "ORN_DL5",
     "ORN_VM3"
    ],
-   "score": -0.005,
-   "confidence": 0.98,
-   "drive": -0.0043
+   "score": -0.045,
+   "confidence": 0.67,
+   "drive": -0.0298
   },
   {
    "key": "salience",
@@ -137,27 +137,27 @@
    "negative": "pure housekeeping",
    "positive": "central political controversy",
    "orn": [],
-   "score": 0.825,
-   "confidence": 0.72,
-   "drive": 0.8687
+   "score": 0.985,
+   "confidence": 0.95,
+   "drive": 0.9888
   }
  ],
  "orn": {
-  "ORN_VA2": 3.833,
+  "ORN_VA2": 4.189,
   "ORN_VM5d": 3.787,
-  "ORN_DL1": 10.438,
-  "ORN_VL1": 3.88,
-  "ORN_VM4": 10.016,
-  "ORN_DM1": 4.299,
-  "ORN_DM3": 5.05,
+  "ORN_VL1": 17.075,
+  "ORN_DL1": 3.833,
+  "ORN_DM1": 7.134,
+  "ORN_VM4": 4.079,
+  "ORN_DM3": 5.415,
   "ORN_VA6": 5.05,
-  "ORN_DM6": 5.485,
+  "ORN_DM6": 14.599,
   "ORN_DL4": 5.131,
-  "ORN_V": 13.981,
-  "ORN_DM2": 5.891,
-  "ORN_VL2p": 14.958,
+  "ORN_DM2": 42.546,
+  "ORN_V": 5.784,
+  "ORN_VL2p": 15.065,
   "ORN_DA2": 6.628,
-  "ORN_DL5": 7.997,
+  "ORN_DL5": 11.589,
   "ORN_VM3": 7.398
  },
  "sim": {
@@ -168,321 +168,321 @@
   "seed": 0,
   "neurons": 166700,
   "edges": 25582938,
-  "total_spikes": 1886988,
-  "mean_rate_hz": 22.6393,
-  "input_spikes": 3473,
-  "wall_seconds": 3.46
+  "total_spikes": 1896684,
+  "mean_rate_hz": 22.7557,
+  "input_spikes": 4763,
+  "wall_seconds": 3.56
  },
  "race": {
   "left_hz": [
    0.0,
-   1.2195,
-   31.7073,
-   47.8659,
-   16.1585,
-   13.1098,
-   15.2439,
-   21.0366,
-   22.2561,
-   22.2561,
-   23.7805,
-   25.6098,
-   24.6951,
-   25.3049,
-   27.7439,
-   27.1341,
-   26.5244,
-   27.1341,
-   24.0854,
-   25.9146,
-   26.8293,
-   24.3902,
-   26.2195,
-   31.4024,
-   26.5244,
-   28.6585,
-   36.8902,
-   35.6707,
-   28.9634,
-   31.7073,
-   32.0122,
-   27.1341,
-   25.9146,
-   29.878,
-   27.7439,
-   25.6098,
-   24.6951,
-   26.5244,
-   23.1707,
-   28.9634,
-   29.878,
-   30.7927,
-   28.9634,
-   25.0,
-   30.4878,
-   31.7073,
-   26.8293,
-   26.5244,
-   31.0976,
-   28.3537,
-   26.8293,
-   26.8293,
-   31.7073,
-   32.3171,
-   31.7073,
-   35.6707,
-   31.0976,
-   36.2805,
-   38.4146,
-   37.1951,
-   31.4024,
-   28.3537,
-   31.4024,
-   29.5732,
-   24.3902,
-   26.2195,
-   26.2195,
-   29.878,
-   28.6585,
-   26.8293,
-   33.5366,
-   32.3171,
-   30.4878,
-   28.3537,
-   36.5854,
-   32.9268,
-   24.6951,
-   26.5244,
-   32.622,
-   26.2195,
-   21.0366,
-   33.2317,
-   31.0976,
-   26.2195,
-   31.0976,
-   31.4024,
-   28.3537,
-   28.6585,
-   30.7927,
-   28.6585,
-   29.5732,
-   27.439,
-   27.1341,
-   28.6585,
-   26.2195,
-   28.6585,
-   27.7439,
-   28.9634,
-   24.0854,
-   32.0122
+   0.0,
+   0.3049,
+   0.3049,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
   ],
   "right_hz": [
    0.0,
-   2.7778,
-   39.1975,
-   55.5556,
-   15.4321,
-   16.358,
-   17.9012,
-   20.679,
-   26.5432,
-   30.5556,
-   25.9259,
-   25.3086,
-   27.7778,
-   25.9259,
-   32.4074,
-   32.4074,
-   28.0864,
-   24.0741,
-   28.7037,
-   26.8519,
-   21.9136,
-   28.3951,
-   27.7778,
-   28.7037,
-   26.8519,
-   26.8519,
-   27.7778,
-   29.9383,
-   25.3086,
-   31.1728,
-   28.3951,
-   29.6296,
-   23.7654,
-   27.1605,
-   23.1481,
-   25.3086,
-   27.4691,
-   25.3086,
-   28.7037,
-   30.2469,
-   26.2346,
-   27.7778,
-   32.4074,
-   27.1605,
-   29.9383,
-   32.0988,
-   29.0123,
-   27.7778,
-   29.9383,
-   28.3951,
-   25.0,
-   28.3951,
-   29.0123,
-   29.9383,
-   27.4691,
-   28.3951,
-   33.0247,
-   27.7778,
-   30.8642,
-   30.8642,
-   26.5432,
-   21.6049,
-   32.4074,
-   28.3951,
-   25.9259,
-   29.0123,
-   25.0,
-   33.3333,
-   26.2346,
-   28.3951,
-   34.5679,
-   33.3333,
-   28.7037,
-   26.5432,
-   31.1728,
-   33.9506,
-   25.6173,
-   23.7654,
-   32.4074,
-   27.1605,
-   26.8519,
-   29.6296,
-   27.4691,
-   22.8395,
-   29.9383,
-   31.7901,
-   30.8642,
-   25.9259,
-   31.4815,
-   31.7901,
-   26.2346,
-   26.2346,
-   28.7037,
-   30.5556,
-   26.5432,
-   30.5556,
-   30.8642,
-   28.7037,
-   25.0,
-   32.4074
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.3086,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
   ],
   "delta_hz": [
    0.0,
-   1.5583,
-   7.4902,
-   7.6897,
-   -0.7264,
-   3.2483,
-   2.6573,
-   -0.3576,
-   4.2871,
-   8.2995,
-   2.1454,
-   -0.3011,
-   3.0827,
-   0.621,
-   4.6635,
-   5.2733,
-   1.562,
-   -3.0601,
-   4.6183,
-   0.9372,
-   -4.9157,
-   4.0048,
-   1.5583,
-   -2.6987,
-   0.3275,
-   -1.8067,
-   -9.1125,
-   -5.7325,
-   -3.6548,
-   -0.5345,
-   -3.6171,
-   2.4955,
-   -2.1492,
-   -2.7176,
-   -4.5958,
-   -0.3011,
-   2.774,
-   -1.2157,
-   5.533,
-   1.2835,
-   -3.6435,
-   -3.0149,
-   3.444,
-   2.1605,
-   -0.5495,
-   0.3914,
-   2.1831,
-   1.2534,
-   -1.1593,
-   0.0414,
-   -1.8293,
-   1.5658,
-   -2.695,
-   -2.3788,
-   -4.2382,
-   -7.2757,
-   1.9271,
-   -8.5027,
-   -7.5504,
-   -6.3309,
-   -4.8592,
-   -6.7487,
-   1.005,
-   -1.1781,
-   1.5357,
-   2.7928,
-   -1.2195,
-   3.4553,
-   -2.424,
-   1.5658,
-   1.0313,
-   1.0163,
-   -1.7841,
-   -1.8104,
-   -5.4125,
-   1.0238,
-   0.9222,
-   -2.759,
-   -0.2145,
-   0.941,
-   5.8153,
-   -3.6021,
-   -3.6284,
-   -3.38,
-   -1.1593,
-   0.3877,
-   2.5105,
-   -2.7326,
-   0.6888,
-   3.1316,
-   -3.3386,
-   -1.2045,
-   1.5696,
-   1.897,
-   0.3237,
-   1.897,
-   3.1203,
-   -0.2597,
-   0.9146,
-   0.3952
+   0.0,
+   -0.3049,
+   -0.3049,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.3086,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
   ],
-  "delta": -0.6927,
+  "delta": 0.0044,
   "settled_from_frame": 30,
-  "dead_band_hz": 1.6056,
+  "dead_band_hz": 1.6497,
   "dn_left": 656,
   "dn_right": 648
  },
@@ -498,48 +498,46 @@
   "runs": [
    {
     "seed": 1,
-    "delta": -1.93,
-    "code": "POOLT"
+    "delta": 0.0,
+    "code": "EI_HAALETANUD"
    },
    {
     "seed": 2,
-    "delta": 0.0669,
+    "delta": 0.0,
     "code": "EI_HAALETANUD"
    },
    {
     "seed": 3,
-    "delta": 0.8087,
+    "delta": 0.0,
     "code": "EI_HAALETANUD"
    },
    {
     "seed": 4,
-    "delta": -0.6989,
+    "delta": 0.0,
     "code": "EI_HAALETANUD"
    },
    {
     "seed": 5,
-    "delta": 1.0567,
+    "delta": 0.0,
     "code": "EI_HAALETANUD"
    },
    {
     "seed": 6,
-    "delta": 1.6987,
-    "code": "VASTU"
+    "delta": 0.0,
+    "code": "EI_HAALETANUD"
    },
    {
     "seed": 7,
-    "delta": 1.5277,
+    "delta": 0.0,
     "code": "EI_HAALETANUD"
    }
   ],
   "tally": {
-   "POOLT": 1,
-   "EI_HAALETANUD": 5,
-   "VASTU": 1
+   "EI_HAALETANUD": 7
   },
-  "delta_sd_hz": 1.3098,
-  "delta_min_hz": -1.93,
-  "delta_max_hz": 1.6987
+  "delta_sd_hz": 0.0,
+  "delta_min_hz": 0.0,
+  "delta_max_hz": 0.0
  },
  "seat": {
   "available": true,
@@ -548,468 +546,532 @@
   "identified": false,
   "fly_dim1": null,
   "n_like_fly": 0,
-  "explained_dim1": 0.6776,
+  "explained_dim1": 0.6442,
   "chamber": [
    {
-    "dim1": 6.9252,
+    "dim1": 2.8851,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": -9.2475,
+    "dim1": -11.8699,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -7.9554,
+    "dim1": -10.4454,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -7.1208,
+    "dim1": -6.788,
     "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
    },
    {
-    "dim1": 15.8522,
+    "dim1": 24.2346,
     "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
    },
    {
-    "dim1": 7.5554,
+    "dim1": 13.6253,
     "faction": "Eesti Keskerakonna fraktsioon"
    },
    {
-    "dim1": 7.7294,
+    "dim1": 9.8069,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": 14.8813,
+    "dim1": 21.8776,
     "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
    },
    {
-    "dim1": 14.164,
-    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
-   },
-   {
-    "dim1": 16.6014,
+    "dim1": 18.9023,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": 6.2419,
+    "dim1": 24.5962,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": -8.6163,
+    "dim1": 1.767,
+    "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
+   },
+   {
+    "dim1": -11.4111,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 14.2312,
+    "dim1": 21.4977,
     "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
    },
    {
-    "dim1": 15.1245,
+    "dim1": 22.1685,
     "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
    },
    {
-    "dim1": 12.0907,
+    "dim1": 20.382,
     "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
    },
    {
-    "dim1": -7.479,
+    "dim1": -10.0839,
     "faction": "Eesti 200 fraktsioon"
    },
    {
-    "dim1": 8.8676,
+    "dim1": 14.6252,
     "faction": "Eesti Keskerakonna fraktsioon"
    },
    {
-    "dim1": -8.7903,
+    "dim1": -10.9104,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 0.1762,
+    "dim1": -6.1756,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": -9.1109,
+    "dim1": -11.9144,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -5.3532,
+    "dim1": -6.5515,
     "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
    },
    {
-    "dim1": -5.592,
+    "dim1": -7.4575,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 7.2748,
+    "dim1": -4.7554,
+    "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
+   },
+   {
+    "dim1": 12.809,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": 7.5185,
+    "dim1": 4.6138,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": -6.3975,
+    "dim1": -9.0818,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -9.0805,
+    "dim1": -12.0005,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 5.4169,
+    "dim1": 2.2067,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": -7.7808,
+    "dim1": -10.074,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 17.2152,
+    "dim1": 23.9612,
     "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
    },
    {
-    "dim1": -7.1815,
+    "dim1": -8.1705,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -7.0842,
+    "dim1": -9.2145,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 14.8461,
+    "dim1": 22.3316,
     "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
    },
    {
-    "dim1": 8.3349,
+    "dim1": 14.3723,
     "faction": "Isamaa fraktsioon"
    },
    {
-    "dim1": 7.5973,
+    "dim1": 13.1655,
     "faction": "Eesti Keskerakonna fraktsioon"
    },
    {
-    "dim1": 8.4035,
+    "dim1": 14.7193,
     "faction": "Eesti Keskerakonna fraktsioon"
    },
    {
-    "dim1": -2.3408,
+    "dim1": -3.8521,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -8.2176,
+    "dim1": -10.9394,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 17.7658,
-    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
-   },
-   {
-    "dim1": -6.7395,
-    "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
-   },
-   {
-    "dim1": -7.9914,
-    "faction": "Eesti Reformierakonna fraktsioon"
-   },
-   {
-    "dim1": 8.3668,
-    "faction": "Eesti Keskerakonna fraktsioon"
-   },
-   {
-    "dim1": 13.8512,
-    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
-   },
-   {
-    "dim1": -8.6047,
-    "faction": "Eesti Reformierakonna fraktsioon"
-   },
-   {
-    "dim1": -6.3563,
-    "faction": "Eesti Reformierakonna fraktsioon"
-   },
-   {
-    "dim1": 8.4074,
-    "faction": "Isamaa fraktsioon"
-   },
-   {
-    "dim1": -7.7918,
-    "faction": "Eesti 200 fraktsioon"
-   },
-   {
-    "dim1": 8.9017,
-    "faction": "Isamaa fraktsioon"
-   },
-   {
-    "dim1": -8.1462,
-    "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
-   },
-   {
-    "dim1": -8.0713,
-    "faction": "Eesti Reformierakonna fraktsioon"
-   },
-   {
-    "dim1": 8.2638,
-    "faction": "Isamaa fraktsioon"
-   },
-   {
-    "dim1": -1.6107,
-    "faction": "Eesti Reformierakonna fraktsioon"
-   },
-   {
-    "dim1": 7.4926,
+    "dim1": 23.4707,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": -3.0004,
+    "dim1": -3.9303,
     "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
    },
    {
-    "dim1": -5.6059,
-    "faction": "Eesti 200 fraktsioon"
-   },
-   {
-    "dim1": -7.5538,
+    "dim1": -9.9339,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -6.3774,
-    "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
+    "dim1": -8.0406,
+    "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 15.4797,
-    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
-   },
-   {
-    "dim1": 15.4164,
-    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
-   },
-   {
-    "dim1": 14.8968,
-    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
-   },
-   {
-    "dim1": 15.5214,
-    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
-   },
-   {
-    "dim1": 8.1293,
+    "dim1": 14.3238,
     "faction": "Eesti Keskerakonna fraktsioon"
    },
    {
-    "dim1": -6.0382,
-    "faction": "Eesti 200 fraktsioon"
-   },
-   {
-    "dim1": 8.9561,
-    "faction": "Isamaa fraktsioon"
-   },
-   {
-    "dim1": -6.0566,
-    "faction": "Eesti Reformierakonna fraktsioon"
-   },
-   {
-    "dim1": 8.3047,
+    "dim1": 8.6446,
     "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": 10.4614,
+    "dim1": -11.303,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -8.1059,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": 13.4725,
     "faction": "Isamaa fraktsioon"
    },
    {
-    "dim1": -9.4367,
-    "faction": "Eesti Reformierakonna fraktsioon"
+    "dim1": -10.3395,
+    "faction": "Eesti 200 fraktsioon"
    },
    {
-    "dim1": 9.5862,
+    "dim1": 4.7487,
+    "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
+   },
+   {
+    "dim1": 15.0933,
     "faction": "Isamaa fraktsioon"
    },
    {
-    "dim1": -8.7035,
+    "dim1": -7.9944,
+    "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
+   },
+   {
+    "dim1": -11.5194,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 9.2655,
+    "dim1": 13.3217,
     "faction": "Isamaa fraktsioon"
    },
    {
-    "dim1": -7.4264,
-    "faction": "Eesti 200 fraktsioon"
-   },
-   {
-    "dim1": -5.8344,
+    "dim1": -2.6159,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -7.7599,
+    "dim1": 9.3747,
+    "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
+   },
+   {
+    "dim1": -3.0919,
+    "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
+   },
+   {
+    "dim1": -6.5385,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": -9.5496,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -8.3839,
+    "dim1": -5.5352,
+    "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
+   },
+   {
+    "dim1": 21.8058,
+    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
+   },
+   {
+    "dim1": 22.4524,
+    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
+   },
+   {
+    "dim1": 22.049,
+    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
+   },
+   {
+    "dim1": 21.4035,
+    "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
+   },
+   {
+    "dim1": 13.1231,
+    "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
+   },
+   {
+    "dim1": -8.8534,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": 14.5875,
+    "faction": "Isamaa fraktsioon"
+   },
+   {
+    "dim1": -6.5492,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -8.1094,
+    "dim1": -9.4243,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -7.4866,
-    "faction": "Eesti 200 fraktsioon"
+    "dim1": 10.7657,
+    "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    },
    {
-    "dim1": -6.7089,
-    "faction": "Eesti 200 fraktsioon"
+    "dim1": 16.3874,
+    "faction": "Isamaa fraktsioon"
    },
    {
-    "dim1": -6.0051,
-    "faction": "Eesti 200 fraktsioon"
-   },
-   {
-    "dim1": -8.003,
-    "faction": "Eesti 200 fraktsioon"
-   },
-   {
-    "dim1": -7.7792,
-    "faction": "Eesti 200 fraktsioon"
-   },
-   {
-    "dim1": -7.2653,
+    "dim1": -11.8271,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 7.4022,
+    "dim1": 15.5052,
+    "faction": "Isamaa fraktsioon"
+   },
+   {
+    "dim1": -11.7723,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": 1.9689,
+    "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
+   },
+   {
+    "dim1": 15.122,
+    "faction": "Isamaa fraktsioon"
+   },
+   {
+    "dim1": -10.1492,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": -7.8238,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -10.7818,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -11.0978,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -10.3781,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -10.4226,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": -9.6135,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": -7.7652,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": -10.3455,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": -8.5095,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": -10.2675,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": 13.9831,
     "faction": "Eesti Keskerakonna fraktsioon"
    },
    {
-    "dim1": -6.0726,
+    "dim1": -9.6896,
     "faction": "Eesti 200 fraktsioon"
    },
    {
-    "dim1": -7.3985,
+    "dim1": -9.8377,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": 13.4778,
+    "dim1": 20.2351,
+    "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
+   },
+   {
+    "dim1": 21.9262,
     "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
    },
    {
-    "dim1": 14.4419,
-    "faction": "Eesti Konservatiivse Rahvaerakonna fraktsioon"
-   },
-   {
-    "dim1": -9.6673,
+    "dim1": -10.9958,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -9.1382,
+    "dim1": -8.4857,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -9.1539,
+    "dim1": -11.9953,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -8.9199,
+    "dim1": -11.8826,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -7.6694,
+    "dim1": -11.9966,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -6.921,
+    "dim1": -10.4436,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -8.6353,
     "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
    },
    {
-    "dim1": -6.8316,
+    "dim1": -8.7964,
     "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
    },
    {
-    "dim1": -5.3077,
+    "dim1": -7.847,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -7.1088,
+    "dim1": -8.9118,
     "faction": "Eesti 200 fraktsioon"
    },
    {
-    "dim1": -9.5014,
+    "dim1": -12.5302,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -8.2921,
+    "dim1": -7.247,
     "faction": "Sotsiaaldemokraatliku Erakonna fraktsioon"
    },
    {
-    "dim1": -6.3097,
+    "dim1": -8.5398,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -8.3579,
+    "dim1": -11.1617,
     "faction": "Eesti 200 fraktsioon"
    },
    {
-    "dim1": -9.8467,
+    "dim1": -12.3688,
     "faction": "Eesti Reformierakonna fraktsioon"
    },
    {
-    "dim1": -8.7456,
+    "dim1": -8.6672,
+    "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
+   },
+   {
+    "dim1": -11.9641,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": 14.6798,
+    "faction": "Eesti Keskerakonna fraktsioon"
+   },
+   {
+    "dim1": -9.9686,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -10.8808,
     "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": -11.1802,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -10.5872,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -5.7152,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": -5.2303,
+    "faction": "Eesti Reformierakonna fraktsioon"
+   },
+   {
+    "dim1": -5.7238,
+    "faction": "Eesti 200 fraktsioon"
+   },
+   {
+    "dim1": 14.0647,
+    "faction": "Fraktsiooni mittekuuluvad Riigikogu liikmed"
    }
   ],
   "factions": {
    "Eesti Reformierakonna fraktsioon": {
-    "n": 37,
-    "median": -7.991,
+    "n": 45,
+    "median": -10.444,
     "iqr": [
-     -8.92,
-     -7.084
+     -11.519,
+     -8.54
     ]
    },
    "Eesti 200 fraktsioon": {
-    "n": 14,
-    "median": -7.453,
+    "n": 16,
+    "median": -9.652,
     "iqr": [
-     -7.789,
-     -6.232
+     -10.341,
+     -8.323
     ]
    },
    "Sotsiaaldemokraatliku Erakonna fraktsioon": {
-    "n": 9,
-    "median": -6.832,
+    "n": 12,
+    "median": -6.043,
     "iqr": [
-     -7.121,
-     -6.377
+     -7.434,
+     -3.721
     ]
    },
    "Fraktsiooni mittekuuluvad Riigikogu liikmed": {
-    "n": 10,
-    "median": 7.384,
+    "n": 18,
+    "median": 10.286,
     "iqr": [
-     6.413,
-     7.677
+     3.317,
+     17.693
     ]
    },
    "Eesti Keskerakonna fraktsioon": {
     "n": 7,
-    "median": 8.129,
+    "median": 14.324,
     "iqr": [
-     7.576,
-     8.385
+     13.804,
+     14.652
     ]
    },
    "Isamaa fraktsioon": {
     "n": 8,
-    "median": 8.929,
+    "median": 14.84,
     "iqr": [
-     8.389,
-     9.346
+     14.147,
+     15.218
     ]
    },
    "Eesti Konservatiivse Rahvaerakonna fraktsioon": {
-    "n": 16,
-    "median": 14.889,
+    "n": 11,
+    "median": 22.049,
     "iqr": [
-     14.214,
-     15.49
+     21.842,
+     22.392
     ]
    }
   }
@@ -1018,8 +1080,8 @@
   "encoding": "u32 frames | u32 offsets[frames+1] | u16 atlas slots",
   "magic": "KRB1",
   "frames": 100,
-  "events": 151271,
-  "bytes": 302954
+  "events": 153063,
+  "bytes": 306538
  },
  "atlas": {
   "somas": 15999,
@@ -1030,6 +1092,518 @@
    "ascending",
    "descending"
   ],
+  "group_hz": {
+   "optic": [
+    0.0,
+    0.0,
+    0.09,
+    1.85,
+    0.61,
+    0.38,
+    0.66,
+    1.13,
+    0.98,
+    1.73,
+    1.24,
+    1.73,
+    2.11,
+    1.42,
+    1.94,
+    2.28,
+    1.79,
+    2.2,
+    2.72,
+    2.98,
+    1.62,
+    1.73,
+    2.02,
+    2.63,
+    3.3,
+    3.09,
+    2.52,
+    2.25,
+    2.69,
+    2.25,
+    3.27,
+    2.05,
+    1.73,
+    2.4,
+    2.98,
+    1.94,
+    2.2,
+    2.98,
+    1.5,
+    2.23,
+    2.14,
+    2.63,
+    2.63,
+    1.33,
+    2.17,
+    2.02,
+    2.63,
+    1.97,
+    1.65,
+    3.01,
+    2.49,
+    2.8,
+    1.71,
+    2.37,
+    4.08,
+    2.25,
+    2.28,
+    2.31,
+    2.34,
+    1.71,
+    3.21,
+    3.32,
+    1.68,
+    1.79,
+    2.17,
+    2.86,
+    2.34,
+    2.31,
+    2.31,
+    3.27,
+    2.83,
+    1.88,
+    2.2,
+    2.11,
+    2.08,
+    2.02,
+    3.12,
+    3.32,
+    2.66,
+    3.21,
+    3.21,
+    2.78,
+    2.6,
+    4.39,
+    2.63,
+    2.43,
+    3.79,
+    3.09,
+    1.59,
+    2.89,
+    3.64,
+    1.88,
+    2.37,
+    3.12,
+    3.01,
+    1.82,
+    2.63,
+    2.28,
+    2.4,
+    1.85
+   ],
+   "central": [
+    0.29,
+    13.84,
+    56.34,
+    90.97,
+    90.68,
+    89.66,
+    103.21,
+    97.86,
+    102.14,
+    95.92,
+    106.8,
+    108.35,
+    96.5,
+    99.56,
+    113.21,
+    102.67,
+    99.42,
+    108.64,
+    103.69,
+    108.45,
+    99.61,
+    105.59,
+    108.94,
+    98.69,
+    100.53,
+    111.22,
+    105.54,
+    99.71,
+    110.39,
+    104.03,
+    106.56,
+    98.54,
+    107.24,
+    108.6,
+    101.07,
+    100.87,
+    110.68,
+    103.89,
+    100.29,
+    108.26,
+    103.16,
+    107.53,
+    99.32,
+    105.54,
+    109.86,
+    97.28,
+    100.19,
+    112.43,
+    105.44,
+    99.66,
+    107.67,
+    103.69,
+    109.03,
+    101.07,
+    109.03,
+    108.11,
+    97.77,
+    99.81,
+    110.68,
+    104.71,
+    99.56,
+    111.61,
+    102.77,
+    104.86,
+    100.92,
+    107.87,
+    110.1,
+    99.95,
+    101.31,
+    112.29,
+    103.4,
+    97.81,
+    108.69,
+    106.7,
+    104.61,
+    102.19,
+    110.0,
+    108.94,
+    99.81,
+    99.76,
+    112.92,
+    105.25,
+    100.15,
+    110.3,
+    105.44,
+    105.39,
+    99.95,
+    106.31,
+    106.85,
+    99.9,
+    100.73,
+    114.04,
+    102.62,
+    101.17,
+    109.08,
+    104.42,
+    106.17,
+    101.26,
+    108.06,
+    109.76
+   ],
+   "cord": [
+    0.0,
+    0.22,
+    4.27,
+    28.52,
+    11.98,
+    4.87,
+    5.46,
+    9.88,
+    9.06,
+    9.58,
+    10.1,
+    11.9,
+    11.9,
+    14.6,
+    11.68,
+    15.27,
+    10.63,
+    13.55,
+    14.45,
+    15.19,
+    14.22,
+    13.55,
+    16.32,
+    15.27,
+    14.6,
+    13.4,
+    14.52,
+    13.77,
+    13.55,
+    16.17,
+    14.9,
+    14.9,
+    14.07,
+    16.02,
+    15.79,
+    15.49,
+    17.44,
+    15.49,
+    13.25,
+    13.62,
+    13.17,
+    12.87,
+    13.85,
+    13.25,
+    14.3,
+    14.15,
+    14.22,
+    13.85,
+    12.95,
+    12.72,
+    14.97,
+    11.3,
+    15.94,
+    15.87,
+    14.52,
+    13.77,
+    15.42,
+    15.12,
+    13.55,
+    13.85,
+    14.97,
+    14.22,
+    11.9,
+    13.17,
+    13.62,
+    12.57,
+    14.97,
+    17.96,
+    14.07,
+    13.62,
+    18.34,
+    12.13,
+    12.95,
+    15.94,
+    16.69,
+    14.37,
+    16.77,
+    12.2,
+    14.15,
+    12.65,
+    13.85,
+    13.55,
+    15.72,
+    14.22,
+    14.3,
+    19.69,
+    16.24,
+    15.87,
+    12.5,
+    13.85,
+    12.13,
+    12.28,
+    13.02,
+    14.45,
+    12.87,
+    16.99,
+    15.19,
+    15.42,
+    17.59,
+    17.44
+   ],
+   "ascending": [
+    0.0,
+    0.82,
+    8.17,
+    27.58,
+    14.3,
+    11.44,
+    12.67,
+    15.53,
+    18.18,
+    18.39,
+    17.98,
+    17.16,
+    21.65,
+    21.04,
+    20.43,
+    21.04,
+    17.57,
+    25.94,
+    20.84,
+    20.02,
+    22.88,
+    26.76,
+    19.2,
+    20.63,
+    21.04,
+    24.51,
+    21.04,
+    20.22,
+    26.35,
+    23.7,
+    22.68,
+    22.06,
+    22.06,
+    24.31,
+    25.74,
+    22.88,
+    23.7,
+    20.22,
+    20.22,
+    23.08,
+    19.0,
+    19.41,
+    24.31,
+    22.68,
+    23.49,
+    17.98,
+    21.86,
+    22.47,
+    19.61,
+    22.68,
+    24.11,
+    19.41,
+    25.33,
+    26.56,
+    23.08,
+    21.86,
+    23.7,
+    19.82,
+    21.04,
+    24.11,
+    21.45,
+    23.9,
+    20.63,
+    19.82,
+    21.86,
+    23.49,
+    22.47,
+    20.43,
+    23.29,
+    25.74,
+    24.72,
+    18.79,
+    21.86,
+    22.88,
+    23.08,
+    24.72,
+    26.35,
+    20.22,
+    25.33,
+    20.84,
+    24.92,
+    23.29,
+    24.72,
+    24.92,
+    27.17,
+    28.19,
+    25.74,
+    26.56,
+    22.68,
+    22.88,
+    22.06,
+    22.06,
+    20.63,
+    22.47,
+    22.68,
+    25.13,
+    22.06,
+    21.25,
+    28.8,
+    25.13
+   ],
+   "descending": [
+    0.0,
+    1.68,
+    37.04,
+    42.84,
+    17.68,
+    16.01,
+    21.95,
+    25.91,
+    31.86,
+    25.46,
+    31.1,
+    30.64,
+    30.79,
+    28.66,
+    31.1,
+    30.03,
+    30.79,
+    30.64,
+    33.23,
+    33.99,
+    27.59,
+    32.16,
+    31.25,
+    29.42,
+    37.65,
+    29.73,
+    30.34,
+    30.49,
+    36.28,
+    32.47,
+    33.08,
+    29.73,
+    30.79,
+    33.54,
+    29.27,
+    28.51,
+    33.23,
+    28.35,
+    34.15,
+    30.79,
+    25.61,
+    32.62,
+    34.6,
+    28.05,
+    30.95,
+    33.38,
+    30.79,
+    27.9,
+    32.16,
+    35.82,
+    29.12,
+    30.18,
+    34.15,
+    35.37,
+    30.34,
+    31.1,
+    30.64,
+    30.49,
+    30.64,
+    33.38,
+    32.93,
+    31.25,
+    26.68,
+    28.81,
+    32.62,
+    30.49,
+    33.08,
+    34.3,
+    30.49,
+    33.08,
+    30.95,
+    26.22,
+    32.16,
+    35.06,
+    29.12,
+    36.59,
+    38.72,
+    32.01,
+    33.54,
+    33.99,
+    36.28,
+    33.54,
+    33.38,
+    34.6,
+    33.23,
+    34.3,
+    33.23,
+    27.13,
+    31.71,
+    36.59,
+    30.95,
+    30.49,
+    30.18,
+    31.86,
+    32.01,
+    33.69,
+    31.55,
+    33.84,
+    33.69,
+    32.47
+   ]
+  },
   "sampled_fraction": {
    "optic": 0.0762,
    "central": 0.128,
@@ -4701,6 +5275,6 @@
    923203,
    924718
   ],
-  "jev_input_tokens": 1189
+  "jev_input_tokens": 1233
  }
 }
