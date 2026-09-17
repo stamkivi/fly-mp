@@ -43,7 +43,7 @@ def caveats(bundle: dict, calibration: dict) -> str:
     frac = bundle["atlas"]["sampled_fraction"]
     parts = [
         (
-            "<b>The bill does not measurably change what this fly does.</b> Swept over "
+            "<b>The bill does not measurably change what this fly's readout does.</b> Swept over "
             f"{n} input phases per point, the strongest of the nine channels "
             f"(<code>{widest_key}</code>) moves the readout by "
             f"{widest['span']:+.2f}&nbsp;Hz &plusmn;&nbsp;{widest['se']:.2f} &mdash; and "
@@ -52,7 +52,9 @@ def caveats(bundle: dict, calibration: dict) -> str:
             "positive extreme against every channel at its negative extreme moves it by "
             "&minus;0.09&nbsp;Hz &plusmn;&nbsp;0.38. The animation above is real, and so is "
             "the verdict it produced, but what you are watching the brain respond to is "
-            "being switched on &mdash; not to this bill."
+            "being switched on &mdash; not to this bill. The signal is there and the average "
+            "is what loses it: against a permutation null, 22 of the 1,304 descending "
+            "neurons respond to the stimulus where three would be expected by chance."
         ),
         (
             "<b>Why: the network has two states and nothing in between.</b> With no input "
@@ -93,15 +95,20 @@ def finding(calibration: dict) -> str:
     n = calibration.get("sweep_seeds", 1)
     resolved = calibration.get("channels_resolved_above_noise", [])
     return json.dumps(
-        "<b>Finding, stated before you watch anything:</b> this brain fires, and the firing "
-        "below is real &mdash; but <b>the bill does not measurably change it</b>. Driving "
-        "every topic channel to one extreme against the other moves the readout by "
+        "<b>Finding, stated before you watch anything:</b> the brain below is real and so is "
+        "the firing &mdash; but <b>the verdict it produces is not yet reading the bill</b>. "
+        "Driving every topic channel to one extreme against the other moves this readout by "
         "&minus;0.09&nbsp;Hz &plusmn;&nbsp;0.38, which is nothing, and over "
         f"{n} input phases per point {'only ' + str(len(resolved)) if resolved else 'none'} "
-        "of the nine channels separate from the network's own run-to-run spread. The replay "
-        "is an honest recording of a fly brain responding to being switched on. It is not "
-        "yet a recording of a fly brain reading a bill, and the difference is the whole "
-        "point of building it."
+        "of the nine channels separate from the network's own run-to-run spread."
+        "<br><br>"
+        "The signal is not missing, though &mdash; it is being averaged away. The readout is "
+        "the mean rate of 656 descending neurons minus the mean rate of 648, and against a "
+        "permutation null <b>22 of those 1,304 cells do respond</b> to the stimulus where "
+        "three would be expected by chance. The connectome transmits; this decoder discards. "
+        "Fixing that is the next experiment, and until it is done the vote below should be "
+        "read as an honest recording of a fly brain being switched on rather than as an "
+        "opinion about the bill."
     )
 
 

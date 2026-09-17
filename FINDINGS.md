@@ -6,21 +6,32 @@ published figures to within one synapse) and the XV Riigikogu corpus.*
 
 ## The short answer
 
-**The picture is a fly brain. The vote is not a vote.**
+**The picture is a fly brain. The vote is not yet a vote — because of the decoder, not the
+connectome.**
 
 The animation works: real soma coordinates, real spikes, activity propagating antennal lobe
 → central brain → nerve cord in the correct anatomical order, and the central brain visibly
 carrying the response while the optic lobes stay dark. That is the question the slice was
 built to answer, and the answer is yes.
 
-Building it, however, put a measurement in reach that had not been made: **does the bill
-change what the fly does?** It does not. Driving every channel to +1 versus every channel to
-−1 — the largest stimulus contrast this encoding can produce — moves the descending readout
+Building it put a measurement in reach that had not been made: **does the bill change what
+the fly does?** Through the current readout, no. Driving every channel to +1 against every
+channel at −1 — the largest contrast this encoding can produce — moves the descending readout
 by **−0.09 ± 0.38 Hz (t = −0.24)**. SPEC's Stage 2 verification says of the stimulus sweep:
-*"a flat line is failure."* Measured properly, the line is flat.
+*"a flat line is failure."* Measured properly, the line is flat, and so is every other scalar
+summary of the network tried alongside it.
 
-The cause is identified below and it is not the readout, the encoder, or the scoring. It is
-that **the network has two states — silent and saturated — and no graded regime in between.**
+But the signal is there. Against a label-permutation null, **22 of the 1,304 descending
+neurons respond to the stimulus** where 3.4 would be expected by chance (p = 0.018; the most
+sensitive single cell reaches |t| = 5.59, p = 0.007). SPEC's readout is the mean rate of one
+side minus the mean rate of the other, so those twenty are averaged in with 1,284 that do
+nothing. **The connectome transmits; the decoder discards.**
+
+Two things cause this and they stack. The network is **bistable** — silent with no input,
+~22 Hz with half a hertz of it, and only 24 Hz with two hundred times that — so its
+population rate carries nothing. And the readout takes a population mean, which is precisely
+the statistic that bistability pins. The fix most likely to work is a cross-validated sparse
+readout, fitted against the stimulus sweep and never against a vote.
 
 ---
 
@@ -139,10 +150,43 @@ quantities that are not differences (12 phases each):
 | central brain (32,164 cells) | 99.05 | 99.86 | 99.87 | −0.01 ± 0.19 | −0.05 |
 | whole network | 22.44 | 22.72 | 22.72 | +0.01 ± 0.09 | +0.07 |
 
-**Nothing responds.** Not the readout, not a different readout, not the region the input
-lands in. Changing the decoder would not have helped.
+No *scalar* responds. Not the readout, not the obvious alternatives, not the region the
+input lands in.
 
-### 2.4 Why: the network is bistable, not graded
+### 2.3b But individual descending neurons do respond — the average is what destroys it
+
+Every scalar above is a **mean over 1,304 cells**, which is only blind if the signal is
+spread across them. It is not. Taking the full 1,304-dimensional descending rate vector
+under the same full-scale contrast, 12 phases per condition, against a **label-permutation
+null** (400 permutations — the right null here, because descending neurons are strongly
+correlated and the independent-tests expectation is badly wrong):
+
+| statistic | observed | permuted null | p |
+|---|---:|---:|---:|
+| descending cells with \|t\| > 3 | **22** | 3.4 ± 6.1 | **0.018** |
+| most stimulus-sensitive single cell, \|t\| | **5.59** | 3.54 ± 0.70 | **0.007** |
+| leave-one-out nearest-centroid accuracy | 0.625 | 0.493 ± 0.112 | 0.198 |
+
+**The connectome does carry the stimulus to the descending neurons.** It reaches a small
+number of them — on the order of twenty out of 1,304 — and SPEC's readout, the mean rate of
+one side minus the mean rate of the other, averages those twenty into 1,284 that do not
+respond. That is why every scalar is flat. It is a readout-design failure, not proof that
+the network transmits nothing, and the earlier sentence in this document claiming otherwise
+was wrong.
+
+Held deliberately short of a claim: **which** cells is not established. They were selected
+on the same runs that tested them, so their identity is not validated — the permutation null
+tests whether *more signal than chance exists*, which it does, not whether these particular
+cells are the carriers. A cross-validated decoder on held-out phases is the experiment that
+would settle it, and it has not been run.
+
+One boundary worth marking now, because it is the difference between a result and a rigged
+one: a readout fitted to **maximise stimulus sensitivity** is outcome-blind and legitimate —
+it is fitted against the sweep, and never sees a vote. A readout fitted to maximise agreement
+with a faction is the thing SPEC §4 forbids. These are not the same operation and the
+distinction must survive into whatever replaces the decoder.
+
+### 2.4 Why the scalars are flat: the network is bistable, not graded
 
 The diagnosis. Flat drive on all sixteen ORN populations, swept over input rate, 3 phases each:
 
@@ -168,10 +212,14 @@ ORNs are a rounding error on 166,700 neurons feeding each other. **The bill is n
 with noise; it is competing with the network's own self-excitation, and losing by two orders
 of magnitude.**
 
-This explains every other symptom at once: the flat sweep, the phantom SNR, the fly's
-"wavering", and the earlier observation that `weight_scale` 0.02 leaves the descending neurons
-silent while 0.05 brings them to life. Those two scales are not a range containing a working
-point — **they are the two sides of a bifurcation.**
+This explains every population-level symptom at once: the flat sweep, the phantom SNR, the
+fly's "wavering", and the earlier observation that `weight_scale` 0.02 leaves the descending
+neurons silent while 0.05 brings them to life. Those two scales are not a range containing a
+working point — **they are the two sides of a bifurcation.**
+
+Read together with 2.3b: the *population rate* is pinned by self-excitation, but the
+*pattern* is not entirely. A small stimulus-dependent signal rides on top of a saturated
+network, and any readout that takes a mean throws it away.
 
 ### 2.5 So the wavering is not deliberation
 
@@ -191,34 +239,45 @@ responding to the bill at all. The page should not, and now does not, claim othe
 (1.8–3.5 s per bill, event-driven as required), the Jev scoring, the atlas, the bundle format,
 the page, and the propagation result in Part 1. The measurement harness is what found this.
 
-**Not standing.** `SNR ≈ 0.5`, `SNR = 0.88`, and any per-channel sensitivity ranking. The true
-full-scale effect is consistent with zero, bounded by roughly ±0.8 Hz at 95%.
+**Not standing.** `SNR ≈ 0.5`, `SNR = 0.88`, and any per-channel sensitivity ranking. On the
+mean-rate readout the full-scale effect is consistent with zero, bounded by roughly ±0.8 Hz
+at 95%.
 
-**Stage 3 as designed would produce a voting record of noise.** 784 bills × 5 seeds against a
-stimulus effect indistinguishable from zero yields a record whose correlation with any faction
-is chance. The rewired-graph control — the actual experiment — would then compare one
-stimulus-blind random voter against twenty others and find, correctly, no difference. That is
-not a negative result about connectomes; it is a null instrument.
+**Also not standing: the decoder.** `decode.race` averages 1,304 cells per side. Per 2.3b
+that is where the signal dies, and it is the one component of the pipeline that these
+measurements condemn outright.
+
+**Stage 3 as designed would produce a voting record of noise** — not because the connectome
+is silent, but because the current readout cannot hear it. 784 bills × 5 seeds through a
+mean-rate difference yields a record whose correlation with any faction is chance, and the
+rewired-graph control would then compare one stimulus-blind random voter against twenty
+others and find, correctly, no difference. Running it before the readout is fixed would burn
+two hours to measure the decoder rather than the fly.
 
 ## What would have to change first
 
 Not for me to decide, and deliberately not attempted here — `weight_scale` was left at the
-calibrated 0.05e-3 throughout, per the handoff.
+calibrated 0.05e-3 throughout, per the handoff. In rough order of expected value:
 
-1. **Get the network below self-excitation and drive it harder.** The reason 0.02 looked dead
+1. **Replace the mean-rate readout with a cross-validated sparse one.** This is the cheapest
+   and, on 2.3b, the most likely to work: fit a decoder on the DN population against the
+   *stimulus sweep*, validate on held-out input phases, and only then use it on bills. Fitted
+   against the sweep it never sees a vote, so it stays outcome-blind. If held-out accuracy is
+   real, most of what looks broken here is fixed without touching the model at all.
+2. **Get the network below self-excitation and drive it harder.** The reason 0.02 looked dead
    is probably correct behaviour: a non-self-sustaining network only fires where the input
    drives it, and sixteen ORN populations are too small an input to reach the descending
    neurons through the feedforward path. Widening the input — more glomeruli, or projecting
    scores onto antennal-lobe projection neurons rather than receptor neurons — is the lever,
    not a higher weight scale.
-2. **Add what keeps a real brain off this cliff.** The kernel has no spike-frequency
+3. **Add what keeps a real brain off this cliff.** The kernel has no spike-frequency
    adaptation, no synaptic depression and no global inhibitory normalisation. A recurrent
    network of 25.6M excitatory-dominated synapses without any of them has no stable
-   intermediate state, which is exactly what the sweep shows.
-3. **Make the sweep a gate.** It is cheap (16 × n sims) and it is the difference between a
+   intermediate state, which is exactly what the ignition curve shows.
+4. **Make the sweep a gate.** It is cheap (16 × n sims) and it is the difference between a
    study and a decorated random number generator. It should run, and pass, before Stage 3 is
    launched — and `karbes calibrate` now reports which channels are separable from the noise
-   at all, which on the current model is none of them.
+   at all, which on the current readout is none of them.
 
 ## Incidental
 
@@ -247,5 +306,6 @@ uv run pytest
 ```
 
 Raw measurements behind every number above: `runs/calibration.json`, `runs/power_test.json`,
-`runs/readout_test.json`, `runs/ignition.json`. All read from cache and the compiled CSR;
+`runs/readout_test.json`, `runs/ignition.json`, `runs/population_test.json`,
+`runs/perm_test.json`. All read from cache and the compiled CSR;
 none re-fetch anything.

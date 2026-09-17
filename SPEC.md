@@ -1015,8 +1015,18 @@ away into false confidence.
 > against **every** channel at −1 — is **−0.09 ± 0.38 Hz (t = −0.24)**. Against a blank bill,
 > −0.21 ± 0.42. `nature`, which looked like a 4.12 Hz effect on one seed, is +0.37 ± 0.43. The
 > same contrast moves the total DN rate by −1.08 ± 0.74, the central brain (32,164 cells) by
-> −0.01 ± 0.19, and the whole network by +0.01 ± 0.09. **Nothing responds**, so this is not a
-> readout-design problem and a different decoder would not have helped.
+> −0.01 ± 0.19, and the whole network by +0.01 ± 0.09. No *scalar* responds.
+>
+> **But the population does, and the averaging is what loses it.** Taking the full
+> 1,304-dimensional DN rate vector under the same contrast, against a 400-draw label
+> permutation null: 22 cells at |t| > 3 against 3.4 expected (p = 0.018), max |t| 5.59 against
+> 3.54 (p = 0.007); a naive all-cells nearest-centroid classifier does not find it
+> (0.625, p = 0.198). So §4's `Δ = mean rate(right DN) − mean rate(left DN)` averages roughly
+> twenty responsive cells in with 1,284 that do nothing. **This is a decoder failure, not
+> evidence that the connectome transmits nothing.** Which cells is not established — they were
+> selected on the runs that tested them — so the experiment that settles it is a
+> cross-validated sparse readout fitted **against the sweep, never against a vote**, which
+> keeps it outcome-blind in the sense §4 requires.
 >
 > Cause, measured: **the network is bistable.** Zero input leaves it exactly silent; 0.5 Hz on
 > ~1,000 ORNs takes it to 21.4 Hz; a further 200× increase, to 100 Hz, takes it to 23.6 Hz.
@@ -1026,10 +1036,11 @@ away into false confidence.
 > helped.
 >
 > This is the flat sweep that §Verification pre-commits as failure, and it gates Stage 3: as it
-> stands the I/O mapping is a null instrument, and a voting record built on it would be noise.
-> Levers are in FINDINGS.md §"What would have to change first" — widen the input rather than
-> raise the weight scale, add the adaptation and inhibitory normalisation the kernel lacks, and
-> make the sweep a machine-enforced gate. Everything else in the Stage 2b slice stands.
+> stands a voting record built on this decoder would be noise. Levers are in FINDINGS.md
+> §"What would have to change first", in order — replace the mean-rate readout with a
+> cross-validated sparse one, widen the input rather than raise the weight scale, add the
+> adaptation and inhibitory normalisation the kernel lacks, and make the sweep a
+> machine-enforced gate. Everything else in the Stage 2b slice stands.
 
 ---
 
