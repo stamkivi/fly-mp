@@ -315,6 +315,15 @@ calibrated 0.05e-3 throughout, per the handoff. In rough order of expected value
 - **The readout was 3 descending types; it is now all 1,304** with a lateralised soma, which is
   what the −4.577 → +0.011 Hz asymmetry fix actually requires.
 
+## The page
+
+Published **private** on Display, 2026-09-17:
+<https://pluralplatform.dsp.so/HcPL3HY7-k-rbes-one-bill-replay-stage-2b>
+
+It is one self-contained HTML file with the bundle, the spike raster and the soma atlas
+baked in — no LLM call, no simulation and no network fetch at view time. `runs/page/index.html`
+is the same file and opens from disk.
+
 ## Reproducing
 
 ```sh
