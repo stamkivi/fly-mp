@@ -62,13 +62,19 @@ def _calibrate(args: argparse.Namespace) -> int:
     from karbes import replay
 
     pops, graph = _load_graph()
-    result = replay.calibrate(graph, pops, seeds=args.seeds)
+    result = replay.calibrate(graph, pops, seeds=args.seeds, sweep_seeds=args.sweep_seeds)
     RUNS.mkdir(exist_ok=True)
     (RUNS / "calibration.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     print(f"\nsignal (mean channel span)  {result['signal_hz']:>8.3f} Hz")
     print(f"noise (blank-bill SD)       {result['noise_hz']:>8.3f} Hz")
     print(f"SNR                         {result['snr']:>8.3f}")
     print(f"dead band                   {result['dead_band_hz']:>8.3f} Hz")
+    resolved = result["channels_resolved_above_noise"]
+    print(
+        f"\nchannels separable from the noise at all: "
+        f"{len(resolved)} of {len(result['sweep'])}"
+        + (f"  ({', '.join(resolved)})" if resolved else "")
+    )
     print(f"\nwritten to {RUNS / 'calibration.json'}")
     return 0
 
@@ -201,6 +207,9 @@ def main() -> int:
 
     p = sub.add_parser("calibrate", help="Stage 2b — measure the dead band and the SNR")
     p.add_argument("--seeds", type=int, default=20, help="blank-bill runs behind the dead band")
+    p.add_argument(
+        "--sweep-seeds", type=int, default=8, help="input phases averaged per sweep point"
+    )
     p.set_defaults(func=_calibrate)
 
     p = sub.add_parser("replay", help="Stage 2b — build one bill's replay bundle")

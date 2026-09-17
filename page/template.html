@@ -77,11 +77,16 @@ h2{font-family:var(--display);font-weight:600;font-size:22px;margin:40px 0 12px}
 .ch .row{display:flex;justify-content:space-between;color:var(--dim);margin-bottom:3px}
 .ch .track{position:relative;height:9px;background:#0C0E14;border:1px solid var(--line);
            border-radius:2px;overflow:hidden}
-.ch .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
-.ch .fill{position:absolute;top:0;bottom:0;background:var(--karbes);
+.ch .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);z-index:2}
+/* Two bars per channel. The outline is what Jev read; the solid fill is what the fly
+   actually smells, which is that reading weighted by how confident Jev was. On a bill
+   where the fill is a sliver inside a wide outline, the gap *is* the finding. */
+.ch .raw{position:absolute;top:0;bottom:0;border:1px solid #3E4456;border-radius:2px;
+         width:0;left:50%;opacity:0;transition:width .5s ease,left .5s ease,opacity .5s ease}
+.ch .fill{position:absolute;top:0;bottom:0;background:var(--karbes);opacity:.15;
           transition:width .5s ease,left .5s ease,opacity .5s ease,filter .5s ease;width:0;left:50%}
 .ch.lit .fill{opacity:1}
-.ch .fill{opacity:.15}
+.ch.lit .raw{opacity:1}
 
 /* ---- race ---- */
 .race{margin-top:16px}
@@ -163,6 +168,7 @@ table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
   </div>
 
   <h2>The brain</h2>
+  <p class="lede" id="smell-note"></p>
   <div class="stage">
     <div class="brainwrap">
       <canvas id="brain"></canvas>
@@ -515,16 +521,31 @@ if ((bill.summary || "").length > 420){
     more.textContent = sumEl.classList.contains("open") ? "Collapse" : "Show the whole summary"; };
 }
 
+{
+  const worst = B.channels.filter(c => c.key !== "salience")
+    .reduce((a, c) => (c.confidence < a.confidence ? c : a));
+  document.getElementById("smell-note").textContent =
+    "Nine questions about the bill become drive into sixteen olfactory receptor populations. "
+    + "The outline is what Jev read; the solid bar is what the fly actually smells — the same "
+    + "reading, weighted by how confident Jev was, and blurred in proportion to its doubt. "
+    + `On this bill it returned ${worst.confidence.toFixed(2)} confidence on ${worst.key}, `
+    + "so that channel drives the brain at background and nothing more.";
+}
+
 const chEl = document.getElementById("channels");
 for (const c of B.channels){
   const d = document.createElement("div");
   d.className = "ch"; d.dataset.key = c.key;
   const pct = Math.abs(c.drive) * 50;
   const left = c.drive >= 0 ? 50 : 50 - pct;
+  const rawPct = Math.abs(c.score) * 50;
+  const rawLeft = c.score >= 0 ? 50 : 50 - rawPct;
   d.innerHTML =
     `<div class="row"><span>${c.key}</span>` +
     `<span>${c.score >= 0 ? "+" : ""}${c.score.toFixed(2)} · conf ${c.confidence.toFixed(2)}</span></div>` +
-    `<div class="track"><div class="mid"></div><div class="fill" ` +
+    `<div class="track"><div class="mid"></div>` +
+    `<div class="raw" style="--w:${rawPct}%;--l:${rawLeft}%"></div>` +
+    `<div class="fill" ` +
     `style="--w:${pct}%;--l:${left}%;--blur:${(1-c.confidence)*2.6}px"></div></div>`;
   chEl.appendChild(d);
 }
@@ -661,10 +682,12 @@ function tick(now){
     const el = chs[i];
     if (el.classList.contains("lit")) continue;
     el.classList.add("lit");
-    const f = el.querySelector(".fill");
-    f.style.width = f.style.getPropertyValue("--w");
-    f.style.left = f.style.getPropertyValue("--l");
-    f.style.filter = `blur(${f.style.getPropertyValue("--blur")})`;
+    for (const bar of el.querySelectorAll(".raw, .fill")){
+      bar.style.width = bar.style.getPropertyValue("--w");
+      bar.style.left = bar.style.getPropertyValue("--l");
+      const blur = bar.style.getPropertyValue("--blur");
+      if (blur) bar.style.filter = `blur(${blur})`;
+    }
   }
 
   const f = frameAt(t - LIGHT_MS);

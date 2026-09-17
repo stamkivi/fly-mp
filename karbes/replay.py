@@ -157,11 +157,44 @@ def noise_floor(
     }
 
 
-def sweep(graph: Graph, pops: Populations, params: lif.Params | None = None, seed: int = 0) -> dict:
+def _deltas(
+    graph: Graph,
+    pops: Populations,
+    scored: Scored,
+    seeds: int,
+    p: lif.Params,
+    probes: lif.Probes,
+    sizes: dict[str, int],
+) -> np.ndarray:
+    """The readout under one stimulus, across `seeds` input phases."""
+    drive = encode.drive(scored, pops, graph)
+    return np.array(
+        [
+            decode.race(
+                lif.run(graph, drive, params=p, seed=seed, probes=probes).group_counts,
+                sizes,
+                p.duration,
+            ).delta
+            for seed in range(seeds)
+        ]
+    )
+
+
+def sweep(
+    graph: Graph, pops: Populations, params: lif.Params | None = None, seeds: int = 8
+) -> dict:
     """Each channel driven to -1 and +1 in turn, everything else at zero.
 
     SPEC's Stage 2 verification: a flat line here means the connectome is not converting
     the stimulus into anything, and the whole readout is decoration.
+
+    **Every point is averaged over `seeds` input phases, and reports its standard error.**
+    A single run per pole is not a measurement here. Run-to-run spread on this readout is
+    about 1.6 Hz, and — measured — a different stimulus at the *same* seed decorrelates
+    completely (r = -0.11), because changing a channel's rate reshuffles every subsequent
+    spike time. So the seed is not a shared noise term that cancels in a difference: the
+    only way to see a channel effect is to average it out, and a span quoted without its
+    error is indistinguishable from noise.
     """
     p = params or lif.DEFAULTS
     probes = lif.Probes(
@@ -174,19 +207,33 @@ def sweep(graph: Graph, pops: Populations, params: lif.Params | None = None, see
     sizes = {"dn_left": len(pops.dn_left), "dn_right": len(pops.dn_right)}
     out: dict[str, dict[str, float]] = {}
     for channel in CHANNEL_ORNS:
+        poles = {}
         for pole in (-1.0, 1.0):
             scored = blank_score()
             scored.scores[channel] = pole
-            drive = encode.drive(scored, pops, graph)
-            result = lif.run(graph, drive, params=p, seed=seed, probes=probes)
-            delta = decode.race(result.group_counts, sizes, p.duration).delta
-            out.setdefault(channel, {})[f"{pole:+.0f}"] = round(delta, 4)
-            log.info("sweep %-12s %+.0f -> delta %+.3f Hz", channel, pole, delta)
+            poles[pole] = _deltas(graph, pops, scored, seeds, p, probes, sizes)
+        lo, hi = poles[-1.0], poles[1.0]
+        span = float(hi.mean() - lo.mean())
+        se = float(np.sqrt(hi.var(ddof=1) / seeds + lo.var(ddof=1) / seeds))
+        out[channel] = {
+            "-1": round(float(lo.mean()), 4),
+            "+1": round(float(hi.mean()), 4),
+            "span": round(span, 4),
+            "se": round(se, 4),
+            "t": round(span / se, 3) if se else None,
+        }
+        log.info(
+            "sweep %-12s span %+6.3f Hz  se %.3f  t %+.2f", channel, span, se, span / se if se else 0
+        )
     return out
 
 
 def calibrate(
-    graph: Graph, pops: Populations, seeds: int = 20, params: lif.Params | None = None
+    graph: Graph,
+    pops: Populations,
+    seeds: int = 20,
+    params: lif.Params | None = None,
+    sweep_seeds: int = 8,
 ) -> dict:
     """Measure the dead band and the signal-to-noise ratio, and report both.
 
@@ -199,8 +246,9 @@ def calibrate(
     point, and averaging it into false confidence would be the dishonest move.
     """
     floor = noise_floor(graph, pops, seeds=seeds, params=params)
-    swept = sweep(graph, pops, params=params)
-    spans = [abs(v["+1"] - v["-1"]) for v in swept.values()]
+    swept = sweep(graph, pops, params=params, seeds=sweep_seeds)
+    spans = [abs(v["span"]) for v in swept.values()]
+    resolved = [c for c, v in swept.items() if v["t"] is not None and abs(v["t"]) >= 2.0]
     signal = float(np.mean(spans))
     noise = floor["sd_delta_hz"]
     return {
@@ -208,9 +256,13 @@ def calibrate(
         "weight_scale": (params or lif.DEFAULTS).weight_scale,
         "noise_floor": floor,
         "sweep": swept,
+        "sweep_seeds": sweep_seeds,
         "signal_hz": round(signal, 4),
         "widest_channel_hz": round(float(np.max(spans)), 4),
         "narrowest_channel_hz": round(float(np.min(spans)), 4),
+        # Channels whose full-scale effect is separable from the run-to-run spread at all.
+        # A channel missing here is one the fly demonstrably cannot smell.
+        "channels_resolved_above_noise": resolved,
         "noise_hz": round(noise, 4),
         "snr": round(signal / noise, 4) if noise else None,
         "dead_band_hz": round(noise, 4),
