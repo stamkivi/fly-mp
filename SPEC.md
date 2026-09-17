@@ -689,6 +689,30 @@ check on browser-loadable formats and licences.
 
 ---
 
+## Disk: what is cheap to lose and what is not
+
+`data/` is gitignored, so nothing in it survives a fresh clone and nothing in it is backed up.
+The parts differ enormously in what they cost to rebuild, and the expensive one is not the big one.
+
+| Path | Size | Rebuild cost | Safe to delete? |
+|---|---|---|---|
+| `data/raw/voting/`, `data/raw/draft/` | ~73 MB | **~80 min** — 1,694 API calls at 1 req/s, 12/min per endpoint path | **No.** Last resort only. |
+| `data/malecns/connectome-weights-*.feather` | **1003 MB** | ~10 min re-download | **Yes — delete this first.** |
+| `data/malecns/csr-malecns-v1.0.npz` | 206 MB | 9 s, **but only while the weights feather is present** | Only if the feather is still there |
+| `data/malecns/body-{annotations,neurotransmitters}-*.feather` | 55 MB | seconds | Yes |
+| `data/raw/jev/` | small | 27 s, $0.04 | Yes |
+| `data/raw/llm/` | small | superseded by Jev; nothing reads it | **Yes, freely** |
+
+**Reclaim in this order:** `data/raw/llm/` → the weights feather → the two small feathers →
+`csr-*.npz`. Never `data/raw/voting/` or `data/raw/draft/`.
+
+The trap is that the 1 GB weights feather looks like the obvious thing to delete and *is* —
+but deleting it promotes `csr-malecns-v1.0.npz` from disposable to precious, because that
+compiled CSR is what the kernel actually reads and it can no longer be rebuilt. Delete one or
+the other, never both. `sha256.lock.json` keeps the provenance either way.
+
+---
+
 ## Design — the page and its visuals
 
 Verified live: `GET /api/hallplan` returns all 101 occupied seats with `place`, the MP, and the faction

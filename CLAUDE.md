@@ -86,6 +86,20 @@ is answerable at all. `graph/` and `sim/` are not written until Stage 2, so a fa
 - Every run writes an audit log with the selected cell IDs, the decoded stimulus, and real spend.
 - Estonian source text is cached verbatim; written deliverables are in English.
 
+## Disk
+
+`data/` is gitignored and unbacked. If you need to reclaim space, the order is
+`data/raw/llm/` (superseded, nothing reads it) → the 1 GB
+`connectome-weights-*.feather` → the small feathers → `csr-malecns-v1.0.npz`.
+
+**Never delete `data/raw/voting/` or `data/raw/draft/`** — that is an 80-minute
+rate-limited re-harvest, and it is the expensive thing in the directory even though it is
+not the big thing.
+
+Deleting the weights feather promotes `csr-malecns-v1.0.npz` from disposable to precious:
+the CSR is what the kernel reads, and without the feather it can no longer be rebuilt.
+Delete one or the other, never both. Full table in SPEC.md.
+
 ## Tone
 
 Deadpan-scientific. Label outputs *simulated, wiring-constrained, engineered I/O mapping*. The I/O
