@@ -77,10 +77,18 @@ h2{font-family:var(--display);font-weight:600;font-size:22px;margin:40px 0 12px}
 
 /* ---- channels ---- */
 .channels{display:flex;flex-direction:column;gap:9px}
+.axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;
+      letter-spacing:.05em;color:var(--dim);text-transform:uppercase;margin-bottom:2px}
 .ch{font-family:var(--mono);font-size:11px}
 .ch .row{display:flex;justify-content:space-between;color:var(--dim);margin-bottom:3px}
 .ch .track{position:relative;height:9px;background:#0C0E14;border:1px solid var(--line);
            border-radius:2px;overflow:hidden}
+/* Salience is a magnitude, not a direction. Separated so it cannot be read as a ninth
+   signed channel leaning right. */
+.ch.mag{margin-top:6px;padding-top:11px;border-top:1px solid var(--line)}
+.ch.mag .row span:first-child::after{content:" — magnitude, not a side";color:#5A6070}
+.ch.mag .fill{background:#6E7486}
+.ch.mag .raw{border-color:#3E4456}
 .ch .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);z-index:2}
 /* Two bars per channel. The outline is what Jev read; the solid fill is what the fly
    actually smells, which is that reading weighted by how confident Jev was. On a bill
@@ -182,7 +190,9 @@ table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
       <div class="clock" id="clock">0 ms</div>
       <div class="veil" id="veil">Cast your vote above to start the replay.</div>
     </div>
-    <div class="panel channels" id="channels"></div>
+    <div class="panel channels" id="channels">
+      <div class="axis"><span>◀ left antenna</span><span>right antenna ▶</span></div>
+    </div>
     <div class="panel meters" id="meters"></div>
   </div>
 
@@ -551,17 +561,27 @@ if ((bill.summary || "").length > 420){
 }
 
 const chEl = document.getElementById("channels");
+const axisRow = chEl.querySelector(".axis");
 for (const c of B.channels){
   const d = document.createElement("div");
   d.className = "ch"; d.dataset.key = c.key;
-  const pct = Math.abs(c.drive) * 50;
-  const left = c.drive >= 0 ? 50 : 50 - pct;
-  const rawPct = Math.abs(c.score) * 50;
-  const rawLeft = c.score >= 0 ? 50 : 50 - rawPct;
+  // Salience is a magnitude in [0, 1], not a signed axis: it is positive for every bill in
+  // the corpus by construction. Drawing it in the same centred widget as the eight signed
+  // channels made it the longest bar in the panel and always rightward, which read as the
+  // whole panel leaning one way. It gets its own left-anchored meter.
+  const salience = c.key === "salience";
+  if (salience) d.classList.add("mag");
+  const pct = salience ? c.drive * 100 : Math.abs(c.drive) * 50;
+  const left = salience ? 0 : (c.drive >= 0 ? 50 : 50 - pct);
+  const rawPct = salience ? c.score * 100 : Math.abs(c.score) * 50;
+  const rawLeft = salience ? 0 : (c.score >= 0 ? 50 : 50 - rawPct);
+  const value = salience
+    ? `${c.score.toFixed(2)} of 1 · conf ${c.confidence.toFixed(2)}`
+    : `${c.score >= 0 ? "+" : ""}${c.score.toFixed(2)} · conf ${c.confidence.toFixed(2)}`;
   d.innerHTML =
-    `<div class="row"><span>${c.key}</span>` +
-    `<span>${c.score >= 0 ? "+" : ""}${c.score.toFixed(2)} · conf ${c.confidence.toFixed(2)}</span></div>` +
-    `<div class="track"><div class="mid"></div>` +
+    `<div class="row"><span>${salience ? "salience" : c.key}</span>` +
+    `<span>${value}</span></div>` +
+    `<div class="track">${salience ? "" : '<div class="mid"></div>'}` +
     `<div class="raw" style="--w:${rawPct}%;--l:${rawLeft}%"></div>` +
     `<div class="fill" ` +
     `style="--w:${pct}%;--l:${left}%;--blur:${(1-c.confidence)*2.6}px"></div></div>`;
