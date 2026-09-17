@@ -237,8 +237,11 @@ network, and any readout that takes a mean throws it away.
 
 ### 2.5 So the wavering is not deliberation
 
-Same bill, same scores, same wiring, eight input phases: **6 declined, 1 Poolt, 1 Vastu**,
-Δ ranging −1.93 to +1.70 Hz. It is on the page, labelled.
+Same bill, same scores, same wiring, eight input phases. On the bill the shipped replay
+uses — the highest-salience discriminative bill in the corpus, picked by the pre-registered
+rule — the fly declines **8 times out of 8**, with Δ ranging −0.81 to +0.78 Hz against a
+1.65 Hz dead band. On an earlier candidate the same procedure gave **6 declined, 1 Poolt,
+1 Vastu**, Δ from −1.93 to +1.70. Both are on the page, labelled.
 
 SPEC frames this as content — *a brain visibly making up its mind* — and it reads that way on
 screen. Given 2.3 and 2.3b the honest description is narrower: **the input phase is the only
@@ -296,9 +299,9 @@ calibrated 0.05e-3 throughout, per the handoff. In rough order of expected value
 
 ## Incidental
 
-- **The raster is 6.7× the size budget.** SPEC assumes ~45 KB per bill at ~5 Hz. At 22 Hz the
-  raster is 303 KB (151,271 events), the bundle JSON 58 KB, the finished page 630 KB. One bill
-  is fine; thirty would be ~9.1 MB against a 16 MB limit. Levers: halve the frames to 50, halve
+- **The raster is 6.6× the size budget.** SPEC assumes ~45 KB per bill at ~5 Hz. At 22 Hz the
+  raster is 299 KB (153,063 events), the bundle JSON 64 KB, the finished page 630 KB. One bill
+  is fine; thirty would be ~10.6 MB against a 16 MB limit. Levers: halve the frames to 50, halve
   the atlas to 8k, or record at full resolution only up to steady state.
 - **A zero-input baseline measures nothing**, because the network is exactly silent without
   input. The dead band must be measured against background drive; `karbes calibrate` does.
