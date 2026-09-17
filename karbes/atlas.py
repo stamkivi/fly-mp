@@ -76,6 +76,9 @@ class Atlas:
     def k(self) -> int:
         return len(self.bodies)
 
+    def group_names(self) -> tuple[str, ...]:
+        return GROUP_NAMES
+
     def fractions(self) -> dict[str, float]:
         """Share of each group actually sampled. The page states these."""
         counts = np.bincount(self.group, minlength=len(GROUP_NAMES))

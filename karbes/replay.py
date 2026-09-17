@@ -298,14 +298,20 @@ def build(inputs: Inputs) -> Bundle:
     p = inputs.params
     drive = encode.drive(inputs.scored, inputs.pops, inputs.graph)
     atlas_idx = inputs.graph.index_of(inputs.atlas.bodies)
-    probes = lif.Probes(
-        frames=FRAMES,
-        groups={
-            "dn_left": inputs.graph.index_of(inputs.pops.dn_left),
-            "dn_right": inputs.graph.index_of(inputs.pops.dn_right),
-        },
-        raster=atlas_idx,
-    )
+    # Per-group counts are probed separately rather than derived from the raster. The
+    # raster is deduplicated per frame — the page only asks whether a cell lit up — and at
+    # 5 ms frames a cell firing at 100 Hz often spikes twice inside one. Counting raster
+    # entries therefore understates the rate, and understates it worst exactly where the
+    # rate is highest: measured, it reports the central brain at 53 Hz when it is at 101.
+    groups = {
+        "dn_left": inputs.graph.index_of(inputs.pops.dn_left),
+        "dn_right": inputs.graph.index_of(inputs.pops.dn_right),
+    }
+    for gid, name in enumerate(inputs.atlas.group_names()):
+        members = atlas_idx[inputs.atlas.group == gid]
+        if len(members):
+            groups[f"atlas:{name}"] = members
+    probes = lif.Probes(frames=FRAMES, groups=groups, raster=atlas_idx)
     started = datetime.now(tz=UTC)
     result = lif.run(inputs.graph, drive, params=p, seed=inputs.seed, probes=probes)
     elapsed = (datetime.now(tz=UTC) - started).total_seconds()
@@ -385,6 +391,7 @@ def build(inputs: Inputs) -> Bundle:
         "atlas": {
             "somas": inputs.atlas.k,
             "groups": list(inputs.atlas.fractions()),
+            "group_hz": _group_hz(inputs, result),
             "sampled_fraction": {k: round(v, 4) for k, v in inputs.atlas.fractions().items()},
             # Atlas slots of the two racing pools, so the page can show the race in the
             # brain itself rather than only in the chart beside it.
@@ -442,6 +449,19 @@ def _wavering(
         "delta_min_hz": round(float(deltas.min()), 4),
         "delta_max_hz": round(float(deltas.max()), 4),
     }
+
+
+def _group_hz(inputs: Inputs, result: lif.Result) -> dict[str, list[float]]:
+    """Per drawn group, the true firing rate in each frame. Never raster-derived."""
+    frame_seconds = inputs.params.duration / FRAMES
+    out = {}
+    for gid, name in enumerate(inputs.atlas.group_names()):
+        counts = result.group_counts.get(f"atlas:{name}")
+        size = int((inputs.atlas.group == gid).sum())
+        if counts is None or not size:
+            continue
+        out[name] = [round(float(c) / (size * frame_seconds), 2) for c in counts]
+    return out
 
 
 def _slots(atlas: Atlas, bodies: np.ndarray) -> list[int]:

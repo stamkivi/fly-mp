@@ -370,9 +370,6 @@ function drawBrain(){
 }
 
 /* ---------- per-group activity, so the wave is legible and not just pretty ---------- */
-const GSIZE = new Int32Array(GROUPS.length);
-for (let i = 0; i < K; i++) GSIZE[GRP[i]]++;
-const gnow = new Float32Array(GROUPS.length);
 const meters = document.getElementById("meters");
 GROUPS.forEach((g, i) => {
   const c = BASE_RGB[i];
@@ -386,14 +383,18 @@ GROUPS.forEach((g, i) => {
 });
 const mfills = [...meters.querySelectorAll(".gf")];
 const mvals = [...meters.querySelectorAll(".gv")];
-const FRAME_S = B.sim.duration_s / FRAMES;
+
+/* Rates come from the bundle's own per-group counts, not from the raster. The raster is
+   deduplicated per frame, so counting it understates the rate — and understates it worst
+   where the rate is highest, which is precisely the central brain. */
+const GHZ = B.atlas.group_hz;
+const GPEAK = Math.max(30, ...GROUPS.flatMap(g => GHZ[g] || [0]));
 
 function drawMeters(f){
-  gnow.fill(0);
-  if (f >= 0 && f < FRAMES) for (const s of frameSlots(f)) gnow[GRP[s]]++;
   for (let i = 0; i < GROUPS.length; i++){
-    const hz = gnow[i] / (GSIZE[i] * FRAME_S);
-    mfills[i].style.width = Math.min(100, hz / 1.2) + "%";
+    const series = GHZ[GROUPS[i]];
+    const hz = (series && f >= 0 && f < series.length) ? series[f] : 0;
+    mfills[i].style.width = Math.min(100, 100 * hz / GPEAK) + "%";
     mvals[i].textContent = hz.toFixed(0) + " Hz";
   }
 }

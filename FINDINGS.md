@@ -33,14 +33,21 @@ like structureless particle soup. The data says the opposite:
 
 | group | somas drawn | mean rate over 500 ms |
 |---|---:|---:|
-| optic | 6,918 | **1.9 Hz** |
-| central brain | 4,118 | **53.7 Hz** |
-| cord | 2,672 | 10.6 Hz |
-| ascending | 979 | 14.7 Hz |
-| descending | 1,312 | 19.7 Hz |
+| optic | 6,918 | **2.1 Hz** |
+| central brain | 4,118 | **100.9 Hz** |
+| cord | 2,672 | 13.5 Hz |
+| ascending | 979 | 21.2 Hz |
+| descending | 1,312 | 30.1 Hz |
+
+*(Rates are true spike counts. The spike raster shipped to the page is deduplicated per
+frame — it only records whether a cell lit up — and at 5 ms frames a cell firing at 100 Hz
+often spikes twice inside one, so counting raster entries understates the rate, worst where
+the rate is highest: it reports the central brain at 53 Hz. The bundle therefore carries
+separately probed per-group counts, and the on-screen meters read those.)*
 
 The optic lobes receive no input in this simulation — there is no visual stimulus — and they
-duly sit near silence. They looked brightest because the renderer summed every soma's colour
+duly sit near silence, a **49×** difference against the central brain. They looked brightest
+because the renderer summed every soma's colour
 additively, and optic somas are packed far denser in projection than anywhere else.
 **Density was being rendered as activity**, inverting the single most important fact in the
 picture.

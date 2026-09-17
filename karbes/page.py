@@ -107,6 +107,14 @@ def finding(calibration: dict) -> str:
 
 def build(bundle: dict, raster: bytes, atlas: Atlas, calibration: dict) -> str:
     """Fill the template. Returns the finished HTML."""
+    if "sweep_seeds" not in calibration:
+        # A single-seed sweep is what produced the SNR figure the page used to print and
+        # the measurements later disproved. Refuse to publish from one rather than quote
+        # a number with no error bar beside it.
+        raise ValueError(
+            "runs/calibration.json predates the seeded sweep and has no standard errors. "
+            "Re-run `karbes calibrate` before building the page."
+        )
     template = TEMPLATE.read_text(encoding="utf-8")
     # The bundle rides in a `application/json` script tag, so only `</script>` and a lone
     # `<` can break out of it.
