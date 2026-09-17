@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kärbes — the 102nd member of the Riigikogu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0C10; --panel:#12141B; --line:#242835; --ink:#E8E6E1; --dim:#8A8F9E;
+  --left:#4FA3FF; --right:#FF8A3D; --karbes:#C9C6BE;
+  --display:"Fraunces",Georgia,serif;
+  --body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);
+     font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 20px 80px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(34px,6vw,56px);
+   line-height:1.05;margin:0 0 8px}
+h2{font-family:var(--display);font-weight:600;font-size:22px;margin:40px 0 12px}
+.lede{color:var(--dim);max-width:62ch;margin:0 0 6px}
+.stamp{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+       color:var(--dim);border:1px solid var(--line);border-radius:3px;padding:5px 9px;
+       display:inline-block;margin:14px 0 0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px}
+.mono{font-family:var(--mono)}
+.dim{color:var(--dim)}
+
+/* ---- the bill ---- */
+.bill{margin:28px 0 0}
+.bill .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.09em;
+              text-transform:uppercase;color:var(--dim)}
+.bill h3{font-family:var(--display);font-weight:400;font-size:clamp(20px,3vw,27px);
+         line-height:1.25;margin:8px 0 10px}
+.bill .meta{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.bill .summary{color:var(--dim);font-size:14px;max-height:7.2em;overflow:hidden;
+               margin-top:12px;position:relative}
+.bill .summary.open{max-height:none}
+.more{background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:11px;
+      text-decoration:underline;cursor:pointer;padding:6px 0 0}
+
+/* ---- your vote ---- */
+.ballot{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.ballot button{font-family:var(--body);font-size:15px;font-weight:600;color:var(--ink);
+  background:#171A23;border:1px solid var(--line);border-radius:5px;padding:13px 20px;
+  min-height:46px;cursor:pointer;transition:border-color .15s,background .15s}
+.ballot button:hover{border-color:#3A4152;background:#1B1F2A}
+.ballot button:focus-visible{outline:2px solid var(--left);outline-offset:2px}
+.ballot button[aria-pressed=true]{border-color:var(--karbes);background:#222530}
+.ballot small{display:block;font-weight:400;font-size:11px;color:var(--dim);
+              font-family:var(--mono);margin-top:2px}
+
+/* ---- stage ---- */
+.stage{display:grid;grid-template-columns:1fr 300px;gap:16px;margin-top:16px}
+@media(max-width:820px){.stage{grid-template-columns:1fr}}
+.brainwrap{position:relative;background:#07080C;border:1px solid var(--line);
+           border-radius:6px;overflow:hidden;aspect-ratio:16/11}
+#brain{width:100%;height:100%;display:block}
+.brainlabel{position:absolute;left:12px;top:10px;font-family:var(--mono);font-size:10.5px;
+            letter-spacing:.06em;color:var(--dim);text-transform:uppercase}
+.clock{position:absolute;right:12px;top:10px;font-family:var(--mono);font-size:10.5px;
+       color:var(--dim)}
+.key{position:absolute;left:12px;bottom:10px;font-family:var(--mono);font-size:10.5px;
+     color:var(--dim);display:flex;gap:12px;flex-wrap:wrap}
+.key i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+.veil{position:absolute;inset:0;display:grid;place-items:center;background:rgba(7,8,12,.86);
+      text-align:center;padding:24px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+.veil.hidden{display:none}
+
+/* ---- channels ---- */
+.channels{display:flex;flex-direction:column;gap:9px}
+.ch{font-family:var(--mono);font-size:11px}
+.ch .row{display:flex;justify-content:space-between;color:var(--dim);margin-bottom:3px}
+.ch .track{position:relative;height:9px;background:#0C0E14;border:1px solid var(--line);
+           border-radius:2px;overflow:hidden}
+.ch .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+.ch .fill{position:absolute;top:0;bottom:0;background:var(--karbes);
+          transition:width .5s ease,left .5s ease,opacity .5s ease,filter .5s ease;width:0;left:50%}
+.ch.lit .fill{opacity:1}
+.ch .fill{opacity:.15}
+
+/* ---- race ---- */
+.race{margin-top:16px}
+.racewrap{position:relative;background:#07080C;border:1px solid var(--line);
+          border-radius:6px;padding:0;overflow:hidden}
+#race{width:100%;height:190px;display:block}
+.legend{display:flex;gap:18px;font-family:var(--mono);font-size:11px;color:var(--dim);
+        padding:8px 12px 10px}
+.legend i{display:inline-block;width:14px;height:2px;margin-right:6px;vertical-align:middle}
+
+/* ---- verdict ---- */
+.verdict{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+@media(max-width:700px){.verdict{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
+.card .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+         color:var(--dim)}
+.card .v{font-family:var(--display);font-size:26px;margin-top:6px;line-height:1.1}
+.card .n{font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-top:8px}
+.card.pending .v{color:var(--dim)}
+
+/* ---- seat line ---- */
+.waverow{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px}
+.wchip{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-radius:3px;
+       padding:7px 9px;min-width:104px;background:#0C0E14}
+.wchip b{display:block;font-weight:600;font-size:12px;margin-bottom:2px}
+.wchip.POOLT{border-left:3px solid var(--right)}
+.wchip.VASTU{border-left:3px solid var(--left)}
+.wchip.EI_HAALETANUD{border-left:3px solid #5A6070}
+.wchip.this{background:#1B1F2A;border-color:var(--karbes)}
+.wtally{font-family:var(--mono);font-size:12.5px;color:var(--dim)}
+
+.seatline{position:relative;height:74px;margin-top:14px}
+#seat{width:100%;height:74px;display:block}
+
+.meters{grid-column:1 / -1;display:grid;grid-template-columns:repeat(5,1fr);gap:14px;
+        padding:14px 18px}
+@media(max-width:820px){.meters{grid-template-columns:repeat(2,1fr)}}
+.meter{display:flex;flex-direction:column;gap:5px;font-family:var(--mono);font-size:11px}
+.meter .gl{color:var(--dim)}
+.meter .gt{display:block;height:7px;background:#0C0E14;border:1px solid var(--line);
+           border-radius:2px;overflow:hidden}
+.meter .gf{display:block;height:100%;width:0;transition:width .08s linear}
+.meter .gv{color:var(--ink)}
+
+table.facts{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
+            margin-top:8px}
+table.facts td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
+.foot{color:var(--dim);font-size:13px;max-width:70ch}
+.foot a{color:var(--karbes)}
+@media(prefers-reduced-motion:reduce){.ch .fill{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Kärbes</h1>
+  <p class="lede">A spiking simulation of a real fly brain, cast as a notional 102nd member of
+  the Riigikogu. A real bill goes in as a smell. 166,700 neurons and 25.6 million connections
+  fire for 500&nbsp;ms. Two pools of descending neurons race, and whichever wins is the vote.</p>
+  <span class="stamp">Simulated · wiring-constrained · engineered I/O mapping</span>
+
+  <h2>The bill</h2>
+  <div class="panel bill">
+    <div class="kicker" id="bill-kicker"></div>
+    <h3 id="bill-title"></h3>
+    <div class="meta" id="bill-meta"></div>
+    <div class="summary" id="bill-summary"></div>
+    <button class="more" id="more" hidden>Show the whole summary</button>
+  </div>
+
+  <h2>You vote first</h2>
+  <p class="lede">The fly has already decided — it just has not told you yet. Commit before
+  you watch it think.</p>
+  <div class="ballot" role="group" aria-label="Your vote">
+    <button data-vote="POOLT" aria-pressed="false">Poolt<small>in favour</small></button>
+    <button data-vote="VASTU" aria-pressed="false">Vastu<small>against</small></button>
+    <button data-vote="EI_HAALETANUD" aria-pressed="false">Ei hääletanud<small>declined to press</small></button>
+  </div>
+
+  <h2>The brain</h2>
+  <div class="stage">
+    <div class="brainwrap">
+      <canvas id="brain"></canvas>
+      <div class="brainlabel" id="brainlabel">MaleCNS v1.0 · real soma coordinates</div>
+      <div class="clock" id="clock">0 ms</div>
+      <div class="veil" id="veil">Cast your vote above to start the replay.</div>
+    </div>
+    <div class="panel channels" id="channels"></div>
+    <div class="panel meters" id="meters"></div>
+  </div>
+
+  <div class="race">
+    <div class="racewrap">
+      <canvas id="race"></canvas>
+      <div class="legend">
+        <span><i style="background:var(--left)"></i>left descending pool · 656 cells</span>
+        <span><i style="background:var(--right)"></i>right descending pool · 648 cells</span>
+        <span><i style="background:var(--karbes)"></i>Δ = right − left</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="card pending" id="card-you"><div class="k">You</div>
+      <div class="v" id="you-v">—</div><div class="n" id="you-n">not yet cast</div></div>
+    <div class="card pending" id="card-fly"><div class="k">Kärbes</div>
+      <div class="v" id="fly-v">—</div><div class="n" id="fly-n">still deciding</div></div>
+    <div class="card pending" id="card-cham"><div class="k">The Riigikogu</div>
+      <div class="v" id="cham-v">—</div><div class="n" id="cham-n"></div></div>
+  </div>
+
+  <h2>Run it again and it may say something else</h2>
+  <p class="lede" id="wave-note"></p>
+  <div class="panel" id="wave"></div>
+
+  <h2>Where that puts it</h2>
+  <p class="lede" id="seat-note"></p>
+  <div class="seatline"><canvas id="seat"></canvas></div>
+
+  <h2>What you are actually looking at</h2>
+  <div class="panel">
+    <table class="facts" id="facts"></table>
+  </div>
+
+  <h2>The honest caveats</h2>
+  <p class="foot" id="caveats"></p>
+
+</div>
+
+<script id="bundle" type="application/json">__BUNDLE_JSON__</script>
+<script id="atlas-b64" type="text/plain">__ATLAS_B64__</script>
+<script id="raster-b64" type="text/plain">__RASTER_B64__</script>
+<script>
+"use strict";
+const B = JSON.parse(document.getElementById("bundle").textContent);
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function b64(id){
+  const s = document.getElementById(id).textContent.trim();
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+/* ---------- atlas: uint16 xyz interleaved, then one uint8 group per soma ---------- */
+const K = B.atlas.somas;
+const A_RAW = b64("atlas-b64");
+const XYZ = new Uint16Array(A_RAW.buffer, A_RAW.byteOffset, K * 3);
+const GRP = new Uint8Array(A_RAW.buffer, A_RAW.byteOffset + K * 6, K);
+const GROUPS = B.atlas.groups;
+
+/* ---------- raster: u32 frames | u32 offsets[frames+1] | u16 slots ---------- */
+const R_RAW = b64("raster-b64");
+const RV = new DataView(R_RAW.buffer, R_RAW.byteOffset);
+const FRAMES = RV.getUint32(4, true);
+const OFF = new Uint32Array(R_RAW.buffer, R_RAW.byteOffset + 8, FRAMES + 1);
+const SLOTS = new Uint16Array(R_RAW.buffer, R_RAW.byteOffset + 8 + 4 * (FRAMES + 1));
+const frameSlots = f => SLOTS.subarray(OFF[f], OFF[f + 1]);
+
+/* Left and right descending pools, as atlas slots, so the race shows in the brain too. */
+const SIDE = new Uint8Array(K);            // 0 none, 1 left, 2 right
+for (const s of B.atlas.dn_left_slots) SIDE[s] = 1;
+for (const s of B.atlas.dn_right_slots) SIDE[s] = 2;
+
+/* ---------- geometry: x is left-right, y dorsal-ventral, z the body axis ---------- */
+const CX = [], CY = [], CZ = [];
+let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9,minZ=1e9,maxZ=-1e9;
+for (let i = 0; i < K; i++){
+  const x = XYZ[i*3], y = XYZ[i*3+1], z = XYZ[i*3+2];
+  CX.push(x); CY.push(y); CZ.push(z);
+  if(x<minX)minX=x; if(x>maxX)maxX=x;
+  if(y<minY)minY=y; if(y>maxY)maxY=y;
+  if(z<minZ)minZ=z; if(z>maxZ)maxZ=z;
+}
+const MX=(minX+maxX)/2, MY=(minY+maxY)/2, MZ=(minZ+maxZ)/2;
+const SPAN = Math.max(maxX-minX, maxY-minY, maxZ-minZ);
+
+/* Base colours for the resting cloud. The optic lobes are half the somas drawn and they
+   receive no input at all in this simulation — they fire at about 2 Hz against the central
+   brain's 54 — so they are the dimmest thing here. An earlier draft drew the resting cloud
+   additively, which turned their packing density into brightness and made the least active
+   part of the brain look like the most active one. */
+const BASE = {
+  optic:      [26, 34, 48],
+  central:    [78, 68, 56],
+  cord:       [40, 62, 54],
+  ascending:  [52, 50, 68],
+  descending: [104, 80, 40]
+};
+const BASE_RGB = GROUPS.map(g => BASE[g] || [120,120,120]);
+
+const brain = document.getElementById("brain");
+const bctx = brain.getContext("2d", { alpha: false });
+let BW=0, BH=0, img=null, buf=null;
+
+function sizeBrain(){
+  const r = brain.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  BW = Math.max(320, Math.round(r.width * dpr));
+  BH = Math.max(220, Math.round(r.height * dpr));
+  brain.width = BW; brain.height = BH;
+  img = bctx.createImageData(BW, BH);
+  buf = new Uint8ClampedArray(img.data.buffer);
+}
+
+const heat = new Float32Array(K);
+const PX = new Int32Array(K), PY = new Int32Array(K);
+const FADE = new Float32Array(K);
+let theta = 0.55;
+
+function project(){
+  const st = Math.sin(theta), ct = Math.cos(theta);
+  const scale = Math.min(BW, BH * 1.45) / (SPAN * 1.06);
+  const ox = BW / 2, oy = BH / 2;
+  for (let i = 0; i < K; i++){
+    const x = CX[i]-MX, y = CY[i]-MY, z = CZ[i]-MZ;
+    PX[i] = (ox + (x*ct + z*st)*scale) | 0;
+    PY[i] = (oy + y*scale*0.92) | 0;
+    // Depth fade keeps the far side of the brain from flattening into the near side.
+    FADE[i] = 0.45 + 0.55 * (0.5 - (-x*st + z*ct)/SPAN);
+  }
+}
+
+function drawBrain(){
+  if (!img) sizeBrain();
+  buf.fill(0);
+  for (let i = 3; i < buf.length; i += 4) buf[i] = 255;   // opaque
+  project();
+
+  /* Pass 1 — the resting cloud, blended with max rather than summed. Somas are packed far
+     more densely in the optic lobes than anywhere else, and adding their colours would
+     render that packing as brightness. Anatomy should set the shape; only spikes should
+     set the light. */
+  for (let i = 0; i < K; i++){
+    const px = PX[i], py = PY[i];
+    if (px < 1 || py < 1 || px >= BW-1 || py >= BH-1) continue;
+    const c = BASE_RGB[GRP[i]], f = FADE[i];
+    const o = (py*BW + px) * 4;
+    const r = c[0]*f, g = c[1]*f, b = c[2]*f;
+    if (buf[o] < r) buf[o] = r;
+    if (buf[o+1] < g) buf[o+1] = g;
+    if (buf[o+2] < b) buf[o+2] = b;
+  }
+
+  /* Pass 2 — spikes, additive and on top, so a burst in one place really is brighter. */
+  for (let i = 0; i < K; i++){
+    const h = heat[i];
+    if (h < 0.02) continue;
+    const px = PX[i], py = PY[i];
+    if (px < 1 || py < 1 || px >= BW-1 || py >= BH-1) continue;
+    const s = SIDE[i], f = FADE[i];
+    // A firing cell goes white-hot, except in the racing pools, which keep their side.
+    const a = h * (0.55 + 0.45 * f);           // spikes stay legible on the far side too
+    const r = (s === 1 ? 79  : 255) * a;
+    const g = (s === 1 ? 163 : s === 2 ? 138 : 246) * a;
+    const b = (s === 1 ? 255 : s === 2 ? 61  : 226) * a;
+    const o = (py*BW + px) * 4;
+    buf[o] = Math.min(255, buf[o] + r);
+    buf[o+1] = Math.min(255, buf[o+1] + g);
+    buf[o+2] = Math.min(255, buf[o+2] + b);
+    if (h > 0.25){                                 // a bloom, so spikes read at a glance
+      for (const d of [-4, 4, -BW*4, BW*4]){
+        const q = o + d;
+        if (q < 0 || q >= buf.length) continue;
+        buf[q] = Math.min(255, buf[q] + r*0.5);
+        buf[q+1] = Math.min(255, buf[q+1] + g*0.5);
+        buf[q+2] = Math.min(255, buf[q+2] + b*0.5);
+      }
+    }
+  }
+  bctx.putImageData(img, 0, 0);
+}
+
+/* ---------- per-group activity, so the wave is legible and not just pretty ---------- */
+const GSIZE = new Int32Array(GROUPS.length);
+for (let i = 0; i < K; i++) GSIZE[GRP[i]]++;
+const gnow = new Float32Array(GROUPS.length);
+const meters = document.getElementById("meters");
+GROUPS.forEach((g, i) => {
+  const c = BASE_RGB[i];
+  const d = document.createElement("div");
+  d.className = "meter";
+  d.innerHTML = `<span class="gl">${g}</span>` +
+    `<span class="gt"><span class="gf" style="background:rgb(${Math.min(255,c[0]*2.2)},` +
+    `${Math.min(255,c[1]*2.2)},${Math.min(255,c[2]*2.2)})"></span></span>` +
+    `<span class="gv mono">0 Hz</span>`;
+  meters.appendChild(d);
+});
+const mfills = [...meters.querySelectorAll(".gf")];
+const mvals = [...meters.querySelectorAll(".gv")];
+const FRAME_S = B.sim.duration_s / FRAMES;
+
+function drawMeters(f){
+  gnow.fill(0);
+  if (f >= 0 && f < FRAMES) for (const s of frameSlots(f)) gnow[GRP[s]]++;
+  for (let i = 0; i < GROUPS.length; i++){
+    const hz = gnow[i] / (GSIZE[i] * FRAME_S);
+    mfills[i].style.width = Math.min(100, hz / 1.2) + "%";
+    mvals[i].textContent = hz.toFixed(0) + " Hz";
+  }
+}
+
+/* ---------- the race chart ---------- */
+const race = document.getElementById("race");
+const rctx = race.getContext("2d");
+let RW=0, RH=0;
+function sizeRace(){
+  const r = race.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  RW = Math.round(r.width*dpr); RH = Math.round(r.height*dpr);
+  race.width = RW; race.height = RH;
+}
+const L = B.race.left_hz, R = B.race.right_hz, D = B.race.delta_hz;
+const PEAK = Math.max(1, ...L, ...R);
+
+function drawRace(upto){
+  const pad = 26*Math.min(devicePixelRatio||1,2);
+  rctx.clearRect(0,0,RW,RH);
+  const x = f => pad + (RW-2*pad) * (f/(FRAMES-1));
+  const y = v => RH-pad - (RH-2*pad) * (v/PEAK);
+
+  // settled window: the part of the run the verdict is actually read from
+  rctx.fillStyle = "rgba(255,255,255,.035)";
+  rctx.fillRect(x(B.race.settled_from_frame), pad*0.4, RW-pad-x(B.race.settled_from_frame), RH-pad-pad*0.4);
+  rctx.strokeStyle = "#242835"; rctx.lineWidth = 1;
+  rctx.beginPath(); rctx.moveTo(pad, RH-pad); rctx.lineTo(RW-pad, RH-pad); rctx.stroke();
+
+  const line = (series, colour) => {
+    rctx.strokeStyle = colour; rctx.lineWidth = 2*Math.min(devicePixelRatio||1,2);
+    rctx.lineJoin = "round"; rctx.beginPath();
+    for (let f = 0; f <= upto && f < FRAMES; f++){
+      const px = x(f), py = y(series[f]);
+      f ? rctx.lineTo(px, py) : rctx.moveTo(px, py);
+    }
+    rctx.stroke();
+  };
+  line(L, getComputedStyle(document.body).getPropertyValue("--left").trim());
+  line(R, getComputedStyle(document.body).getPropertyValue("--right").trim());
+
+  rctx.fillStyle = "#8A8F9E";
+  rctx.font = `${11*Math.min(devicePixelRatio||1,2)}px "IBM Plex Mono",monospace`;
+  rctx.fillText(`${PEAK.toFixed(0)} Hz`, 4, pad);
+  rctx.fillText("0", 4, RH-pad+4);
+  rctx.fillText("500 ms", RW-pad-40, RH-pad+16);
+  rctx.fillText("verdict read from here →", x(B.race.settled_from_frame)+6, pad*0.9);
+}
+
+/* ---------- the seat line ---------- */
+const FACTION_HEX = {
+  "Eesti Reformierakonna fraktsioon":"#FFC000",
+  "Eesti Konservatiivse Rahvaerakonna fraktsioon":"#2A3DA0",
+  "Isamaa fraktsioon":"#6FABD4",
+  "Eesti 200 fraktsioon":"#eb268e",
+  "Eesti Keskerakonna fraktsioon":"#3BAC7B",
+  "Sotsiaaldemokraatliku Erakonna fraktsioon":"#E35558",
+  "Fraktsiooni mittekuuluvad Riigikogu liikmed":"#C0C0C0"
+};
+const seat = document.getElementById("seat");
+const sctx = seat.getContext("2d");
+let SW=0, SH=0;
+function sizeSeat(){
+  const r = seat.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio||1,2);
+  SW = Math.round(r.width*dpr); SH = Math.round(r.height*dpr);
+  seat.width = SW; seat.height = SH;
+}
+function drawSeat(show){
+  const S = B.seat;
+  sctx.clearRect(0,0,SW,SH);
+  if (!S.available) return;
+  const dpr = Math.min(devicePixelRatio||1,2);
+  const pad = 18*dpr, mid = SH*0.46;
+  const xs = S.chamber.map(m => m.dim1);
+  let lo = Math.min(...xs), hi = Math.max(...xs);
+  if (S.fly_dim1 !== null){ lo = Math.min(lo, S.fly_dim1); hi = Math.max(hi, S.fly_dim1); }
+  const X = v => pad + (SW-2*pad) * ((v-lo)/(hi-lo || 1));
+
+  sctx.strokeStyle = "#242835"; sctx.lineWidth = 1*dpr;
+  sctx.beginPath(); sctx.moveTo(pad, mid); sctx.lineTo(SW-pad, mid); sctx.stroke();
+  for (const m of S.chamber){
+    sctx.fillStyle = FACTION_HEX[m.faction] || "#6E7486";
+    sctx.globalAlpha = .82;
+    sctx.beginPath(); sctx.arc(X(m.dim1), mid, 3.6*dpr, 0, 7); sctx.fill();
+    sctx.globalAlpha = 1;
+    sctx.strokeStyle = "rgba(0,0,0,.55)"; sctx.lineWidth = 1*dpr; sctx.stroke();
+  }
+  sctx.fillStyle = "#8A8F9E";
+  sctx.font = `${10.5*dpr}px "IBM Plex Mono",monospace`;
+  sctx.fillText("← voted against what passed", pad, SH-6*dpr);
+  const rt = "voted with what passed →";
+  sctx.fillText(rt, SW-pad-sctx.measureText(rt).width, SH-6*dpr);
+
+  if (show && S.fly_dim1 === null){
+    sctx.fillStyle = "#8A8F9E";
+    sctx.font = `${11.5 * dpr}px "IBM Plex Mono",monospace`;
+    sctx.fillText("Kärbes declined — a declined vote places nothing on this line",
+                  pad, mid - 14 * dpr);
+  }
+  if (show && S.fly_dim1 !== null){
+    const fx = X(S.fly_dim1);
+    sctx.strokeStyle = "#E8E6E1"; sctx.lineWidth = 1.5*dpr;
+    sctx.beginPath(); sctx.moveTo(fx, mid-15*dpr); sctx.lineTo(fx, mid+15*dpr); sctx.stroke();
+    sctx.fillStyle = "#1A1A1A";
+    sctx.beginPath(); sctx.arc(fx, mid, 6*dpr, 0, 7); sctx.fill();
+    sctx.strokeStyle = "#E8E6E1"; sctx.lineWidth = 1.5*dpr; sctx.stroke();
+    sctx.fillStyle = "#E8E6E1";
+    sctx.font = `${11*dpr}px "IBM Plex Mono",monospace`;
+    sctx.fillText("Kärbes", fx+10*dpr, mid-8*dpr);
+  }
+}
+
+/* ---------- static content ---------- */
+const ET = {POOLT:"Poolt", VASTU:"Vastu", EI_HAALETANUD:"Ei hääletanud"};
+const bill = B.bill, cham = B.chamber;
+
+document.getElementById("bill-kicker").textContent =
+  [bill.mark ? bill.mark + " SE" : null, cham.kind].filter(Boolean).join(" · ");
+document.getElementById("bill-title").textContent = bill.title;
+document.getElementById("bill-meta").textContent =
+  [bill.committee, cham.when ? cham.when.slice(0,10) : null,
+   bill.government_bill ? "government bill" : "member or committee bill"]
+  .filter(Boolean).join("  ·  ");
+const sumEl = document.getElementById("bill-summary");
+sumEl.textContent = bill.summary || "(no summary in the register)";
+if ((bill.summary || "").length > 420){
+  const more = document.getElementById("more");
+  more.hidden = false;
+  more.onclick = () => { sumEl.classList.toggle("open");
+    more.textContent = sumEl.classList.contains("open") ? "Collapse" : "Show the whole summary"; };
+}
+
+const chEl = document.getElementById("channels");
+for (const c of B.channels){
+  const d = document.createElement("div");
+  d.className = "ch"; d.dataset.key = c.key;
+  const pct = Math.abs(c.drive) * 50;
+  const left = c.drive >= 0 ? 50 : 50 - pct;
+  d.innerHTML =
+    `<div class="row"><span>${c.key}</span>` +
+    `<span>${c.score >= 0 ? "+" : ""}${c.score.toFixed(2)} · conf ${c.confidence.toFixed(2)}</span></div>` +
+    `<div class="track"><div class="mid"></div><div class="fill" ` +
+    `style="--w:${pct}%;--l:${left}%;--blur:${(1-c.confidence)*2.6}px"></div></div>`;
+  chEl.appendChild(d);
+}
+document.getElementById("cham-v").textContent = cham.advances_bill ? "Advances" : "Rejected";
+document.getElementById("cham-n").textContent =
+  `${cham.in_favor} poolt · ${cham.against} vastu · ${cham.neutral} erapooletu` +
+  (cham.inverted ? " — on a motion to reject, so the polarity is flipped" : "");
+document.getElementById("card-cham").classList.remove("pending");
+
+/* ---------- the wavering ---------- */
+const W = B.wavering;
+if (W && W.runs){
+  const all = [{seed: B.sim.seed, delta: B.race.delta, code: B.verdict.code, this: true}]
+    .concat(W.runs).sort((a, b) => a.seed - b.seed);
+  const tally = {};
+  for (const r of all) tally[r.code] = (tally[r.code] || 0) + 1;
+  const parts = Object.entries(tally)
+    .sort((a, b) => b[1] - a[1])
+    .map(([c, n]) => `${n}\u00d7 ${ET[c]}`);
+  document.getElementById("wave-note").textContent =
+    `The bill, the scores and the wiring are identical in all ${all.length} runs below. `
+    + `Only the phase of the input spike trains differs — and that alone moves the readout `
+    + `across a ${(W.delta_max_hz - W.delta_min_hz).toFixed(2)} Hz range, `
+    + `wider than any single channel moves it. The fly is not being coy; the noise in this `
+    + `network is genuinely larger than the signal.`;
+  document.getElementById("wave").innerHTML =
+    `<div class="waverow">` + all.map(r =>
+      `<div class="wchip ${r.code}${r.this ? " this" : ""}">` +
+      `<b>${ET[r.code]}</b>phase ${r.seed}${r.this ? " · shown above" : ""}<br>` +
+      `Δ ${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(2)} Hz</div>`).join("") + `</div>` +
+    `<div class="wtally">${parts.join("  ·  ")} across ${all.length} input phases ` +
+    `· Δ spread ${W.delta_min_hz.toFixed(2)} to ${W.delta_max_hz.toFixed(2)} Hz ` +
+    `· dead band ±${B.race.dead_band_hz.toFixed(2)} Hz</div>`;
+} else {
+  document.getElementById("wave-note").textContent = "Not measured for this bundle.";
+}
+
+const S = B.seat;
+document.getElementById("seat-note").textContent = !S.available
+  ? "Not available for this bundle."
+  : `The chamber's first dimension, recovered from votes alone — it carries `
+    + `${(S.explained_dim1 * 100).toFixed(0)}% of the variance. `
+    + (S.fly_dim1 === null
+      ? `Kärbes declined on this bill, and a declined vote places nothing: there is no group `
+        + `of MPs who "voted the same way" in any sense the scaling can use.`
+      : `One vote does not identify a position, so Kärbes is placed at the mean coordinate `
+        + `of the ${S.n_like_fly} MPs who voted the way it just did. That is an "after one `
+        + `vote" marker, not a seat.`);
+
+const facts = [
+  ["Connectome", `MaleCNS v1.0 · ${B.sim.neurons.toLocaleString()} neurons · ${B.sim.edges.toLocaleString()} connections`],
+  ["Somas drawn", `${K.toLocaleString()} of 139,662 with real 3-D coordinates`],
+  ["Sampling", Object.entries(B.atlas.sampled_fraction).map(([k,v]) => `${k} ${(v*100).toFixed(0)}%`).join(" · ")],
+  ["Simulated", `${(B.sim.duration_s*1000).toFixed(0)} ms of neural time at ${(B.sim.dt_s*1e3).toFixed(1)} ms steps`],
+  ["Spikes", `${B.sim.total_spikes.toLocaleString()} · mean ${B.sim.mean_rate_hz.toFixed(1)} Hz across the network`],
+  ["Synaptic weight", `${(B.sim.weight_scale*1e3).toFixed(3)} mV per contact — calibrated here, not the published 0.275`],
+  ["Readout", `${B.race.dn_left} left and ${B.race.dn_right} right descending neurons — all of them`],
+  ["Settled Δ", `${B.race.delta >= 0 ? "+" : ""}${B.race.delta.toFixed(3)} Hz against a ${B.race.dead_band_hz.toFixed(2)} Hz dead band`],
+  ["Scoring", `TypeSafe Jev · nine questions · ${B.audit.jev_input_tokens.toLocaleString()} input tokens`],
+  ["Wall clock", `${B.sim.wall_seconds.toFixed(1)} s to simulate, precomputed — nothing runs in your browser`]
+];
+document.getElementById("facts").innerHTML =
+  facts.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+
+document.getElementById("caveats").innerHTML = __CAVEATS__;
+
+/* ---------- playback ---------- */
+/* Playback is deliberately not linear in neural time. Everything interesting happens in
+   the first ~15 ms: the antennal lobe fires, then the descending neurons, then the cord,
+   and after that the network is in a steady state for the remaining 485 ms. At a constant
+   frame rate the whole wave is over in four tenths of a second and the viewer sees a flat
+   blaze. So the opening frames are held long and the steady state is played fast. The
+   clock on the canvas always shows real neural time, so nothing about the data is
+   misstated - only the rate at which it is shown. */
+const SLOW_FRAMES = 10, SLOW_MS = 380, FAST_MS = 118;
+const START_MS = [];
+for (let f = 0, t = 0; f <= FRAMES; f++){
+  START_MS.push(t);
+  t += f < SLOW_FRAMES ? SLOW_MS : FAST_MS;
+}
+const frameAt = ms => {
+  if (ms < 0) return -1;
+  let lo = 0, hi = FRAMES;
+  while (lo < hi){ const mid = (lo + hi + 1) >> 1; (START_MS[mid] <= ms) ? lo = mid : hi = mid - 1; }
+  return lo;
+};
+const LIGHT_MS = 2600;                      // channels light before the brain fires
+const veil = document.getElementById("veil");
+let started = 0, playing = false, yourVote = null;
+
+document.querySelectorAll(".ballot button").forEach(b => {
+  b.onclick = () => {
+    yourVote = b.dataset.vote;
+    document.querySelectorAll(".ballot button").forEach(o =>
+      o.setAttribute("aria-pressed", String(o === b)));
+    document.getElementById("you-v").textContent = ET[yourVote];
+    document.getElementById("you-n").textContent = "your call, cast before the fly's";
+    document.getElementById("card-you").classList.remove("pending");
+    if (!playing) start();
+  };
+});
+
+function start(){
+  playing = true; started = performance.now(); lastNow = started; lastFrame = -1;
+  veil.classList.add("hidden");
+  heat.fill(0);
+  document.getElementById("fly-v").textContent = "—";
+  document.getElementById("fly-n").textContent = "still deciding";
+  document.getElementById("card-fly").classList.add("pending");
+  document.querySelectorAll(".ch").forEach(c => c.classList.remove("lit"));
+  requestAnimationFrame(tick);
+}
+
+function reveal(){
+  const v = B.verdict;
+  document.getElementById("fly-v").textContent = ET[v.code];
+  const agree = v.agrees_with_chamber;
+  document.getElementById("fly-n").textContent =
+    (v.supports_bill === null
+      ? "the race stayed inside the brain's own noise floor"
+      : `Δ ${B.race.delta >= 0 ? "+" : ""}${B.race.delta.toFixed(2)} Hz — `
+        + (agree ? "the same way as the chamber" : "the opposite way to the chamber"))
+    + (yourVote ? (yourVote === v.code ? " · you agreed" : " · you did not") : "");
+  document.getElementById("card-fly").classList.remove("pending");
+  drawSeat(true);
+}
+
+let lastFrame = -1, lastNow = 0;
+function tick(now){
+  const t = now - started;
+  const lit = Math.min(B.channels.length, Math.floor(t / (LIGHT_MS / B.channels.length)));
+  const chs = document.querySelectorAll(".ch");
+  for (let i = 0; i < lit; i++){
+    const el = chs[i];
+    if (el.classList.contains("lit")) continue;
+    el.classList.add("lit");
+    const f = el.querySelector(".fill");
+    f.style.width = f.style.getPropertyValue("--w");
+    f.style.left = f.style.getPropertyValue("--l");
+    f.style.filter = `blur(${f.style.getPropertyValue("--blur")})`;
+  }
+
+  const f = frameAt(t - LIGHT_MS);
+  if (f >= 0){
+    if (f !== lastFrame && f < FRAMES){
+      for (const s of frameSlots(f)) heat[s] = 1;
+      lastFrame = f;
+      document.getElementById("clock").textContent =
+        `${(f * B.sim.duration_s * 1000 / FRAMES).toFixed(0)} ms`
+        + (f < SLOW_FRAMES ? "  ·  slowed" : "");
+      drawRace(f);
+      drawMeters(f);
+    }
+    // ~3 playback frames of afterglow, expressed per animation frame so the glow lasts the
+    // same number of *simulation* frames whether the run is being held slow or played fast.
+    // At a flat 0.86 a spike stayed lit for fifteen frames, which smeared the whole 500 ms
+    // into one flat blaze and hid the wave entirely.
+    const hold = (f < SLOW_FRAMES ? SLOW_MS : FAST_MS) * 3;
+    const decay = Math.exp(-(now - lastNow) / hold);
+    for (let i = 0; i < K; i++) if (heat[i] > 0) heat[i] *= decay;
+    lastNow = now;
+    theta += REDUCED ? 0 : 0.0016;
+    drawBrain();
+  }
+
+  if (f >= FRAMES){
+    if (playing){ playing = false; reveal(); veil.classList.remove("hidden");
+      veil.textContent = "Replay finished. Pick a vote again to watch it once more."; }
+    return;
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ---------- boot ---------- */
+function layout(){ sizeBrain(); sizeRace(); sizeSeat(); drawBrain(); drawRace(0);
+  drawSeat(false); drawMeters(-1); }
+addEventListener("resize", layout);
+layout();
+</script>
+</body>
+</html>

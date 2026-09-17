@@ -37,9 +37,17 @@ def test_body_ids_stay_integers(pops):
         assert ids.dtype == np.int64
 
 
-def test_every_axis_has_two_distinct_channels(pops):
-    channels = pops.axis_channels()
-    assert set(channels) == set(P.AXIS_ORNS)
+def test_channel_keys_track_the_rubric(pops):
+    """The ORN table and the scoring rubric must name the same channels. They have drifted
+    apart once already, when the rubric was rewritten as concrete questions."""
+    from karbes.score import rubric2
+
+    assert tuple(P.CHANNEL_ORNS) == rubric2.KEYS
+
+
+def test_every_channel_has_two_distinct_poles(pops):
+    channels = pops.channels()
+    assert set(channels) == set(P.CHANNEL_ORNS)
     seen = set()
     for neg, pos in channels.values():
         assert len(neg) > 0 and len(pos) > 0
@@ -50,9 +58,18 @@ def test_every_axis_has_two_distinct_channels(pops):
 
 
 def test_channels_are_comparable_in_size(pops):
-    """No axis should be louder than another purely through cell count."""
+    """No channel should be louder than another purely through cell count."""
     sizes = [len(v) for v in pops.orn.values()]
     assert max(sizes) / min(sizes) < 2.5, f"channel sizes span {min(sizes)}-{max(sizes)}"
+
+
+def test_readout_is_every_lateralised_descending_neuron(pops):
+    """1,304 of the 1,314 descending neurons carry a side; the other 10 sit on the midline.
+
+    Narrowing this pool is how the zero-input left-right asymmetry reached -4.577 Hz, which
+    was larger than any stimulus effect. If this count drops, that floor moved with it.
+    """
+    assert len(pops.dn_left) + len(pops.dn_right) == 1_304
 
 
 def test_readout_has_both_sides_and_is_balanced(pops):

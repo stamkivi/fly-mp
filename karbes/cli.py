@@ -38,6 +38,134 @@ def _score(args: argparse.Namespace) -> int:
     return run_pilot(DATA, force=args.force, verbose=not args.quiet, full=args.full)
 
 
+MALECNS = Path("data/malecns")
+RUNS = Path("runs")
+
+
+def _load_graph():
+    """Populations and the compiled CSR, or a clear instruction if they are missing."""
+    from karbes.graph import load as L
+    from karbes.graph import populations as P
+
+    graph = L.load_compiled(MALECNS)
+    if graph is None:
+        raise SystemExit(
+            f"no compiled connectome in {MALECNS}. Run ./bootstrap.sh, or fetch the "
+            "feathers with scripts_fetch.sh and compile."
+        )
+    return P.load(MALECNS), graph
+
+
+def _calibrate(args: argparse.Namespace) -> int:
+    import json
+
+    from karbes import replay
+
+    pops, graph = _load_graph()
+    result = replay.calibrate(graph, pops, seeds=args.seeds)
+    RUNS.mkdir(exist_ok=True)
+    (RUNS / "calibration.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
+    print(f"\nsignal (mean channel span)  {result['signal_hz']:>8.3f} Hz")
+    print(f"noise (blank-bill SD)       {result['noise_hz']:>8.3f} Hz")
+    print(f"SNR                         {result['snr']:>8.3f}")
+    print(f"dead band                   {result['dead_band_hz']:>8.3f} Hz")
+    print(f"\nwritten to {RUNS / 'calibration.json'}")
+    return 0
+
+
+def _replay(args: argparse.Namespace) -> int:
+    import json
+
+    from karbes import atlas as A
+    from karbes import replay
+    from karbes.analysis import idealpoint, votematrix
+    from karbes.riigikogu.corpus import load_bills, load_votes
+    from karbes.score.jev import JevScorer
+
+    pops, graph = _load_graph()
+    soma = A.load(MALECNS)
+    if soma is None:
+        soma = A.build(MALECNS)
+        A.save(soma, MALECNS)
+
+    votes = load_votes(DATA)
+    bills = load_bills(DATA)
+    log = logging.getLogger("karbes.cli")
+    log.info("corpus: %d votings on %d bills", len(votes), len(bills))
+
+    with JevScorer(DATA) as scorer:
+        if args.bill:
+            wanted = [v for v in votes if v.draft_uuid == args.bill]
+            if not wanted:
+                raise SystemExit(f"no substantive voting on bill {args.bill}")
+            scores = {args.bill: scorer.score(bills[args.bill])}
+        else:
+            # Only bills with text can be scored, and an unscorable bill is excluded
+            # rather than defaulted to zeros.
+            scores = {
+                uuid: scorer.score(bills[uuid])
+                for uuid in {v.draft_uuid for v in votes}
+                if uuid in bills and bills[uuid].has_text
+            }
+        scores = {k: v for k, v in scores.items() if v is not None}
+        if scorer.calls:
+            log.info("scored %d bills live, $%.4f", scorer.calls, scorer.cost_usd)
+
+    bill, vote = (
+        (
+            bills[args.bill],
+            max((v for v in votes if v.draft_uuid == args.bill), key=lambda v: v.when),
+        )
+        if args.bill
+        else replay.pick_bill(bills, votes, scores)
+    )
+
+    vm = votematrix.build(votes)
+    space = idealpoint.fit(vm, dims=2)
+
+    calibration = RUNS / "calibration.json"
+    if not calibration.exists():
+        raise SystemExit(f"no {calibration}; run `karbes calibrate` first")
+    dead_band = json.loads(calibration.read_text(encoding="utf-8"))["dead_band_hz"]
+
+    bundle = replay.build(
+        replay.Inputs(
+            bill=bill,
+            vote=vote,
+            scored=scores[bill.uuid],
+            graph=graph,
+            pops=pops,
+            atlas=soma,
+            space=space,
+            vm=vm,
+            dead_band=dead_band,
+            seed=args.seed,
+            seeds=args.seeds,
+        )
+    )
+    doc, blob = bundle.write(RUNS / "replay")
+
+    from karbes import page as P
+
+    html = P.write(
+        RUNS / "page" / "index.html",
+        P.build(bundle.doc, bundle.raster, soma, json.loads(calibration.read_text("utf-8"))),
+    )
+
+    v = bundle.doc["verdict"]
+    print(f"\nbill      {bill.title[:72]}")
+    print(f"chamber   {'advances' if v['chamber_advances'] else 'rejects'} the bill")
+    print(
+        f"Karbes    {v['code']}  (delta {bundle.doc['race']['delta']:+.3f} Hz, "
+        f"dead band {dead_band:.3f})"
+    )
+    print(f"agrees    {v['agrees_with_chamber']}")
+    print(f"\n{doc} ({doc.stat().st_size:,} B)")
+    print(f"{blob} ({blob.stat().st_size:,} B)")
+    print(f"{html} ({html.stat().st_size:,} B)")
+    return 0
+
+
 def _unimplemented(stage: str):
     def run(args: argparse.Namespace) -> int:
         raise SystemExit(f"'{stage}' is not implemented yet")
@@ -70,6 +198,18 @@ def main() -> int:
     )
     p.add_argument("--quiet", action="store_true")
     p.set_defaults(func=_score)
+
+    p = sub.add_parser("calibrate", help="Stage 2b — measure the dead band and the SNR")
+    p.add_argument("--seeds", type=int, default=20, help="blank-bill runs behind the dead band")
+    p.set_defaults(func=_calibrate)
+
+    p = sub.add_parser("replay", help="Stage 2b — build one bill's replay bundle")
+    p.add_argument("--bill", help="draft UUID; defaults to the pre-registered pick")
+    p.add_argument("--seed", type=int, default=0, help="input phase; the fly wavers with it")
+    p.add_argument(
+        "--seeds", type=int, default=8, help="input phases to re-run, to measure the wavering"
+    )
+    p.set_defaults(func=_replay)
 
     for name, help_text in [
         ("run", "Stage 3 — simulate Kärbes's vote on every bill, from cache"),

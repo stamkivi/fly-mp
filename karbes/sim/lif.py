@@ -7,7 +7,8 @@ roughly 139 hours for Stage 3. Propagating only from cells that actually spiked 
 that to ~64M edge-ops at a plausible 5 Hz, and the dominant remaining cost becomes
 membrane integration, which numpy does in one call per step rather than 166,700.
 
-Parameters follow Stonkfly's documented table, reimplemented rather than copied.
+Parameters follow Stonkfly's documented table, reimplemented rather than copied — with
+the exception of `weight_scale`, which is calibrated against this graph. See `Params`.
 """
 
 from __future__ import annotations
@@ -32,7 +33,12 @@ class Params:
     v_reset: float = -52e-3
     delay: float = 1.8e-3
     refractory: float = 2.2e-3
-    weight_scale: float = 0.275e-3  # mV per synaptic contact
+    #: **Calibrated here, not inherited.** Stonkfly publishes 0.275 mV per contact; on
+    #: this graph that runs the network at ~50 Hz. The network is quiescent without input
+    #: at every scale tested, so it is over-driven rather than unstable. At 0.02 it is
+    #: physiological but the descending neurons never fire at all. 0.05 is the lowest
+    #: scale at which the readout is alive, and that is why it is the working point.
+    weight_scale: float = 0.05e-3  # mV per synaptic contact
     duration: float = 0.5  # 500 ms of neural time
 
     @property
@@ -48,8 +54,26 @@ class Params:
         return max(1, round(self.refractory / self.dt))
 
 
-#: Stonkfly's documented parameters, as a singleton so it is not rebuilt per call.
+#: The working parameter set, as a singleton so it is not rebuilt per call.
 DEFAULTS = Params()
+
+
+@dataclass(frozen=True)
+class Probes:
+    """What the replay needs out of a run, recorded at frame resolution.
+
+    Recording is opt-in because it costs two fancy-index lookups per timestep. Spikes are
+    binned into `frames` equal slices of the run rather than kept at 0.1 ms, which is what
+    keeps a bundle at tens of kilobytes instead of tens of megabytes.
+    """
+
+    frames: int
+    #: name -> neuron indices. Yields a per-frame spike count for the whole group, which
+    #: is how the left/right descending race is measured.
+    groups: dict[str, np.ndarray] = field(default_factory=dict)
+    #: Neuron indices whose spikes are recorded individually, as positions into this
+    #: array. This is the atlas sample, and it is what the brain on screen draws.
+    raster: np.ndarray | None = None
 
 
 @dataclass
@@ -60,6 +84,11 @@ class Result:
     steps: int
     input_spikes: int
     history: np.ndarray | None = field(default=None)  # optional (steps,) population rate
+    #: group name -> (frames,) spike counts, present only when probes were requested.
+    group_counts: dict[str, np.ndarray] = field(default_factory=dict)
+    #: per frame, the raster slots that fired in it. Deduplicated: at 5 ms frames and a
+    #: 2.2 ms refractory a cell can fire twice, and the page only asks whether it fired.
+    raster: list[np.ndarray] = field(default_factory=list)
 
     def rates(self) -> np.ndarray:
         """Firing rate in Hz per neuron."""
@@ -83,6 +112,7 @@ def run(
     seed: int = 0,
     record_history: bool = False,
     poisson_input: bool = False,
+    probes: Probes | None = None,
 ) -> Result:
     """Simulate `params.duration` of neural time.
 
@@ -127,6 +157,21 @@ def run(
         phase = rng.random(len(driven_idx)) if len(driven_idx) else np.zeros(0)
 
     history = np.zeros(p.steps, dtype=np.float32) if record_history else None
+
+    # Probe bookkeeping: index -> group id, and index -> raster slot, both -1 when the
+    # neuron is not probed. One int32 array each, so the per-step cost is a gather over
+    # the handful of cells that actually spiked rather than a scan over all 166,700.
+    group_names: list[str] = list(probes.groups) if probes else []
+    group_of = np.full(n, -1, dtype=np.int32)
+    group_counts = np.zeros((probes.frames if probes else 0, len(group_names)), dtype=np.int32)
+    for gid, name in enumerate(group_names):
+        group_of[probes.groups[name]] = gid
+    raster_slot = np.full(n, -1, dtype=np.int32)
+    raster_frames: list[list[np.ndarray]] = []
+    if probes is not None and probes.raster is not None:
+        raster_slot[probes.raster] = np.arange(len(probes.raster), dtype=np.int32)
+        raster_frames = [[] for _ in range(probes.frames)]
+
     total_in = 0
     indptr, indices, weights, sign = graph.indptr, graph.indices, graph.weights, graph.sign
 
@@ -175,6 +220,19 @@ def run(
                 # current one axonal delay later, when the ring comes back around.
                 np.add.at(pending[slot], targets, amps)
 
+            if probes is not None:
+                frame = step * probes.frames // p.steps
+                if group_names:
+                    g = group_of[idx]
+                    g = g[g >= 0]
+                    if g.size:
+                        group_counts[frame] += np.bincount(g, minlength=len(group_names))
+                if raster_frames:
+                    fired = raster_slot[idx]
+                    fired = fired[fired >= 0]
+                    if fired.size:
+                        raster_frames[frame].append(fired.astype(np.uint16))
+
         if history is not None:
             history[step] = idx.size
 
@@ -185,4 +243,9 @@ def run(
         steps=p.steps,
         input_spikes=total_in,
         history=history,
+        group_counts={name: group_counts[:, gid].copy() for gid, name in enumerate(group_names)},
+        raster=[
+            np.unique(np.concatenate(parts)) if parts else np.empty(0, dtype=np.uint16)
+            for parts in raster_frames
+        ],
     )
