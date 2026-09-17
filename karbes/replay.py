@@ -241,9 +241,12 @@ def calibrate(
     than the spread this brain produces on a bill that says nothing is not a decision.
     The rule is fixed here, on the network alone; no part of it can see the chamber.
 
-    SNR is the stimulus effect over that spread. It has been measured at roughly 0.5, and
-    it is reported rather than engineered away: a brain visibly making up its mind is the
-    point, and averaging it into false confidence would be the dishonest move.
+    SNR is the stimulus effect over that spread. **Measured with enough seeds it is
+    consistent with zero** — the full-scale contrast, every channel +1 against every
+    channel -1, comes to -0.09 +/- 0.38 Hz. SPEC's 0.5 and this module's earlier 0.88 were
+    both artefacts of one simulation per sweep point. `channels_resolved_above_noise` is
+    the number that matters: it is how many channels the fly can be shown to smell at all,
+    and on the current model it is none. See FINDINGS.md.
     """
     floor = noise_floor(graph, pops, seeds=seeds, params=params)
     swept = sweep(graph, pops, params=params, seeds=sweep_seeds)

@@ -972,8 +972,8 @@ dropped after the fact on a threshold I chose.
 | Stage 0 — harvest + pre-tests (T1–T5, era-aware) | **done**, gate PASS |
 | Stage 1 — scoring | **done**; LLM rubric superseded by Jev, 751/751 bills, $0.042 |
 | Stage 2 — connectome + LIF kernel | **done**; see measurements below |
-| **Stage 2b — one-bill replay slice** | **next** |
-| Stage 3 — full run · Stage 4 — null ladder · Stage 5 — deliverables | not started |
+| **Stage 2b — one-bill replay slice** | **done** — bundle, atlas and page built; **stimulus sweep fails**, see FINDINGS.md |
+| Stage 3 — full run · Stage 4 — null ladder · Stage 5 — deliverables | **blocked** on the flat sweep |
 
 ### Stage 2 measurements (2026-09-16/17)
 
@@ -1003,6 +1003,33 @@ Reading all 1,304 descending neurons instead of 51 fixed the zero-input left/rig
 Per §"The deliverable is a replay", **this is treated as content rather than as a defect**: a
 brain visibly making up its mind is the point. It must be shown and reported, never averaged
 away into false confidence.
+
+> **Superseded 2026-09-17 — the 1.1 Hz was noise, and the SNR is zero.** The figures above came
+> from one simulation per sweep point. Run-to-run spread on this readout is ~1.6 Hz, so a span
+> built from two single runs carries ~2.3 Hz of error, and every per-channel number in the
+> original sweep is smaller than its own error bar. Seed pairing cannot cancel it either: the
+> same seed under two different stimuli gives r = −0.11, because changing a channel's rate
+> reshuffles every subsequent spike time.
+>
+> Measured over 24 phases per condition, the full-scale contrast — **every** channel at +1
+> against **every** channel at −1 — is **−0.09 ± 0.38 Hz (t = −0.24)**. Against a blank bill,
+> −0.21 ± 0.42. `nature`, which looked like a 4.12 Hz effect on one seed, is +0.37 ± 0.43. The
+> same contrast moves the total DN rate by −1.08 ± 0.74, the central brain (32,164 cells) by
+> −0.01 ± 0.19, and the whole network by +0.01 ± 0.09. **Nothing responds**, so this is not a
+> readout-design problem and a different decoder would not have helped.
+>
+> Cause, measured: **the network is bistable.** Zero input leaves it exactly silent; 0.5 Hz on
+> ~1,000 ORNs takes it to 21.4 Hz; a further 200× increase, to 100 Hz, takes it to 23.6 Hz.
+> Once lit, activity is self-sustained through the 25.6M recurrent synapses and the driven
+> cells are a rounding error. `weight_scale` 0.02 and 0.05 are therefore not a range containing
+> a working point — they are the two sides of a bifurcation, which is why re-tuning it never
+> helped.
+>
+> This is the flat sweep that §Verification pre-commits as failure, and it gates Stage 3: as it
+> stands the I/O mapping is a null instrument, and a voting record built on it would be noise.
+> Levers are in FINDINGS.md §"What would have to change first" — widen the input rather than
+> raise the weight scale, add the adaptation and inhibitory normalisation the kernel lacks, and
+> make the sweep a machine-enforced gate. Everything else in the Stage 2b slice stands.
 
 ---
 

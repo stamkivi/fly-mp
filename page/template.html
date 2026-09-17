@@ -23,6 +23,10 @@ h1{font-family:var(--display);font-weight:600;font-size:clamp(34px,6vw,56px);
    line-height:1.05;margin:0 0 8px}
 h2{font-family:var(--display);font-weight:600;font-size:22px;margin:40px 0 12px}
 .lede{color:var(--dim);max-width:62ch;margin:0 0 6px}
+.finding{border:1px solid var(--line);border-left:3px solid var(--right);border-radius:5px;
+         padding:16px 18px;margin:22px 0 0;max-width:72ch;background:var(--panel);
+         font-size:14.5px;color:var(--dim)}
+.finding b{color:var(--ink)}
 .stamp{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
        color:var(--dim);border:1px solid var(--line);border-radius:3px;padding:5px 9px;
        display:inline-block;margin:14px 0 0}
@@ -148,6 +152,8 @@ table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
   the Riigikogu. A real bill goes in as a smell. 166,700 neurons and 25.6 million connections
   fire for 500&nbsp;ms. Two pools of descending neurons race, and whichever wins is the vote.</p>
   <span class="stamp">Simulated · wiring-constrained · engineered I/O mapping</span>
+
+  <div class="finding" id="finding"></div>
 
   <h2>The bill</h2>
   <div class="panel bill">
@@ -568,9 +574,10 @@ if (W && W.runs){
   document.getElementById("wave-note").textContent =
     `The bill, the scores and the wiring are identical in all ${all.length} runs below. `
     + `Only the phase of the input spike trains differs — and that alone moves the readout `
-    + `across a ${(W.delta_max_hz - W.delta_min_hz).toFixed(2)} Hz range, `
-    + `wider than any single channel moves it. The fly is not being coy; the noise in this `
-    + `network is genuinely larger than the signal.`;
+    + `across a ${(W.delta_max_hz - W.delta_min_hz).toFixed(2)} Hz range, far wider than any `
+    + `channel moves it. Read this the careful way round: the fly is not weighing the bill `
+    + `and finding it close. On the measurements below the page, the phase is the only thing `
+    + `the readout responds to at all.`;
   document.getElementById("wave").innerHTML =
     `<div class="waverow">` + all.map(r =>
       `<div class="wchip ${r.code}${r.this ? " this" : ""}">` +
@@ -611,6 +618,7 @@ document.getElementById("facts").innerHTML =
   facts.map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
 
 document.getElementById("caveats").innerHTML = __CAVEATS__;
+document.getElementById("finding").innerHTML = __FINDING__;
 
 /* ---------- playback ---------- */
 /* Playback is deliberately not linear in neural time. Everything interesting happens in

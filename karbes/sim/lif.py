@@ -38,6 +38,13 @@ class Params:
     #: at every scale tested, so it is over-driven rather than unstable. At 0.02 it is
     #: physiological but the descending neurons never fire at all. 0.05 is the lowest
     #: scale at which the readout is alive, and that is why it is the working point.
+    #:
+    #: **"Alive" turned out to mean self-sustained, not stimulus-driven** (FINDINGS.md
+    #: §2.4). At this scale the network is bistable: silent with no input, and ~22 Hz with
+    #: half a hertz of it, after which a two hundred-fold increase in input changes the
+    #: rate by 10%. So 0.02 and 0.05 are not a range containing a working point, they are
+    #: the two sides of a bifurcation, and no value between them will make the readout
+    #: follow the stimulus. Raising this further is not the lever.
     weight_scale: float = 0.05e-3  # mV per synaptic contact
     duration: float = 0.5  # 500 ms of neural time
 

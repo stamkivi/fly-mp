@@ -31,9 +31,13 @@ log = logging.getLogger(__name__)
 #: shown on screen, not scored.
 SETTLE_SECONDS = 0.15
 
-#: Zero-input |delta| on this graph, measured over seeds 0-9 (see `runs/noise_floor.json`
-#: and FINDINGS.md). A race closer than this is not a decision.
-DEAD_BAND_HZ = 1.0
+#: Fallback dead band in Hz. The real one is measured by `karbes calibrate` and read from
+#: `runs/calibration.json`; this is only what `race()` uses when called without one.
+#:
+#: Note what a decline currently means, per FINDINGS.md: the stimulus does not move this
+#: readout at all, so a race inside the dead band says the network was not driven anywhere,
+#: not that the fly found the bill finely balanced.
+DEAD_BAND_HZ = 1.6
 
 
 @dataclass(frozen=True)
