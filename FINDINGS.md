@@ -241,9 +241,10 @@ Same bill, same scores, same wiring, eight input phases: **6 declined, 1 Poolt, 
 Δ ranging −1.93 to +1.70 Hz. It is on the page, labelled.
 
 SPEC frames this as content — *a brain visibly making up its mind* — and it reads that way on
-screen. But given 2.3, the honest description is narrower: **the input phase is the only thing
-the readout responds to.** The fly is not making up its mind about the bill; it is not
-responding to the bill at all. The page should not, and now does not, claim otherwise.
+screen. Given 2.3 and 2.3b the honest description is narrower: **the input phase is the only
+thing this readout responds to.** The brain is not silent to the bill, but the number the
+verdict is taken from is, so what looks like deliberation is a coin landing. The page should
+not claim otherwise, and now does not.
 
 ---
 
