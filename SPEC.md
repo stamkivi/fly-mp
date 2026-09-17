@@ -945,16 +945,67 @@ dropped after the fact on a threshold I chose.
 
 | Step | State |
 |---|---|
-| Repo initialised, skeleton + `.gitignore` | done |
-| `SPEC.md` promoted from plan | done (this file) |
-| `CLAUDE.md` via `/init` | done |
-| Stage 0 — harvest + offline pre-tests (T1–T5, era-aware) | **done, gate PASS** (see above) |
-| Stage 1 — LLM rubric, full corpus | **done, gate FAIL on P2; finding recorded** |
-| **Stage 2 — LIF kernel + smoke tests** | **next** |
+| Stage 0 — harvest + pre-tests (T1–T5, era-aware) | **done**, gate PASS |
+| Stage 1 — scoring | **done**; LLM rubric superseded by Jev, 751/751 bills, $0.042 |
+| Stage 2 — connectome + LIF kernel | **done**; see measurements below |
+| **Stage 2b — one-bill replay slice** | **next** |
+| Stage 3 — full run · Stage 4 — null ladder · Stage 5 — deliverables | not started |
 
-Stage 0 is the decision point: it runs with no LLM and no simulator, and its T1/T3 kill criteria
-determine whether the 7-faction question is answerable at all or must be reframed as
-coalition/opposition plus a continuous position. Nothing downstream should be built until it passes.
+### Stage 2 measurements (2026-09-16/17)
+
+Graph compiles to **166,700 neurons / 25,582,938 edges / 124,177,616 synaptic contacts**,
+independently reproducing the published figures to within one synapse. 9 s to compile, 3.0 GB
+peak, 206 MB CSR.
+
+Kernel: **1.81 s per bill** at 500 ms neural time, so Stage 3's 3,920 sims is **~2 h**. The
+40× arithmetic in §Engineering constraints held: event-driven propagation with vectorised
+membrane integration is what makes this feasible.
+
+Two corrections found by running it:
+
+- The synapse model had to become **instantaneous PSPs**. Filtering through a 5 ms synapse and
+  adding the filtered value every timestep integrates each event ~50× over, and the network ran
+  away at 97 Hz.
+- `weight_scale` is **calibrated, not inherited**. Stonkfly's published 0.275 mV per contact
+  gives ~50 Hz here; the network is quiescent without input at every scale tested, so it is not
+  unstable, just over-driven. 0.05 mV is the working point — it is the lowest scale at which the
+  descending neurons fire at all.
+
+**The open problem, stated honestly: SNR ≈ 0.5.** Moving a channel from −1 to +1 shifts the
+DN readout ~1.1 Hz; re-running the same stimulus with a different input phase shifts it ~2.3 Hz.
+Reading all 1,304 descending neurons instead of 51 fixed the zero-input left/right asymmetry
+(−4.577 → +0.011 Hz) but not the noise. Averaging 5 seeds does not rescue it.
+
+Per §"The deliverable is a replay", **this is treated as content rather than as a defect**: a
+brain visibly making up its mind is the point. It must be shown and reported, never averaged
+away into false confidence.
+
+---
+
+## Current task: the one-bill replay slice
+
+Build a single ~20-second loop end to end on real data, before scaling to 30 bills or a season
+mode. It exists to answer one question: **does the brain animation read as a fly brain, or as
+particle soup?** Everything downstream depends on that.
+
+1. **Replay bundle generator** — `karbes/replay.py`, writing one JSON/binary bundle per bill:
+   the bill's title and summary; its nine Jev channels with confidence; ORN drive weighted by
+   confidence; a spike raster downsampled to ~100 frames; the left/right DN race as a series;
+   the verdict; the fly's position on the political line.
+2. **Soma atlas** — sample ~16,000 of the 139,662 neurons that carry real 3-D coordinates,
+   quantised to uint16 (94 KB). Keep superclass so optic lobes, central brain and nerve cord
+   are separable on screen.
+3. **The page** — replace the current illustrative canvas with playback of the real bundle.
+   Viewer votes first (poolt / vastu / decline), then the brain fires, then the fly decides.
+
+Budget: shared atlas ~94 KB, spikes sparse at 3 bytes each ≈ 45 KB per bill, so 30 bills ≈
+1.4 MB against a 16 MB limit.
+
+*Deferred until the slice proves out:* the 3-D fly body pressing a button. `flybody`
+(Apache-2.0, ~85 OBJ meshes) is the community's shared model and is browser-loadable via
+`OBJLoader`; Virtual Fly Brain publishes neuropil surface meshes as OBJ. No existing project
+combines an animated fly body with a connectome-driven discrete choice, so it is open territory
+rather than something to copy.
 
 ---
 
