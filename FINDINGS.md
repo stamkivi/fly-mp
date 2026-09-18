@@ -96,6 +96,33 @@ Per faction, the share of speeches that ring: EKRE 46%, Isamaa 22%, KESK 18%, RE
 SDE 5%. That is the opposition asking the questions in question time, and questions are
 adversarial by role; it is recorded here and kept off the page as a table.
 
+### 19 June 2023, played — the day with disorder in it
+
+The 27-hour obstruction sitting, chosen from 172 fetched days as the one with the most
+conduct events: 1,512 events, 846 stimuli, 641 s of biological time.
+
+| | 20 May 2026 | 19 June 2023 |
+|---|---:|---:|
+| stimuli | 316 | 846 |
+| speeches read as hostile (> 0.3) | 54 (17%) | 227 (27%) |
+| recorded disturbances | 11 | 43 |
+| fly rang the bell | 22 | **73** |
+| real chair: called for order / rang for order | 0 / 0 | **8 / 8** |
+| real chair: called time | 7 | 56 |
+| fly bells within two events of a chair conduct action | — | **1** |
+
+Mean giant-fibre response by kind held its shape across the two days — heckles 174.7 and
+173.6, civil speeches 0.5 and 1.0, votes 0 and 0 — which is what a reflex should do.
+
+**The fly and the chair police different things.** On the night the chair intervened sixteen
+times for conduct, the fly rang seventy-three times and the two coincided once. The chair's
+interventions are about the *floor* — *Saalis on liiga suur lärm*, the bell rung over general
+noise — while the fly, by construction, reacts to the *speaker*: a hostile speech looms, a
+recorded heckle lunges. The stenographer's record of disturbances is the floor as heard from
+the chair; the chair's own bell is the floor as judged from the chair; the fly's bell is the
+speaker as scored by a classifier. Three different instruments. The page shows all three on
+one timeline and does not pretend they measure the same thing.
+
 ### The transcript's own rhythm, which is what the page plays
 
 A speaker change every 80 s; the chair's utterances median 7 s (38 of them literally
