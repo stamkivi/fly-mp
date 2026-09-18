@@ -3,6 +3,117 @@
 *uv-mac-mini, 2026-09-17/18, MaleCNS v1.0. Newest iteration first; earlier sections are kept
 as the record of what was believed when, not deleted when superseded.*
 
+## Iteration 5 — the fly takes the chair (2026-09-19)
+
+*Design in SPEC §"Iteration 5", revised in the night of 18–19 September after the reading
+question was retired. Every link below is measured; the page is built from the
+measurements, not around them.*
+
+### Why the fly is the Speaker
+
+The model is a reflex machine. Tested directly: the ellipsoid-body ring attractor — the fly's
+compass and its working memory — holds **nothing** after input stops (zero EPG spikes in the
+600 ms after a 200 ms drive; Δ7 inhibition localises the bump, nothing sustains it). Its state
+is a 20 ms membrane and a 5 ms synapse. It cannot hold a position.
+
+The one role in a parliament that is *supposed* to be a reflex is the chair: react to conduct,
+not content; give the floor; ring the bell. So the fly sits in the Speaker's seat and the
+sitting is played to it.
+
+### What the brain can and cannot show, measured before building
+
+| pathway | result | used |
+|---|---|---|
+| smell → lean away (DA2/CO2, innately aversive) | dead: +0.43 at one seed, +0.29 at five, → 0.00 as dose and duration rise. Small-count noise, the same trap as the per-bill coin flip and the 16.5× ratio | no |
+| hearing → which side (672 JO neurons, L/R) | unreliable: both ears give a leftward sign on 2–67 spikes | no |
+| motion → which side is speaking (T4/T5, sustained) | switching left→right under steady drive: **nothing visible** — T4/T5 flat at ~20k, DNa noise | no |
+| text → mushroom body pattern separation | saturated: 55–59% of Kenyon cells light for anything, overlap 0.96–0.98 at every drive down to 2 Hz | no |
+| **onset from silence** | the wave: ORNs 0 ms → antennal-lobe LNs 5 ms → Kenyon cells 15 ms; centroid travels 15,693→33,550 voxels | **yes** |
+| **looming → escape (LC4/LPLC2 → DNp01)** | cleanest result of the project: fires 5/5 at every dose from 2 Hz, graded 20→168 spikes, seed variance ±1–2; a 300 ms pulse gives 20–24 spikes/50 ms then **zero** within 100 ms — a discrete event | **yes** |
+| **escape lateralises** | left eye → DNa turn +0.67 ± 0.07; right eye → −0.92 ± 0.00 | **yes** |
+
+The brain displays **events, not states**. Anything true for a while — who is speaking, which
+side — leaves no visible mark.
+
+### The data
+
+The Riigikogu API documents two endpoints in its README and serves 72 (`/v3/api-docs`).
+`/api/steno/verbatims` is the verbatim record with **second-resolution timestamps**, speaker,
+text, and disturbances, votes and the bell inline: 30,598 speaker events across the term,
+556 on 20 May 2026 (12:00→00:04 UTC, 71,719 words, 63 speakers). `/api/hallplan` gives
+seat number, member, faction and the official party colours; the numbered plan itself is not
+published and positions are reconstructed from seat order and the photograph from the
+Speaker's desk (two blocks, six rows). `texts[]` on every draft carries the full legal text —
+50,297 words for the Crisis Act — which the earlier "no bill texts" claim missed.
+
+### The stimulus, three rules, all declared
+
+* A speech is a **scent from the speaker's side** (ORNs, 30 Hz, for a duration that grows
+  with the log of its length). Its onset out of silence is the wave. Scent never reaches the
+  giant fibre.
+* **Hostility makes it loom.** One five-level question to Jev per speech — how does the speaker
+  treat the people addressed — with calibrated confidence. `hostility = max(0, (2−score)/2) ×
+  confidence`; looming rate zero below a knee of 0.3, 40 Hz at 1.0. Validated where the record
+  allows: the day's most confident "openly insulting", 0.09 at 0.92, was *"Lugupeetud
+  esikloun!"* — the speech the chair reprimanded minutes later.
+* A **heckle lunges** from the heckler's seat (both sides if unseated); a **vote fills the
+  hall** (scent, both sides, 90 Hz).
+
+Every event starts the brain from rest, which its measured decay makes it do anyway, with
+150 ms of silence after.
+
+**The first encoding was wrong and the smoke test caught it.** Speeches through T4/T5 fired
+the giant fibre 184–335 times on every civil sentence — one-sided optic flow drives DNp01 by
+itself, which `vision.py` had already found the day before. Speeches moved to scent.
+
+### 20 May 2026, played
+
+566 events, 316 stimuli, 252 s of biological time for 724 minutes of sitting.
+
+| | |
+|---|---:|
+| fly rang the bell (giant fibre ≥ 8 spikes) | **22** |
+| of which heckles | 11 of 11 |
+| real chair: rang the bell / called for order / called time | 1 / 0 / 6 |
+| fly bells within two events of a chair action | 2 |
+| recoil direction correct, hostile from the left (n=13) / right (n=4) | **100% / 100%** |
+
+**A speech's own scent damps the escape.** Looming alone at 9 Hz one-sided gives ~40
+giant-fibre spikes per 300 ms; the same looming *during* a speech's scent on the same side
+gives a median of 5:
+
+| hostility | n | looming Hz | GF median | bells |
+|---|---:|---:|---:|---:|
+| 0.3–0.4 | 9 | 2.9 | 1 | 0 |
+| 0.4–0.5 | 28 | 9.2 | 5 | 1 |
+| 0.5–0.7 | 10 | 15.6 | 7 | 3 |
+| 0.7–1.0 | 7 | 29.2 | 68 | 7 |
+
+The network, busy with the speaker, bolts only at a confident insult. That is the connectome
+doing something the encoding did not ask for, and it stays.
+
+Per faction, the share of speeches that ring: EKRE 46%, Isamaa 22%, KESK 18%, REF 2%, E200 0%,
+SDE 5%. That is the opposition asking the questions in question time, and questions are
+adversarial by role; it is recorded here and kept off the page as a table.
+
+### The transcript's own rhythm, which is what the page plays
+
+A speaker change every 80 s; the chair's utterances median 7 s (38 of them literally
+*"NAME, palun!"*), members 65 s, ministers 102 s. 66% of speeches open with a thank-you or
+honorific. The day's tempo: ~50 changes an hour, a dinner lull, then **81** in the seventh
+hour. 13 recorded disturbances, 6 procedural fights, 6 time bells. The page's "what the page
+remembers" tally is the memory the brain lacks: mean reaction by kind of event, bells by side,
+recoil direction, ritual greetings counted, and the running comparison with the real chair.
+
+### Not claimed
+
+That the fly judges anything. The judgement of tone is a classifier's; the connectome
+contributes a lateralised escape threshold with its own dynamics, the damping above, and
+the wave. That the seat map is right — it is reconstructed. That 22 bells against 1 real one
+means anything on its own — the day's chair mostly called time, which the fly cannot do.
+
+---
+
 ## Iteration 4 — the connectome is not a better predictor, it is a different person (2026-09-18)
 
 *Design pre-registered in SPEC §"Iteration 4" before the runs that test it finished. Complete:

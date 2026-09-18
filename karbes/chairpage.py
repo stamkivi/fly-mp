@@ -15,7 +15,7 @@ import numpy as np
 
 from karbes import hall
 from karbes.atlas import Atlas
-from karbes.chair import BELL_GF, FPS, Recording
+from karbes.chair import BELL_GF, FPS, ONSET_BINS, Recording
 from karbes.sitting import Sitting
 
 log = logging.getLogger(__name__)
@@ -57,41 +57,123 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
     events = []
     for i, e in enumerate(s.events):
         r = reactions.get(i)
-        events.append({
-            "t": round(e.t, 1), "kind": e.kind, "role": e.role, "who": _who(e),
-            "faction": e.faction, "side": e.side, "seat": e.seat, "words": e.words,
-            "text": e.text, "hostility": round(e.hostility, 3), "real_chair": e.real_chair,
-            "bio": round(e.bio, 3), "item": e.item,
-            "gf": r.gf if r else None, "turn": r.turn if r else None,
-            "dna_l": r.dna_l if r else None, "dna_r": r.dna_r if r else None,
-            "spikes": r.spikes if r else None, "active": r.active if r else None,
-        })
+        events.append(
+            {
+                "t": round(e.t, 1),
+                "kind": e.kind,
+                "role": e.role,
+                "who": _who(e),
+                "faction": e.faction,
+                "side": e.side,
+                "seat": e.seat,
+                "words": e.words,
+                "text": e.text,
+                "hostility": round(e.hostility, 3),
+                "real_chair": e.real_chair,
+                "bio": round(e.bio, 3),
+                "item": e.item,
+                "gf": r.gf if r else None,
+                "turn": r.turn if r else None,
+                "dna_l": r.dna_l if r else None,
+                "dna_r": r.dna_r if r else None,
+                "spikes": r.spikes if r else None,
+                "active": r.active if r else None,
+            }
+        )
     fly_bells = [i for i, r in reactions.items() if r.gf >= BELL_GF]
     chair_marks = [i for i, e in enumerate(s.events) if e.real_chair]
     # a fly bell "coincides" with a chair mark if the chair acted within the same or the
     # next two events — the chair reacts after the offence, not during it
     coincide = sum(1 for i in fly_bells if any(0 <= j - i <= 2 for j in chair_marks))
     summary = {
-        "events": len(s.events), "stimuli": len(rec.reactions),
-        "fly_bells": len(fly_bells), "chair_order": sum(1 for i in chair_marks if s.events[i].real_chair == "order"),
+        "events": len(s.events),
+        "stimuli": len(rec.reactions),
+        "fly_bells": len(fly_bells),
+        "chair_order": sum(1 for i in chair_marks if s.events[i].real_chair == "order"),
         "chair_bell": sum(1 for i in chair_marks if s.events[i].real_chair == "bell"),
         "chair_time": sum(1 for i in chair_marks if s.events[i].real_chair == "time"),
-        "coincide": coincide, "heckles": sum(1 for e in s.events if e.kind == "heckle"),
+        "coincide": coincide,
+        "heckles": sum(1 for e in s.events if e.kind == "heckle"),
         "hostile": sum(1 for e in s.stimuli if e.hostility > 0.3),
-        "ritual": sum(1 for e in s.stimuli if e.kind == "speech" and e.text.startswith(("Aitäh", "Suur tänu", "Tänan"))),
+        "ritual": sum(
+            1
+            for e in s.stimuli
+            if e.kind == "speech" and e.text.startswith(("Aitäh", "Suur tänu", "Tänan"))
+        ),
         "bio_seconds": round(len(rec.raster) / FPS, 1),
+        "by_kind": _by_kind(s, rec),
     }
+
+    def pack(frames: list[list[int]]) -> tuple[str, list[int]]:
+        off = [0]
+        for fr in frames:
+            off.append(off[-1] + len(fr))
+        flat = np.fromiter((x for fr in frames for x in fr), dtype="<u2", count=off[-1])
+        return base64.b64encode(flat.tobytes()).decode(), off
+
+    raster_b64, raster_off = pack(rec.raster)
+    onset_b64, onset_off = pack(rec.onset)
     return {
-        "schema": "karbes-chair/1",
-        "date": s.date, "title": s.title, "start": start_iso, "fps": FPS, "bell_gf": BELL_GF,
-        "seats": [{"place": x.place, "faction": x.faction, "colour": x.colour, "side": x.side, "row": x.row, "col": x.col} for x in seats],
+        "schema": "karbes-chair/2",
+        "date": s.date,
+        "title": s.title,
+        "start": start_iso,
+        "fps": FPS,
+        "bell_gf": BELL_GF,
+        "seats": [
+            {
+                "place": x.place,
+                "faction": x.faction,
+                "colour": x.colour,
+                "side": x.side,
+                "row": x.row,
+                "col": x.col,
+            }
+            for x in seats
+        ],
         "events": events,
-        "group_hz": rec.group_hz, "raster": rec.raster, "frame_event": rec.frame_event,
-        "atlas": {"k": atlas.k, "xy_b64": base64.b64encode(atlas_xy.tobytes()).decode(),
-                  "group_b64": base64.b64encode(atlas.group.astype(np.uint8).tobytes()).decode(),
-                  "inside_b64": base64.b64encode(np.packbits(inside).tobytes()).decode(),
-                  "groups": list(atlas.group_names())},
-        "brain": frame, "summary": summary,
+        "group_hz": rec.group_hz,
+        "frame_event": rec.frame_event,
+        "raster_b64": raster_b64,
+        "raster_off": raster_off,
+        "onset_b64": onset_b64,
+        "onset_off": onset_off,
+        "onset_bins": ONSET_BINS,
+        "onset_event": [r.index for r in rec.reactions],
+        "atlas": {
+            "k": atlas.k,
+            "xy_b64": base64.b64encode(atlas_xy.tobytes()).decode(),
+            "group_b64": base64.b64encode(atlas.group.astype(np.uint8).tobytes()).decode(),
+            "inside_b64": base64.b64encode(np.packbits(inside).tobytes()).decode(),
+            "groups": list(atlas.group_names()),
+        },
+        "brain": frame,
+        "summary": summary,
+    }
+
+
+def _by_kind(s: Sitting, rec: Recording) -> dict:
+    """Mean reaction per kind of event — the thing the brain cannot keep and the page can."""
+    R = {r.index: r for r in rec.reactions}
+    rows: dict[str, list] = {}
+    for i, r in R.items():
+        e = s.events[i]
+        kind = (
+            e.kind
+            if e.kind != "speech"
+            else ("hostile speech" if e.hostility >= 0.5 else "civil speech")
+        )
+        rows.setdefault(kind, []).append(r)
+    return {
+        k: {
+            "n": len(v),
+            "gf": round(float(np.mean([r.gf for r in v])), 1),
+            "turn": round(float(np.mean([abs(r.turn) for r in v])), 3),
+            "active": int(np.mean([r.active for r in v])),
+            "spikes": int(np.mean([r.spikes for r in v])),
+            "bells": sum(1 for r in v if r.gf >= BELL_GF),
+        }
+        for k, v in rows.items()
     }
 
 
@@ -101,7 +183,9 @@ def build(b: dict) -> str:
         "__BUNDLE_JSON__": json.dumps(b, ensure_ascii=False).replace("</", "<\\/"),
         "__BRAIN_B64__": base64.b64encode(BRAIN.read_bytes()).decode(),
         "__FLY_B64__": base64.b64encode(FLY.read_bytes()).decode(),
-        "__HALL_B64__": base64.b64encode(HALL_PHOTO.read_bytes()).decode() if HALL_PHOTO.exists() else "",
+        "__HALL_B64__": base64.b64encode(HALL_PHOTO.read_bytes()).decode()
+        if HALL_PHOTO.exists()
+        else "",
     }
     for k, v in tokens.items():
         if k not in t:

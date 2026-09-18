@@ -45,7 +45,9 @@ LOOM_KNEE = 0.3  # hostility below this is not a threat; the giant fibre fires f
 HECKLE_HZ = 40.0
 VOTE_HZ = 90.0
 FPS = 10  # frames per biological second the page receives
-PINPRICKS = 400  # at most this many individual cells per frame, so the page stays small
+PINPRICKS = 300  # at most this many individual cells per frame, so the page stays small
+ONSET_BIN_MS = 5  # the first 40 ms of every event, at 5 ms: the wave itself
+ONSET_BINS = 8
 BELL_GF = 8  # giant-fibre spikes in one event before it counts as the bell: a twitch is not a bolt
 
 
@@ -68,6 +70,9 @@ class Recording:
     group_hz: dict[str, list[float]] = field(default_factory=dict)  # per frame
     raster: list[list[int]] = field(default_factory=list)  # per frame, atlas positions
     frame_event: list[int] = field(default_factory=list)  # per frame, event index (-1 = silence)
+    onset: list[list[int]] = field(
+        default_factory=list
+    )  # per reaction, ONSET_BINS frames of atlas positions
 
 
 def loom_rate(hostility: float) -> float:
@@ -128,7 +133,13 @@ def _loom(side: str, pops: Populations, eng: E.Engine) -> np.ndarray:
 
 
 def record(
-    s: Sitting, eng: E.Engine, pops: Populations, atlas: Atlas, bias: float, *, limit: int | None = None,
+    s: Sitting,
+    eng: E.Engine,
+    pops: Populations,
+    atlas: Atlas,
+    bias: float,
+    *,
+    limit: int | None = None,
     seed: int = 0,
 ) -> Recording:
     L = eng.positions(pops.dna_left)
@@ -154,11 +165,18 @@ def record(
         on_frames = max(1, round(e.bio * FPS))
         counts = run.counts
         turn = decode.turn_index(counts, L, R, baseline=bias, dead_band=0.0).turn
-        rec.reactions.append(Reaction(
-            index=i, gf=int(counts[GF].sum()), turn=round(float(turn), 4),
-            dna_l=int(counts[L].sum()), dna_r=int(counts[R].sum()),
-            spikes=len(run.events), active=int((counts > 0).sum()), frames=frames,
-        ))
+        rec.reactions.append(
+            Reaction(
+                index=i,
+                gf=int(counts[GF].sum()),
+                turn=round(float(turn), 4),
+                dna_l=int(counts[L].sum()),
+                dna_r=int(counts[R].sum()),
+                spikes=len(run.events),
+                active=int((counts > 0).sum()),
+                frames=frames,
+            )
+        )
         for g in groups:
             fc = run.frame_counts(members[g], frames)
             per_cell_per_s = fc / max(len(members[g]), 1) * FPS
@@ -169,6 +187,22 @@ def record(
                 ids = rng.choice(ids, PINPRICKS, replace=False)
             rec.raster.append(sorted(int(x) for x in ids))
             rec.frame_event.append(i if f < on_frames else -1)
+        # The onset, at the resolution the wave actually has: which atlas cells fired in
+        # each 5 ms bin of the first 40 ms. This is the sweep the page slows down.
+        ev_ = run.events
+        early = ev_[ev_[:, 0] < ONSET_BINS * ONSET_BIN_MS * 10] if len(ev_) else ev_
+        for b in range(ONSET_BINS):
+            lo, hi = b * ONSET_BIN_MS * 10, (b + 1) * ONSET_BIN_MS * 10
+            n_ = (
+                early[(early[:, 0] >= lo) & (early[:, 0] < hi), 1]
+                if len(early)
+                else np.zeros(0, int)
+            )
+            sl = slot[n_]
+            sl = np.unique(sl[sl >= 0])
+            if len(sl) > PINPRICKS:
+                sl = rng.choice(sl, PINPRICKS, replace=False)
+            rec.onset.append(sorted(int(x) for x in sl))
         if n % 25 == 0:
             log.info("chair: %d/%d events, %d frames", n, len(stimuli), len(rec.raster))
     return rec

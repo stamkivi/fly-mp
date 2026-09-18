@@ -33,6 +33,11 @@ canvas{display:block;width:100%;height:100%}
 .bellmark{position:absolute;right:16px;top:14px;z-index:3;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
   color:#FFD36E;opacity:0;transition:opacity .15s;text-transform:uppercase}
 .bellmark.on{opacity:1}
+.memo{position:absolute;left:14px;right:14px;bottom:34px;z-index:2;font-family:var(--mono);font-size:10.5px;color:var(--mute);line-height:1.55}
+.memo .row{display:grid;grid-template-columns:150px 1fr 44px;gap:8px;align-items:center}
+.memo .bar{height:6px;background:#151B26;border-radius:2px;overflow:hidden}.memo .bar i{display:block;height:100%}
+.memo b{color:var(--ink);font-weight:500;text-align:right}
+.memo .two{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;margin-top:4px}
 .regions{position:absolute;left:14px;bottom:12px;right:14px;display:flex;gap:14px;font-family:var(--mono);font-size:10px;color:var(--mute);z-index:2}
 .regions i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;vertical-align:middle}
 .regions b{color:var(--ink);font-weight:500;margin-left:3px}
@@ -86,11 +91,12 @@ canvas{display:block;width:100%;height:100%}
     <div class="panel" id="brainpanel">
       <div class="tag">Its brain — 166,700 neurons, live</div>
       <canvas id="brain"></canvas>
+      <div class="memo" id="memo"><div class="tag" style="position:static;margin-bottom:6px">What the page remembers, and the brain cannot</div><div id="memobody"></div></div>
       <div class="regions" id="regions"></div>
     </div>
   </div>
   <div class="bottom">
-    <div class="ctl"><button id="play">▶ play</button><button id="sp1" class="on">1×</button><button id="sp4">4×</button><button id="sp12">12×</button></div>
+    <div class="ctl"><button id="play">▶ play</button><button id="sp1" class="on">1×</button><button id="sp4">4×</button><button id="sp12">12×</button><button id="mute">🔔 sound</button></div>
     <canvas id="timeline"></canvas>
     <div class="legend"><i style="background:#FFD36E"></i>fly rings the bell &nbsp;<i style="background:#7FB2FF"></i>real chair: order / bell &nbsp;<i style="background:#3A4658"></i>real chair: time</div>
   </div>
@@ -116,7 +122,7 @@ canvas{display:block;width:100%;height:100%}
 <script id="bundle" type="application/json">__BUNDLE_JSON__</script>
 <script>
 const D = JSON.parse(document.getElementById("bundle").textContent);
-const FPS = D.fps, N = D.raster.length;
+const FPS = D.fps, N = D.raster_off.length - 1;
 const COLOUR = Object.fromEntries(D.seats.map(s => [s.faction, s.colour]));
 COLOUR["GOV"] = "#E9EEF6"; COLOUR[""] = "#A9A49B";
 const REGION = {optic:[79,168,204], central:[222,95,160], cord:[95,185,127], ascending:[139,123,208], descending:[238,154,60]};
@@ -129,6 +135,13 @@ const XY = new Float32Array(b64(D.atlas.xy_b64).buffer);
 const GRP = b64(D.atlas.group_b64);
 const INS = b64(D.atlas.inside_b64);
 const inside = i => (INS[i>>3] >> (7 - (i & 7))) & 1;
+const RAST = new Uint16Array(b64(D.raster_b64).buffer), ROFF = D.raster_off;
+const ONS = new Uint16Array(b64(D.onset_b64).buffer), OOFF = D.onset_off;
+const onsetOf = {}; D.onset_event.forEach((e, k) => { onsetOf[e] = k; });
+const rasterAt = f => RAST.subarray(ROFF[f], ROFF[f+1]);
+const onsetAt = (k, b) => { const j = k*D.onset_bins + b; return ONS.subarray(OOFF[j], OOFF[j+1]); };
+const WAVE_MS = 70; // each 5 ms bin of the onset is shown for this long: the wave, slowed 14x
+let wave = {t: -1e9, k: -1};
 
 /* ---------- brain ---------- */
 const brain = document.getElementById("brain"), bctx = brain.getContext("2d");
@@ -165,10 +178,21 @@ function drawBrain(f, alphaNext){
     const v = (a*(1-alphaNext) + b*alphaNext) / peak[g];
     bctx.globalAlpha = Math.min(1, 0.12 + 1.6*v); bctx.drawImage(glowLayers[gi], 0, 0); });
   bctx.globalAlpha = 1;
-  const ids = D.raster[f] || [];
+  const ids = rasterAt(f);
   for (const i of ids){ if (!inside(i)) continue; const [r_,g_,b_] = REGION[D.atlas.groups[GRP[i]]] || [255,255,255];
     bctx.fillStyle = `rgba(${Math.min(255,r_+90)},${Math.min(255,g_+90)},${Math.min(255,b_+90)},.95)`;
     bctx.fillRect(plateBox.x + XY[i*2]*plateBox.w - dpr, plateBox.y + XY[i*2+1]*plateBox.w - dpr, 2.2*dpr, 2.2*dpr); }
+  // the onset wave: the first 40 ms of this event, one 5 ms bin at a time, drawn hot and large
+  const we = (performance.now() - wave.t) / WAVE_MS;
+  if (wave.k >= 0 && we < D.onset_bins){
+    const b = Math.floor(we), fade = 1 - (we - b)*0.5;
+    for (let bb = Math.max(0, b-2); bb <= b; bb++){
+      const age = b - bb, a = (age===0 ? 1 : age===1 ? 0.55 : 0.25) * fade, R = (age===0 ? 3.4 : 2.4)*dpr;
+      for (const i of onsetAt(wave.k, bb)){ if (!inside(i)) continue;
+        bctx.fillStyle = `rgba(255,${age===0?250:200},${age===0?230:150},${a})`;
+        bctx.beginPath(); bctx.arc(plateBox.x + XY[i*2]*plateBox.w, plateBox.y + XY[i*2+1]*plateBox.w, R, 0, 6.2832); bctx.fill(); } }
+    bctx.fillStyle = "#8B97AA"; bctx.font = `${10*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "left";
+    bctx.fillText(`onset  +${(Math.min(we, D.onset_bins)*5).toFixed(0).padStart(2)} ms  (slowed ${Math.round(WAVE_MS/5)}×)`, plateBox.x, plateBox.y - 8*dpr); }
   bctx.globalCompositeOperation = "source-over";
   // the motor readout for the current event: what the fly's steering and escape neurons did
   const ev = D.events[curEv]; if (ev && ev.gf !== null){
@@ -261,17 +285,50 @@ function onEvent(i){
   line(ev, ev.kind);
   if (ev.seat) lit[ev.seat] = {t: performance.now(), kind: ev.kind};
   if (ev.kind==="vote" || ev.kind==="presence") for (const s of D.seats) lit[s.place] = {t: performance.now(), kind: "vote"};
-  if (ev.gf >= D.bell_gf){ flash = 1; jolt = {x: ev.side==="L" ? 16 : ev.side==="R" ? -16 : 0, y: -8, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
-    const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">FLY</span><span class="txt">rings the bell — giant fibre ×${ev.gf}, throws itself ${ev.side==="L"?"right":ev.side==="R"?"left":"back"}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
+  if (ev.gf >= D.bell_gf){ ding(); flash = 1; jolt = {x: ev.side==="L" ? 16 : ev.side==="R" ? -16 : 0, y: -8, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
+    const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">FLY</span><span class="txt">rings the bell — giant fibre ×${ev.gf}, ${ev.side==="L"?"throws itself right":ev.side==="R"?"throws itself left":"flinches"}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
+  remember(i);
   lastEv = i;
 }
+/* ---------- memory: the tally the brain cannot keep ---------- */
+const M = {kinds:{}, bellsBySide:{L:0,R:0,"":0}, thrown:{left:0,right:0}, ritual:0, seen:{}, repeatBells:0, chair:{order:0,bell:0,time:0}, flyBells:0, coincide:0, lastBellIdx:-99};
+function remember(i){
+  const ev = D.events[i]; if (!ev) return;
+  const kind = ev.kind==="speech" ? (ev.hostility>=0.5 ? "hostile speech" : "civil speech") : ev.kind;
+  const k = M.kinds[kind] = M.kinds[kind] || {n:0, gf:0, bells:0, active:0};
+  k.n++; k.gf += ev.gf||0; k.active += ev.active||0;
+  if (ev.text && /^(Aitäh|Suur tänu|Tänan)/.test(ev.text) && ev.role!=="chair") M.ritual++;
+  if (ev.gf >= D.bell_gf){ k.bells++; M.flyBells++; M.bellsBySide[ev.side||""]++; M.lastBellIdx = i;
+    if (ev.turn > 0.15) M.thrown.right++; else if (ev.turn < -0.15) M.thrown.left++;
+    const key = ev.seat || ev.who; if (M.seen[key]) M.repeatBells++; M.seen[key] = (M.seen[key]||0)+1; }
+  for (let j = lastEv+1; j <= i; j++){ const c = D.events[j]; if (c && c.real_chair){ M.chair[c.real_chair]++; if (c.real_chair!=="time" && i - M.lastBellIdx <= 2 && M.lastBellIdx>=0) M.coincide++; } }
+  renderMemo();
+}
+function renderMemo(){
+  const order = ["civil speech","hostile speech","heckle","vote","presence"], mx = Math.max(1, ...order.map(k => (M.kinds[k]||{}).n ? M.kinds[k].gf/M.kinds[k].n : 0));
+  let h = order.filter(k => M.kinds[k]).map(k => { const v = M.kinds[k], g = v.gf/v.n; return `<div class="row"><span>${k} ×${v.n}</span><span class="bar"><i style="width:${100*g/mx}%;background:${g>=D.bell_gf?"#FFD36E":"#3A4658"}"></i></span><b>${g.toFixed(0)}</b></div>`; }).join("");
+  h += `<div class="two"><span>giant fibre, mean spikes per kind ↑</span><span></span>`
+     + `<span>fly rang the bell <b>${M.flyBells}</b>× · thrown left <b>${M.thrown.left}</b>, right <b>${M.thrown.right}</b></span>`
+     + `<span>real chair: order <b>${M.chair.order}</b>, bell <b>${M.chair.bell}</b>, time <b>${M.chair.time}</b> · coincided <b>${M.coincide}</b></span>`
+     + `<span>rang at the same seat again <b>${M.repeatBells}</b>× — it does not remember the first</span>`
+     + `<span>greeted <i>Aitäh!</i> as new <b>${M.ritual}</b>×</span></div>`;
+  document.getElementById("memobody").innerHTML = h;
+}
+
+/* ---------- sound ---------- */
+let AC = null, muted = false;
+function ding(){ if (muted) return; try { AC = AC || new (window.AudioContext||window.webkitAudioContext)(); const t = AC.currentTime;
+  for (const [f, g, d] of [[2093, .22, .45], [3520, .10, .30], [1046, .06, .6]]){ const o = AC.createOscillator(), v = AC.createGain(); o.frequency.value = f; o.type = "sine";
+    v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(g, t+0.004); v.gain.exponentialRampToValueAtTime(0.0001, t+d);
+    o.connect(v); v.connect(AC.destination); o.start(t); o.stop(t+d+0.05); } } catch(e){} }
+
 /* silence frames belong to no event; when the event index changes to a new stimulus, fire it */
 let curEv = -1;
 function step(ts){
   if (playing){ acc += (ts - lastT)/1000 * FPS * speed; while (acc >= 1){ frame++; acc -= 1; } if (frame >= N){ frame = N-1; playing = false; finish(); } }
   lastT = ts;
   const evi = D.frame_event[frame];
-  if (evi >= 0 && evi !== curEv){ curEv = evi; onEvent(evi); }
+  if (evi >= 0 && evi !== curEv){ curEv = evi; onEvent(evi); if (onsetOf[evi] !== undefined) wave = {t: performance.now(), k: onsetOf[evi]}; }
   drawBrain(frame, acc);
   drawHall();
   for (const g of D.atlas.groups){ const el = document.getElementById("hz-"+g); if (el) el.textContent = (D.group_hz[g][frame]||0).toFixed(1); }
@@ -294,15 +351,20 @@ function drawTimeline(){
   tctx.fillStyle="#E9EEF6"; tctx.fillRect(x(frame)-dpr, 0, 2*dpr, H);
 }
 function nextFrame(i){ for (let j=i;j<D.events.length;j++) if (evFrame[j]!==undefined) return evFrame[j]; return N-1; }
-tl.addEventListener("click", e => { const r = tl.getBoundingClientRect(); frame = Math.floor((e.clientX-r.left)/r.width*N); curEv=-1; lastEv = Math.max(-1, (D.frame_event[frame]??0)-1); ticker.innerHTML=""; });
+tl.addEventListener("click", e => { const r = tl.getBoundingClientRect(); frame = Math.floor((e.clientX-r.left)/r.width*N); curEv=-1; ticker.innerHTML=""; resetMemory();
+  // replay memory silently up to here, so the tally is what a viewer who watched from the start would have
+  const target = D.frame_event.slice(0, frame).filter(x => x>=0).pop() ?? -1; lastEv = -1;
+  for (let i = 0; i <= target; i++){ if (D.events[i].bio > 0){ const keep = renderMemo; remember(i); lastEv = i; } } });
 
 /* ---------- controls ---------- */
 const playBtn = document.getElementById("play");
 function setPlay(p){ playing = p; playBtn.textContent = p ? "❚❚ pause" : "▶ play"; }
 playBtn.onclick = () => setPlay(!playing);
+document.getElementById("mute").onclick = () => { muted = !muted; document.getElementById("mute").textContent = muted ? "🔕 muted" : "🔔 sound"; };
 for (const [id, s] of [["sp1",1],["sp4",4],["sp12",12]]) document.getElementById(id).onclick = () => { speed = s; for (const b of ["sp1","sp4","sp12"]) document.getElementById(b).classList.toggle("on", b===id); };
 document.getElementById("start").onclick = () => { document.getElementById("veil").classList.add("gone"); sizeHall(); sizeBrain(); setPlay(true); };
-document.getElementById("again").onclick = () => { document.getElementById("end").classList.remove("on"); frame=0; curEv=-1; lastEv=-1; ticker.innerHTML=""; lit={}; setPlay(true); };
+function resetMemory(){ for (const k of Object.keys(M.kinds)) delete M.kinds[k]; M.bellsBySide={L:0,R:0,"":0}; M.thrown={left:0,right:0}; M.ritual=0; M.seen={}; M.repeatBells=0; M.chair={order:0,bell:0,time:0}; M.flyBells=0; M.coincide=0; M.lastBellIdx=-99; renderMemo(); }
+document.getElementById("again").onclick = () => { document.getElementById("end").classList.remove("on"); frame=0; curEv=-1; lastEv=-1; ticker.innerHTML=""; lit={}; resetMemory(); setPlay(true); };
 addEventListener("resize", () => { sizeHall(); sizeBrain(); });
 function finish(){
   const S = D.summary;
@@ -310,7 +372,9 @@ function finish(){
     [S.stimuli, "things happened in the hall"], [S.fly_bells, "times the fly rang the bell"],
     [S.chair_order + S.chair_bell, "times the real chair called for order or rang it"], [S.coincide, "of the fly's bells fell within two events of the chair's"]
   ].map(([n,t])=>`<div class="fig"><b>${n}</b><span>${t}</span></div>`).join("");
-  document.getElementById("verdict").textContent = `${S.hostile} speeches read as hostile; ${S.heckles} disturbances in the record; ${S.ritual} speeches opened with a thank-you, each greeted as new. The real chair also called time ${S.chair_time} times — the fly has no clock. ${S.bio_seconds} seconds of biological time for ${Math.round((D.events[D.events.length-1].t)/60)} minutes of sitting.`;
+  const K = S.by_kind || {}; const kinds = ["civil speech","hostile speech","heckle","vote","presence"].filter(k => K[k]);
+  document.getElementById("figs").innerHTML += kinds.map(k => `<div class="fig"><b>${K[k].gf}</b><span>giant-fibre spikes, mean, per <i>${k}</i> (×${K[k].n}; ${K[k].bells} bells)</span></div>`).join("");
+  document.getElementById("verdict").textContent = `A speech's own scent on the same side damps the escape: mid-hostility speeches barely ring, confident insults and heckles always do — the network, busy with the speaker, bolts only at a real threat. ${S.hostile} speeches read as hostile; ${S.heckles} disturbances in the record; ${S.ritual} speeches opened with a thank-you, each greeted as new. The real chair also called time ${S.chair_time} times — the fly has no clock. ${S.bio_seconds} seconds of biological time for ${Math.round((D.events[D.events.length-1].t)/60)} minutes of sitting.`;
   document.getElementById("credit").innerHTML = `Simulated, wiring-constrained, engineered I/O mapping. Connectome: MaleCNS v1.0 (CC BY 4.0). Engine: mlx-lif-engine (MIT), Shiu et al. 2024. Transcript, seating and votes: Riigikogu open data (CC BY-SA 3.0); members shown by faction only. Hostility per speech: one calibrated question to a typed classifier; side from the seating chart; seat positions reconstructed from seat numbers and the photograph. The brain image is a rendering of 126,104 measured cell-body positions. Fly photograph: André Karwath, CC BY-SA 2.5.`;
   document.getElementById("end").classList.add("on");
 }
