@@ -124,6 +124,8 @@ body{background:var(--paper);color:var(--ink);font-family:var(--body);line-heigh
   <p id="n-why"></p>
   <h3>Honest caveats</h3>
   <p id="n-caveats"></p>
+  <h3>Credits</h3>
+  <p id="n-credits"></p>
 </section>
 
 <script id="bundle" type="application/json">__SEASON_JSON__</script>
@@ -295,6 +297,7 @@ function finish(){
 document.getElementById("n-what").innerHTML = __N_WHAT__;
 document.getElementById("n-why").innerHTML = __N_WHY__;
 document.getElementById("n-caveats").innerHTML = __N_CAVEATS__;
+document.getElementById("n-credits").innerHTML = __N_CREDITS__;
 
 addEventListener("resize", () => { size(); draw(TL.length, null); });
 size(); draw(0, null); setBars({});
