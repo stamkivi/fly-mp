@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kärbes takes the chair</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090E;--panel:#0C1017;--ink:#E9EEF6;--mute:#8B97AA;--rule:#1C2430;--fly:#E2622C;
+      --wall:#2C4BA0;--wood:#B07A3E;--wood2:#7A5330;--seat:#1A1B1F;
+      --display:"Fraunces",Georgia,serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-font-smoothing:antialiased}
+.stage{height:100svh;display:grid;grid-template-rows:auto 1fr auto;gap:10px;padding:14px 18px 12px}
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+.brand{font-family:var(--display);font-weight:600;font-size:22px}
+.brand span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-left:12px;font-weight:400}
+.clock{font-family:var(--mono);font-size:13px;color:var(--mute)}.clock b{color:var(--ink);font-weight:500;font-size:18px}
+.board{display:grid;grid-template-columns:5fr 7fr;gap:12px;min-height:0}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:12px;position:relative;overflow:hidden;min-height:0}
+canvas{display:block;width:100%;height:100%}
+.tag{position:absolute;left:14px;top:11px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);z-index:2}
+.item{position:absolute;left:14px;right:14px;top:30px;font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
+.ticker{position:absolute;left:14px;right:14px;top:52px;z-index:2;display:flex;flex-direction:column;gap:3px;pointer-events:none}
+.line{display:flex;gap:9px;align-items:baseline;font-size:13px;line-height:1.3;text-shadow:0 1px 2px rgba(0,0,0,.6);opacity:0;transform:translateY(4px);animation:in .25s forwards}
+@keyframes in{to{opacity:1;transform:none}}
+.line .chip{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px;color:#fff;flex:none;letter-spacing:.04em}
+.line .txt{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.line.heckle .txt{color:#FFB38A;font-style:italic}.line.chair .txt{color:var(--mute)}
+.line.bell .txt{color:#FFD36E;font-weight:600}
+.bellmark{position:absolute;right:16px;top:14px;z-index:3;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  color:#FFD36E;opacity:0;transition:opacity .15s;text-transform:uppercase}
+.bellmark.on{opacity:1}
+.regions{position:absolute;left:14px;bottom:12px;right:14px;display:flex;gap:14px;font-family:var(--mono);font-size:10px;color:var(--mute);z-index:2}
+.regions i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.regions b{color:var(--ink);font-weight:500;margin-left:3px}
+.bottom{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+.ctl{display:flex;gap:6px}.ctl button{font-family:var(--mono);font-size:11px;background:#131924;color:var(--ink);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;cursor:pointer}
+.ctl button.on{background:var(--ink);color:var(--bg)}
+#timeline{height:44px;width:100%;display:block}
+.legend{font-family:var(--mono);font-size:10px;color:var(--mute);line-height:1.5;text-align:right}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}
+.veil{position:absolute;inset:0;background:rgba(7,9,14,.92);display:grid;place-items:center;z-index:9;transition:opacity .5s}
+.veil.gone{opacity:0;pointer-events:none}
+.open{max-width:640px;text-align:center;padding:24px}
+.open h1{font-family:var(--display);font-weight:600;font-size:clamp(30px,5vw,48px);line-height:1.05;margin:0 0 14px}
+.open p{color:#B9C3D2;font-size:16px;margin:0 auto 10px;max-width:52ch}
+.open .fine{font-size:12px;color:var(--mute)}
+.go{margin-top:20px;font-size:15px;font-weight:600;color:var(--bg);background:var(--ink);border:0;border-radius:8px;padding:13px 24px;cursor:pointer}
+.flyimg{width:96px;display:block;margin:0 auto 14px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.6))}
+.hallphoto{width:100%;max-width:520px;border-radius:8px;display:block;margin:0 auto 14px;opacity:.9}
+.end{position:absolute;inset:0;background:rgba(7,9,14,.94);display:none;place-items:center;z-index:8}
+.end.on{display:grid}
+.figs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 6px}
+.fig{background:#111722;border:1px solid var(--rule);border-radius:8px;padding:10px}
+.fig b{display:block;font-family:var(--mono);font-size:22px;font-weight:500}.fig span{font-size:11px;color:var(--mute)}
+.credit{font-family:var(--mono);font-size:9.5px;color:#55627A;margin-top:14px;line-height:1.5}
+@media(max-width:900px){.board{grid-template-columns:1fr;grid-template-rows:5fr 7fr}.figs{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="top">
+    <div class="brand">Kärbes<span>takes the chair · simulated</span></div>
+    <div class="clock" id="clock">Riigikogu, <b id="date">—</b> <b id="time">--:--</b></div>
+  </div>
+  <div class="board">
+    <div class="panel" id="hallpanel">
+      <div class="tag">The hall, from the Speaker's desk</div>
+      <div class="item" id="item"></div>
+      <canvas id="hall"></canvas>
+      <div class="bellmark" id="bellmark">▲ the fly rings the bell</div>
+      <div class="ticker" id="ticker"></div>
+    </div>
+    <div class="panel" id="brainpanel">
+      <div class="tag">Its brain — 166,700 neurons, live</div>
+      <canvas id="brain"></canvas>
+      <div class="regions" id="regions"></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="ctl"><button id="play">▶ play</button><button id="sp1" class="on">1×</button><button id="sp4">4×</button><button id="sp12">12×</button></div>
+    <canvas id="timeline"></canvas>
+    <div class="legend"><i style="background:#FFD36E"></i>fly rings the bell &nbsp;<i style="background:#7FB2FF"></i>real chair: order / bell &nbsp;<i style="background:#3A4658"></i>real chair: time</div>
+  </div>
+  <div class="veil" id="veil"><div class="open">
+    <img class="hallphoto" src="data:image/jpeg;base64,__HALL_B64__" alt="The Riigikogu session hall from the Speaker's desk">
+    <img class="flyimg" src="data:image/png;base64,__FLY_B64__" alt="">
+    <h1>The 102nd member takes the chair</h1>
+    <p>One sitting of the Riigikogu, <span id="vdate"></span>, played to a complete simulated fruit-fly brain sitting in the Speaker's seat. Every speech reaches it as a scent from the speaker's side of the hall. Every insult comes at it. Every heckle lunges.</p>
+    <p>When the giant fibre fires, it rings the bell. Below, what the real chair did.</p>
+    <p class="fine">Its memory is 20 milliseconds. It greets the hundredth <i>Aitäh!</i> as the first, and every heckler as a stranger.</p>
+    <button class="go" id="start">Open the sitting</button>
+    <div class="credit">Hall: Foto: Paul Kuimet, Riigikogu. Shown unaltered.</div>
+  </div></div>
+  <div class="end" id="end"><div class="open">
+    <h1>Sitting closed</h1>
+    <div class="figs" id="figs"></div>
+    <p class="fine" id="verdict"></p>
+    <div class="credit" id="credit"></div>
+    <button class="go" id="again">Watch again</button>
+  </div></div>
+</div>
+
+<script id="bundle" type="application/json">__BUNDLE_JSON__</script>
+<script>
+const D = JSON.parse(document.getElementById("bundle").textContent);
+const FPS = D.fps, N = D.raster.length;
+const COLOUR = Object.fromEntries(D.seats.map(s => [s.faction, s.colour]));
+COLOUR["GOV"] = "#E9EEF6"; COLOUR[""] = "#A9A49B";
+const REGION = {optic:[79,168,204], central:[222,95,160], cord:[95,185,127], ascending:[139,123,208], descending:[238,154,60]};
+const dpr = Math.min(devicePixelRatio || 1, 2);
+
+/* ---------- atlas ---------- */
+const b64 = s => { const bin = atob(s); const u = new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; };
+const K = D.atlas.k;
+const XY = new Float32Array(b64(D.atlas.xy_b64).buffer);
+const GRP = b64(D.atlas.group_b64);
+const INS = b64(D.atlas.inside_b64);
+const inside = i => (INS[i>>3] >> (7 - (i & 7))) & 1;
+
+/* ---------- brain ---------- */
+const brain = document.getElementById("brain"), bctx = brain.getContext("2d");
+const PLATE = new Image(); PLATE.src = "data:image/jpeg;base64,__BRAIN_B64__";
+let BW=0, BH=0, plateBox=null, glowLayers=null;
+function sizeBrain(){
+  const r = brain.getBoundingClientRect(); BW = Math.round(r.width*dpr); BH = Math.round(r.height*dpr);
+  brain.width = BW; brain.height = BH;
+  const ar = D.brain.width / D.brain.height;
+  let w = BW - 24*dpr, h = w / ar; if (h > BH - 60*dpr){ h = BH - 60*dpr; w = h * ar; }
+  plateBox = {x:(BW-w)/2, y: Math.max(44*dpr, (BH-h)/2 - 70*dpr), w, h};
+  glowLayers = D.atlas.groups.map((g, gi) => {
+    const c = document.createElement("canvas"); c.width = BW; c.height = BH; const x = c.getContext("2d");
+    const [r_, g_, b_] = REGION[g] || [200,200,200]; const rad = 9*dpr; x.globalCompositeOperation = "lighter";
+    for (let i=0;i<K;i++){ if (GRP[i]!==gi || !inside(i)) continue;
+      const px = plateBox.x + XY[i*2]*plateBox.w, py = plateBox.y + XY[i*2+1]*plateBox.w;
+      const gr = x.createRadialGradient(px,py,0,px,py,rad); gr.addColorStop(0,`rgba(${r_},${g_},${b_},.20)`); gr.addColorStop(1,`rgba(${r_},${g_},${b_},0)`);
+      x.fillStyle = gr; x.fillRect(px-rad,py-rad,rad*2,rad*2); }
+    return c; });
+}
+const peak = {}; for (const g of D.atlas.groups){ peak[g] = Math.max(0.5, ...D.group_hz[g]); }
+const MOTOR = {dna: Math.max(10, ...D.events.map(e => Math.max(e.dna_l||0, e.dna_r||0))), gf: Math.max(20, ...D.events.map(e => e.gf||0))};
+let jolt = {x:0,y:0,t:0}, flash = 0;
+function drawBrain(f, alphaNext){
+  if (!plateBox) sizeBrain();
+  bctx.clearRect(0,0,BW,BH); bctx.fillStyle="#07090E"; bctx.fillRect(0,0,BW,BH);
+  const age = (performance.now()-jolt.t)/420, k = age<1 ? (1-age)*(1-age) : 0;
+  const ox = jolt.x*k*dpr, oy = jolt.y*k*dpr;
+  bctx.save(); bctx.translate(ox, oy);
+  if (PLATE.complete) bctx.drawImage(PLATE, plateBox.x, plateBox.y, plateBox.w, plateBox.h);
+  bctx.globalCompositeOperation = "lighter";
+  D.atlas.groups.forEach((g, gi) => {
+    const a = D.group_hz[g][f] || 0, b = D.group_hz[g][Math.min(f+1,N-1)] || 0;
+    const v = (a*(1-alphaNext) + b*alphaNext) / peak[g];
+    bctx.globalAlpha = Math.min(1, 0.12 + 1.6*v); bctx.drawImage(glowLayers[gi], 0, 0); });
+  bctx.globalAlpha = 1;
+  const ids = D.raster[f] || [];
+  for (const i of ids){ if (!inside(i)) continue; const [r_,g_,b_] = REGION[D.atlas.groups[GRP[i]]] || [255,255,255];
+    bctx.fillStyle = `rgba(${Math.min(255,r_+90)},${Math.min(255,g_+90)},${Math.min(255,b_+90)},.95)`;
+    bctx.fillRect(plateBox.x + XY[i*2]*plateBox.w - dpr, plateBox.y + XY[i*2+1]*plateBox.w - dpr, 2.2*dpr, 2.2*dpr); }
+  bctx.globalCompositeOperation = "source-over";
+  // the motor readout for the current event: what the fly's steering and escape neurons did
+  const ev = D.events[curEv]; if (ev && ev.gf !== null){
+    const y0 = plateBox.y + plateBox.h + 26*dpr, x0 = plateBox.x + 110*dpr, W = plateBox.w - 130*dpr;
+    bctx.font = `${10*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "right";
+    [["DNa left", ev.dna_l ?? 0, MOTOR.dna, "#7FB2FF"], ["DNa right", ev.dna_r ?? 0, MOTOR.dna, "#7FB2FF"], ["giant fibre", ev.gf, MOTOR.gf, ev.gf>=D.bell_gf ? "#FFD36E" : "#8E7A45"]].forEach(([lab, v, mx, col], i) => {
+      const y = y0 + i*15*dpr; bctx.fillStyle = "#8B97AA"; bctx.fillText(lab, x0 - 10*dpr, y + 8*dpr);
+      bctx.fillStyle = "#151B26"; bctx.fillRect(x0, y, W, 9*dpr); bctx.fillStyle = col; bctx.fillRect(x0, y, W*Math.min(1, v/mx), 9*dpr);
+      bctx.fillStyle = "#E9EEF6"; bctx.textAlign = "left"; bctx.fillText(String(v), x0 + W*Math.min(1, v/mx) + 6*dpr, y + 8*dpr); bctx.textAlign = "right"; });
+    bctx.textAlign = "left"; }
+  if (flash > 0){ bctx.fillStyle = `rgba(255,236,190,${0.55*flash})`; bctx.fillRect(plateBox.x-40, plateBox.y-40, plateBox.w+80, plateBox.h+80); flash *= 0.82; if (flash<0.02) flash=0; }
+  bctx.restore();
+}
+
+/* ---------- hall ---------- */
+const hall = document.getElementById("hall"), hctx = hall.getContext("2d");
+const FLY = new Image(); FLY.src = "data:image/png;base64,__FLY_B64__";
+let HW=0, HH=0, seatPos = {};
+const rows = Math.max(...D.seats.map(s=>s.row))+1, cols = Math.max(...D.seats.map(s=>s.col))+1;
+function sizeHall(){
+  const r = hall.getBoundingClientRect(); HW = Math.round(r.width*dpr); HH = Math.round(r.height*dpr); hall.width = HW; hall.height = HH;
+  seatPos = {};
+  // two blocks in perspective from the Speaker's desk: the near row wide and large, the far row narrow and small
+  const top = HH*0.30, bot = HH*0.76, aisle = HW*0.05;
+  for (const s of D.seats){
+    const depth = s.row/(rows-1);
+    const y = bot - Math.pow(depth, 0.85)*(bot-top);
+    const scale = 1 - 0.45*depth;
+    const blockW = (HW/2 - aisle - 10*dpr)*scale, x0 = HW/2 + (s.side==="R" ? aisle : -aisle - blockW);
+    const cw = blockW/cols, x = x0 + (s.side==="R" ? s.col : cols-1-s.col)*cw + cw/2;
+    seatPos[s.place] = {x, y, w: cw*0.78, h: 15*dpr*scale + 5*dpr, scale};
+  }
+}
+let lit = {};  // place -> {t, kind, colour}
+function drawHall(){
+  if (!HW) sizeHall();
+  hctx.clearRect(0,0,HW,HH);
+  const wall = hctx.createLinearGradient(0,0,0,HH); wall.addColorStop(0,"#2B49A6"); wall.addColorStop(.5,"#1F3684"); wall.addColorStop(1,"#101A3A");
+  hctx.fillStyle = wall; hctx.fillRect(0,0,HW,HH);
+  // the far wall's arches, faintly, from the photograph
+  hctx.fillStyle = "rgba(255,255,255,.035)"; for (const cx of [0.16, 0.5, 0.84]){ hctx.beginPath(); hctx.ellipse(HW*cx, HH*0.19, HW*0.07, HH*0.10, 0, Math.PI, 0); hctx.fill(); hctx.fillRect(HW*cx-HW*0.07, HH*0.19, HW*0.14, HH*0.06); }
+  hctx.fillStyle = "rgba(255,255,255,.05)"; hctx.fillRect(HW/2 - HW*0.045, HH*0.26, HW*0.09, HH*0.55); // the aisle
+  const order = D.seats.slice().sort((a,b)=>b.row-a.row), now = performance.now();
+  for (const s of order){
+    const p = seatPos[s.place]; if (!p) continue;
+    const l = lit[s.place]; const a = l ? Math.max(0, 1-(now-l.t)/(l.kind==="heckle"?900:1600)) : 0;
+    if (a>0){ const R = p.w*2.2; const gr = hctx.createRadialGradient(p.x,p.y-p.h/2,0,p.x,p.y-p.h/2,R);
+      gr.addColorStop(0, l.kind==="heckle" ? `rgba(255,120,60,${.75*a})` : hexa(s.colour, .7*a)); gr.addColorStop(1,"rgba(0,0,0,0)");
+      hctx.fillStyle=gr; hctx.fillRect(p.x-R,p.y-p.h/2-R,R*2,R*2); }
+    // desk, then chair, then the back-rest in the faction colour
+    hctx.fillStyle = `rgba(190,132,70,${0.55+0.4*p.scale})`; hctx.fillRect(p.x-p.w/2, p.y, p.w, 4*dpr*p.scale+2*dpr);
+    hctx.fillStyle = a>0 ? mix(s.colour, "#15161A", 0.35+0.65*a) : "#15161A"; roundRect(p.x-p.w*0.4, p.y-p.h, p.w*0.8, p.h, 3*dpr*p.scale); hctx.fill();
+    hctx.fillStyle = s.colour; hctx.globalAlpha = 0.5 + 0.5*a; hctx.fillRect(p.x-p.w*0.4, p.y-p.h, p.w*0.8, 3.5*dpr); hctx.globalAlpha = 1;
+  }
+  hctx.fillStyle = "rgba(233,238,246,.08)"; hctx.fillRect(HW*0.56, HH*0.79, HW*0.40, 14*dpr);
+  hctx.fillStyle = "#9AA6B8"; hctx.font = `${9*dpr}px "IBM Plex Mono",monospace`; hctx.fillText("GOVERNMENT", HW*0.57, HH*0.79 + 10*dpr);
+  const desk = hctx.createLinearGradient(0,HH*0.84,0,HH); desk.addColorStop(0,"#66788F"); desk.addColorStop(1,"#3A4658");
+  hctx.fillStyle = desk; hctx.fillRect(0, HH*0.84, HW, HH*0.16);
+  hctx.fillStyle = "#B07A3E"; hctx.fillRect(0, HH*0.84, HW, 5*dpr);
+  const age = (now-jolt.t)/420, k = age<1 ? (1-age)*(1-age) : 0;
+  if (FLY.complete){ const fw = HW*0.17; hctx.save(); hctx.translate(HW*0.5 + jolt.x*k*dpr*1.8, HH*0.925 + jolt.y*k*dpr); hctx.rotate(-jolt.x*k*0.03);
+    hctx.shadowColor="rgba(0,0,0,.6)"; hctx.shadowBlur=14*dpr; hctx.shadowOffsetY=6*dpr; hctx.drawImage(FLY, -fw/2, -fw/2, fw, fw); hctx.restore(); }
+  hctx.fillStyle = flash>0 ? "#FFD36E" : "#8E7A45"; hctx.beginPath(); hctx.arc(HW*0.70, HH*0.93, 6*dpr, 0, 6.28); hctx.fill();
+  hctx.fillStyle = "#6F7D93"; hctx.font = `${9*dpr}px "IBM Plex Mono",monospace`; hctx.fillText("THE SPEAKER", HW*0.5 - 30*dpr, HH*0.99);
+}
+function hexa(hex, a){ const n = parseInt(hex.slice(1),16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; }
+function mix(h1, h2, t){ const a = parseInt(h1.slice(1),16), b = parseInt(h2.slice(1),16); const c = [16,8,0].map(sh => Math.round(((a>>sh)&255)*t + ((b>>sh)&255)*(1-t))); return `rgb(${c.join(",")})`; }
+function roundRect(x,y,w,h,r){ hctx.beginPath(); hctx.moveTo(x+r,y); hctx.arcTo(x+w,y,x+w,y+h,r); hctx.arcTo(x+w,y+h,x,y+h,r); hctx.arcTo(x,y+h,x,y,r); hctx.arcTo(x,y,x+w,y,r); hctx.closePath(); }
+
+/* ---------- playback ---------- */
+const ticker = document.getElementById("ticker"), itemEl = document.getElementById("item"), timeEl = document.getElementById("time");
+const bellmark = document.getElementById("bellmark");
+document.getElementById("date").textContent = D.date; document.getElementById("vdate").textContent = D.date;
+document.getElementById("regions").innerHTML = D.atlas.groups.map(g=>`<span><i style="background:rgb(${REGION[g]})"></i>${g}<b id="hz-${g}">0</b> Hz</span>`).join("");
+let frame = 0, playing = false, speed = 1, lastEv = -1, lastT = 0, acc = 0;
+const t0 = new Date(D.start).getTime();
+function clock(ev){ if (!ev) return; const d = new Date(t0 + ev.t*1000); timeEl.textContent = d.toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"}); }
+function line(ev, cls){
+  const el = document.createElement("div"); el.className = "line " + cls;
+  const chip = `<span class="chip" style="background:${ev.kind==="heckle"?"#C24B18":(COLOUR[ev.faction]||"#3A4658")}">${ev.kind==="heckle"?"HECKLE":ev.kind==="vote"?"VOTE":ev.kind==="presence"?"ROLL CALL":ev.role==="chair"?"CHAIR":(ev.faction||ev.who).toUpperCase()}</span>`;
+  const txt = ev.kind==="vote" ? "the hall votes" : ev.kind==="presence" ? "presence check" : ev.text || ev.who;
+  el.innerHTML = chip + `<span class="txt">${ev.kind==="speech" && ev.role!=="chair" ? ev.who+": " : ""}${txt}</span>`;
+  ticker.appendChild(el); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild);
+}
+function onEvent(i){
+  const ev = D.events[i]; if (!ev) return;
+  clock(ev); itemEl.textContent = ev.item;
+  line(ev, ev.kind);
+  if (ev.seat) lit[ev.seat] = {t: performance.now(), kind: ev.kind};
+  if (ev.kind==="vote" || ev.kind==="presence") for (const s of D.seats) lit[s.place] = {t: performance.now(), kind: "vote"};
+  if (ev.gf >= D.bell_gf){ flash = 1; jolt = {x: ev.side==="L" ? 14 : ev.side==="R" ? -14 : 0, y: -6, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 900);
+    const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">FLY</span><span class="txt">rings the bell — giant fibre ×${ev.gf}, throws itself ${ev.side==="L"?"right":ev.side==="R"?"left":"back"}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
+  // the real chair's marks live on chair events, which have no frames: surface them when the next frame-bearing event arrives
+  for (let j = lastEv+1; j < i; j++){ const c = D.events[j]; if (c && c.role==="chair"){ if (c.real_chair) line({...c, text: c.real_chair==="bell" ? "(rings the bell)" : c.real_chair==="order" ? "calls for order: "+c.text : "calls time: "+c.text}, "chair"); else if (c.text) line(c, "chair"); } }
+  lastEv = i;
+}
+/* silence frames belong to no event; when the event index changes to a new stimulus, fire it */
+let curEv = -1;
+function step(ts){
+  if (playing){ acc += (ts - lastT)/1000 * FPS * speed; while (acc >= 1){ frame++; acc -= 1; } if (frame >= N){ frame = N-1; playing = false; finish(); } }
+  lastT = ts;
+  const evi = D.frame_event[frame];
+  if (evi >= 0 && evi !== curEv){ curEv = evi; onEvent(evi); }
+  drawBrain(frame, acc);
+  drawHall();
+  for (const g of D.atlas.groups){ const el = document.getElementById("hz-"+g); if (el) el.textContent = (D.group_hz[g][frame]||0).toFixed(1); }
+  drawTimeline();
+  requestAnimationFrame(step);
+}
+
+/* ---------- timeline ---------- */
+const tl = document.getElementById("timeline"), tctx = tl.getContext("2d");
+const evFrame = {}; D.frame_event.forEach((e,f)=>{ if (e>=0 && evFrame[e]===undefined) evFrame[e]=f; });
+function drawTimeline(){
+  const r = tl.getBoundingClientRect(); const W = Math.round(r.width*dpr), H = Math.round(r.height*dpr);
+  if (tl.width!==W){ tl.width=W; tl.height=H; }
+  tctx.clearRect(0,0,W,H); tctx.fillStyle="#0C1017"; tctx.fillRect(0,0,W,H);
+  const x = f => (f/N)*W;
+  // real chair marks below the line, fly bells above
+  let after = 0;
+  D.events.forEach((e,i)=>{ if (e.real_chair){ const f = evFrame[i] ?? nextFrame(i); tctx.fillStyle = e.real_chair==="time" ? "#3A4658" : "#7FB2FF"; tctx.fillRect(x(f), H*0.55, Math.max(1.5*dpr,1), H*0.35); }
+    if (e.gf >= D.bell_gf){ tctx.fillStyle = "#FFD36E"; tctx.fillRect(x(evFrame[i]), H*0.12, Math.max(1.5*dpr,1), H*0.35); } });
+  tctx.fillStyle="#E9EEF6"; tctx.fillRect(x(frame)-dpr, 0, 2*dpr, H);
+}
+function nextFrame(i){ for (let j=i;j<D.events.length;j++) if (evFrame[j]!==undefined) return evFrame[j]; return N-1; }
+tl.addEventListener("click", e => { const r = tl.getBoundingClientRect(); frame = Math.floor((e.clientX-r.left)/r.width*N); curEv=-1; lastEv = Math.max(-1, (D.frame_event[frame]??0)-1); ticker.innerHTML=""; });
+
+/* ---------- controls ---------- */
+const playBtn = document.getElementById("play");
+function setPlay(p){ playing = p; playBtn.textContent = p ? "❚❚ pause" : "▶ play"; }
+playBtn.onclick = () => setPlay(!playing);
+for (const [id, s] of [["sp1",1],["sp4",4],["sp12",12]]) document.getElementById(id).onclick = () => { speed = s; for (const b of ["sp1","sp4","sp12"]) document.getElementById(b).classList.toggle("on", b===id); };
+document.getElementById("start").onclick = () => { document.getElementById("veil").classList.add("gone"); sizeHall(); sizeBrain(); setPlay(true); };
+document.getElementById("again").onclick = () => { document.getElementById("end").classList.remove("on"); frame=0; curEv=-1; lastEv=-1; ticker.innerHTML=""; lit={}; setPlay(true); };
+addEventListener("resize", () => { sizeHall(); sizeBrain(); });
+function finish(){
+  const S = D.summary;
+  document.getElementById("figs").innerHTML = [
+    [S.stimuli, "things happened in the hall"], [S.fly_bells, "times the fly rang the bell"],
+    [S.chair_order + S.chair_bell, "times the real chair called for order or rang it"], [S.coincide, "of the fly's bells fell within two events of the chair's"]
+  ].map(([n,t])=>`<div class="fig"><b>${n}</b><span>${t}</span></div>`).join("");
+  document.getElementById("verdict").textContent = `${S.hostile} speeches read as hostile; ${S.heckles} disturbances in the record; ${S.ritual} speeches opened with a thank-you, each greeted as new. The real chair also called time ${S.chair_time} times — the fly has no clock. ${S.bio_seconds} seconds of biological time for ${Math.round((D.events[D.events.length-1].t)/60)} minutes of sitting.`;
+  document.getElementById("credit").innerHTML = `Simulated, wiring-constrained, engineered I/O mapping. Connectome: MaleCNS v1.0 (CC BY 4.0). Engine: mlx-lif-engine (MIT), Shiu et al. 2024. Transcript, seating and votes: Riigikogu open data (CC BY-SA 3.0); members shown by faction only. Hostility per speech: one calibrated question to a typed classifier; side from the seating chart; seat positions reconstructed from seat numbers and the photograph. The brain image is a rendering of 126,104 measured cell-body positions. Fly photograph: André Karwath, CC BY-SA 2.5.`;
+  document.getElementById("end").classList.add("on");
+}
+requestAnimationFrame(step);
+</script>
+</body>
+</html>
