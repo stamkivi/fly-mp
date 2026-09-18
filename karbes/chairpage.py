@@ -42,16 +42,18 @@ def _who(e) -> str:
 def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
     seats = hall.load()
     frame = json.loads(BRAIN_FRAME.read_text(encoding="utf-8"))
-    # atlas coordinates -> voxels -> the plate's normalised [0,1] frame
+    # atlas coordinates -> voxels -> the plate's frame, in units of the plate's width.
+    # plate.render uses ONE isotropic scale, set by the x-span: px = (vx-minX)*k + m*w and
+    # py = (vz-minZ)*k + m*w with k = w*(1-2m)/span_x. So both axes divide by span_x.
     vox = atlas.origin[None, :] + atlas.xyz.astype(np.float64) * atlas.scale
     m = frame["margin"]
-    sx = (vox[:, 0] - frame["minX"]) / (frame["maxX"] - frame["minX"]) * (1 - 2 * m) + m
-    sy = (vox[:, 2] - frame["minZ"]) / (frame["maxZ"] - frame["minZ"]) * (1 - 2 * m) * (
-        frame["width"] / frame["height"]
-    ) + m * (frame["width"] / frame["height"])
-    # y is in units of width, so the page can scale both by the drawn width
-    inside = (sx >= 0) & (sx <= 1) & (sy >= 0) & (sy <= frame["height"] / frame["width"])
+    span_x = frame["maxX"] - frame["minX"]
+    sx = (vox[:, 0] - frame["minX"]) / span_x * (1 - 2 * m) + m
+    sy = (vox[:, 2] - frame["minZ"]) / span_x * (1 - 2 * m) + m
+    aspect = frame["height"] / frame["width"]
+    inside = (sx >= 0) & (sx <= 1) & (sy >= 0) & (sy <= aspect)
     atlas_xy = np.stack([sx, sy], axis=1).astype(np.float32)
+    log.info("atlas: %d of %d cells fall on the plate", int(inside.sum()), len(inside))
 
     reactions = {r.index: r for r in rec.reactions}
     events = []

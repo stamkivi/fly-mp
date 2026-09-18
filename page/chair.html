@@ -155,10 +155,10 @@ function sizeBrain(){
   plateBox = {x:(BW-w)/2, y: Math.max(44*dpr, (BH-h)/2 - 70*dpr), w, h};
   glowLayers = D.atlas.groups.map((g, gi) => {
     const c = document.createElement("canvas"); c.width = BW; c.height = BH; const x = c.getContext("2d");
-    const [r_, g_, b_] = REGION[g] || [200,200,200]; const rad = 9*dpr; x.globalCompositeOperation = "lighter";
+    const [r_, g_, b_] = REGION[g] || [200,200,200]; const rad = 7*dpr; x.globalCompositeOperation = "lighter";
     for (let i=0;i<K;i++){ if (GRP[i]!==gi || !inside(i)) continue;
       const px = plateBox.x + XY[i*2]*plateBox.w, py = plateBox.y + XY[i*2+1]*plateBox.w;
-      const gr = x.createRadialGradient(px,py,0,px,py,rad); gr.addColorStop(0,`rgba(${r_},${g_},${b_},.20)`); gr.addColorStop(1,`rgba(${r_},${g_},${b_},0)`);
+      const gr = x.createRadialGradient(px,py,0,px,py,rad); gr.addColorStop(0,`rgba(${r_},${g_},${b_},.045)`); gr.addColorStop(1,`rgba(${r_},${g_},${b_},0)`);
       x.fillStyle = gr; x.fillRect(px-rad,py-rad,rad*2,rad*2); }
     return c; });
 }
@@ -176,12 +176,12 @@ function drawBrain(f, alphaNext){
   D.atlas.groups.forEach((g, gi) => {
     const a = D.group_hz[g][f] || 0, b = D.group_hz[g][Math.min(f+1,N-1)] || 0;
     const v = (a*(1-alphaNext) + b*alphaNext) / peak[g];
-    bctx.globalAlpha = Math.min(1, 0.12 + 1.6*v); bctx.drawImage(glowLayers[gi], 0, 0); });
+    bctx.globalAlpha = Math.min(0.85, 0.05 + 0.9*v*v + 0.25*v); bctx.drawImage(glowLayers[gi], 0, 0); });
   bctx.globalAlpha = 1;
   const ids = rasterAt(f);
   for (const i of ids){ if (!inside(i)) continue; const [r_,g_,b_] = REGION[D.atlas.groups[GRP[i]]] || [255,255,255];
-    bctx.fillStyle = `rgba(${Math.min(255,r_+90)},${Math.min(255,g_+90)},${Math.min(255,b_+90)},.95)`;
-    bctx.fillRect(plateBox.x + XY[i*2]*plateBox.w - dpr, plateBox.y + XY[i*2+1]*plateBox.w - dpr, 2.2*dpr, 2.2*dpr); }
+    bctx.fillStyle = `rgba(${Math.min(255,r_+70)},${Math.min(255,g_+70)},${Math.min(255,b_+70)},.75)`;
+    bctx.fillRect(plateBox.x + XY[i*2]*plateBox.w - 0.8*dpr, plateBox.y + XY[i*2+1]*plateBox.w - 0.8*dpr, 1.7*dpr, 1.7*dpr); }
   // the onset wave: the first 40 ms of this event, one 5 ms bin at a time, drawn as a bloom
   const we = (performance.now() - wave.t) / WAVE_MS;
   if (wave.k >= 0 && we < D.onset_bins){
