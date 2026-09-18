@@ -29,7 +29,7 @@ from pathlib import Path
 import httpx
 
 from karbes.riigikogu.model import Bill
-from karbes.score import rubric2
+from karbes.score import rubric2, rubric3
 
 log = logging.getLogger(__name__)
 
@@ -81,14 +81,7 @@ def api_key() -> str:
 
 
 def questions() -> dict:
-    qs = {
-        k: {
-            "type": "score",
-            "instructions": f"{q} Negative means: {neg}. Positive means: {pos}.",
-            "criteria": list(LEVELS),
-        }
-        for k, q, neg, pos in rubric2.QUESTIONS
-    }
+    qs = rubric3.questions_for_jev(LEVELS)
     qs["salience"] = {
         "type": "score",
         "instructions": "How much does this bill actually change?",
@@ -197,7 +190,7 @@ class JevScorer:
         except (KeyError, TypeError, ValueError) as exc:
             self.failures[bill.uuid] = f"bad answer shape: {exc}"
             return None
-        missing = {*rubric2.KEYS, "salience"} - set(scores)
+        missing = {*rubric3.KEYS, "salience"} - set(scores)
         if missing:
             # A partially-answered bill is not a bill scored zero on the rest of it.
             self.failures[bill.uuid] = f"missing channels: {sorted(missing)}"

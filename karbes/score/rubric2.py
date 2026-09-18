@@ -72,17 +72,26 @@ QUESTIONS: tuple[tuple[str, str, str, str], ...] = (
 
 KEYS: tuple[str, ...] = tuple(k for k, _, _, _ in QUESTIONS)
 
-#: Short human labels. The keys are fine in a manifest and useless on a page: nobody
-#: arriving cold knows what "burden" or "place" is supposed to mean.
+#: Short human labels, each naming the two poles of its axis.
+#:
+#: **These are axes of change, not topics.** The rubric asks which way a bill moves each
+#: one, so a bill can be entirely about a subject and still score zero: the Bronze Soldier
+#: removal scores -0.05 on `security` because taking down a monument does not change
+#: military effort, while the Weapons Act scores +1.00. Labelling them "the questions this
+#: bill raises" was wrong and made the page unreadable.
+#:
+#: `who_decides` was previously shown as "who gets to decide", which collided head-on with
+#: the *initiator* — "who tabled it" — and left readers assuming they were the same thing.
+#: They are unrelated.
 LABELS: dict[str, str] = {
-    "pay": "what people pay",
-    "spend": "what the state spends",
-    "burden": "who carries it",
+    "pay": "taxes and fees",
+    "spend": "state spending",
+    "burden": "business or households",
     "place": "city or countryside",
-    "power_over": "power over people",
-    "who_decides": "who gets to decide",
-    "nature": "nature",
-    "security": "defence",
+    "power_over": "rules on people",
+    "who_decides": "parliament or ministries",
+    "nature": "nature and climate",
+    "security": "defence and security",
 }
 
 #: Plain tags, for display and for the metadata control. They do not drive neurons.

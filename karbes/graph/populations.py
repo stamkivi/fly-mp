@@ -25,25 +25,33 @@ log = logging.getLogger(__name__)
 
 ANNOTATIONS = "body-annotations-male-cns-v1.0-minconf-0.5.feather"
 
-#: Sixteen ORN types, two per rubric channel, chosen for comparable population size
-#: (43-84 cells) and for having both sides represented. The very large pheromone
-#: channels (ORN_DA1 at 204, ORN_VA1d at 132) are excluded so no channel is louder than
-#: another purely through cell count.
+#: One glomerulus per rubric channel, ten in all.
+#:
+#: **The pole pair is gone.** It existed because firing rates cannot be negative, so each
+#: channel needed a glomerulus for each direction. Since the *side* now carries the sign —
+#: a positive score drives the right antenna harder — one population per channel is enough,
+#: and the pair had stopped meaning anything.
+#:
+#: Chosen for balanced `rootSide` counts (L/R between 0.72 and 1.21) and comparable size
+#: (41-76 cells), so no channel is louder than another through cell count, and neither
+#: antenna is louder through annotation asymmetry. The large pheromone channels (ORN_DA1 at
+#: 204, ORN_VA1d at 132) stay excluded.
 #:
 #: **The channel-to-glomerulus assignment is arbitrary and fixed, not discovered.** No
-#: glomerulus in a fly means "taxes". The pairing was fixed once, before any agreement
-#: was measured, and is never re-drawn to improve a result. Keys are `rubric2.KEYS`;
+#: glomerulus in a fly means "healthcare". Channels are in `rubric3.KEYS` order against
+#: glomeruli in a fixed list; it is never re-drawn to improve a result.
 #: `test_channel_keys_track_the_rubric` fails if the rubric and this table drift apart.
-CHANNEL_ORNS: dict[str, tuple[str, str]] = {
-    # channel:     (negative pole,  positive pole)
-    "pay": ("ORN_VM5d", "ORN_VA2"),
-    "spend": ("ORN_DL1", "ORN_VL1"),
-    "burden": ("ORN_VM4", "ORN_DM1"),
-    "place": ("ORN_VA6", "ORN_DM3"),
-    "power_over": ("ORN_DL4", "ORN_DM6"),
-    "who_decides": ("ORN_V", "ORN_DM2"),
-    "nature": ("ORN_DA2", "ORN_VL2p"),
-    "security": ("ORN_DL5", "ORN_VM3"),
+CHANNEL_ORNS: dict[str, str] = {
+    "cost_of_living": "ORN_DM1",
+    "healthcare": "ORN_DL1",
+    "defence": "ORN_VA2",
+    "social": "ORN_VA6",
+    "taxes": "ORN_DM2",
+    "education": "ORN_VM5d",
+    "wages": "ORN_DM3",
+    "energy": "ORN_DM6",
+    "business": "ORN_DA2",
+    "immigration": "ORN_DL5",
 }
 
 DN_SUPERCLASS = "descending_neuron"
@@ -101,15 +109,12 @@ class Populations:
     def n(self) -> int:
         return len(self.retained)
 
-    def channels(self) -> dict[str, tuple[np.ndarray, np.ndarray]]:
-        """Per channel, the (negative pole, positive pole) body-ID arrays."""
-        out = {}
-        for channel, (neg, pos) in CHANNEL_ORNS.items():
-            out[channel] = (
-                self.orn.get(neg, np.array([], dtype=np.int64)),
-                self.orn.get(pos, np.array([], dtype=np.int64)),
-            )
-        return out
+    def channels(self) -> dict[str, np.ndarray]:
+        """Per channel, the body IDs of its glomerulus."""
+        return {
+            channel: self.orn.get(name, np.array([], dtype=np.int64))
+            for channel, name in CHANNEL_ORNS.items()
+        }
 
 
 def load(root: Path) -> Populations:
@@ -144,7 +149,7 @@ def load(root: Path) -> Populations:
 
     kept = set(retained.tolist())
     orn: dict[str, np.ndarray] = {}
-    wanted = {t for pair in CHANNEL_ORNS.values() for t in pair}
+    wanted = set(CHANNEL_ORNS.values())
     for name in wanted:
         ids = np.array(
             [
@@ -240,10 +245,8 @@ def load(root: Path) -> Populations:
 
 def summary(pops: Populations) -> str:
     lines = [f"retained {pops.n:,} neurons"]
-    for channel, (neg, pos) in CHANNEL_ORNS.items():
-        lines.append(
-            f"  {channel:<12} {neg:<10} n={len(pops.orn[neg]):<4} {pos:<10} n={len(pops.orn[pos])}"
-        )
+    for channel, name in CHANNEL_ORNS.items():
+        lines.append(f"  {channel:<15} {name:<10} n={len(pops.orn[name])}")
     lines.append(f"  drive        ORN rootSide L n={len(pops.orn_left)} R n={len(pops.orn_right)}")
     lines.append(f"  vision       T4/T5       L n={len(pops.t4t5_left)} R n={len(pops.t4t5_right)}")
     lines.append(f"  alarm        looming n={len(pops.looming)} -> DNp01 n={len(pops.giant_fibre)}")

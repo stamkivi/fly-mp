@@ -143,6 +143,12 @@ def bearings() -> dict[str, float]:
     return {name: 2 * math.pi * i / len(names) for i, name in enumerate(names)}
 
 
+def labels() -> dict[str, str]:
+    from karbes.score import rubric3
+
+    return dict(rubric3.LABELS)
+
+
 @dataclass
 class Step:
     """One tick of the walk, kept so the page can replay it."""
@@ -200,6 +206,7 @@ def walk(
     engine: Engine,
     *,
     see_initiator: bool = True,
+    mode: str = "deflect",
     bias: float = 0.0,
     escape_baseline: float = 0.0,
     seed: int = 0,
@@ -221,7 +228,15 @@ def walk(
 
     orn_l = engine.positions(pops.orn_left)
     orn_r = engine.positions(pops.orn_right)
-    visual = vision.stimulus(bill, scored.scores.get("salience", 0.0), pops, engine)
+    # Candidate mechanisms for how the procedural sense acts on the walk.
+    #   deflect  one-sided optic flow, a transient rotational push
+    #   startle  looming only: the giant fibre fires and the fly stops where it is
+    #   veto     the walk never sees it; the override is decided afterwards
+    salience = scored.scores.get("salience", 0.0)
+    if mode == "startle":
+        visual = vision.stimulus(bill, salience, pops, engine, flow_gain=0.0, loom_hz=150.0)
+    else:
+        visual = vision.stimulus(bill, salience, pops, engine)
 
     atlas_idx = engine.positions(atlas.bodies) if atlas is not None else np.array([], dtype=np.int32)
     rng = np.random.default_rng(seed)
@@ -258,7 +273,11 @@ def walk(
                 np.full(len(orn_r), right_hz * mean_n / len(orn_r)),
             ]
         )
-        seeing_now = see_initiator and REVEAL_STEP <= step < REVEAL_STEP + REVEAL_STEPS
+        seeing_now = (
+            see_initiator
+            and mode != "veto"
+            and REVEAL_STEP <= step < REVEAL_STEP + REVEAL_STEPS
+        )
         if seeing_now:
             targets = np.concatenate([targets, visual[0]])
             rates = np.concatenate([rates, visual[1]])

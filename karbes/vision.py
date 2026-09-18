@@ -80,7 +80,13 @@ def flow(bill: Bill) -> float:
 
 
 def stimulus(
-    bill: Bill, salience: float, pops: Populations, engine: Engine
+    bill: Bill,
+    salience: float,
+    pops: Populations,
+    engine: Engine,
+    *,
+    flow_gain: float = 1.0,
+    loom_hz: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """`(targets, rates_hz)` for the visual channels of one bill.
 
@@ -90,7 +96,9 @@ def stimulus(
     left = engine.positions(pops.t4t5_left)
     right = engine.positions(pops.t4t5_right)
     loom = engine.positions(pops.looming)
-    signed = flow(bill)
+    signed = flow(bill) * flow_gain
+
+    hz_loom = looming_hz(salience) if loom_hz is None else loom_hz
     mean_n = (len(left) + len(right)) / 2
 
     targets = np.concatenate([left, right, loom])
@@ -98,7 +106,7 @@ def stimulus(
         [
             np.full(len(left), (FLOW_BACKGROUND_HZ + FLOW_PEAK_HZ * max(-signed, 0.0)) * mean_n / len(left)),
             np.full(len(right), (FLOW_BACKGROUND_HZ + FLOW_PEAK_HZ * max(signed, 0.0)) * mean_n / len(right)),
-            np.full(len(loom), looming_hz(salience)),
+            np.full(len(loom), hz_loom),
         ]
     )
     order = np.argsort(targets)

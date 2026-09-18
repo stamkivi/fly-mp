@@ -32,7 +32,7 @@ from karbes.analysis import idealpoint, votematrix
 from karbes.atlas import Atlas
 from karbes.graph.populations import CHANNEL_ORNS, Populations
 from karbes.riigikogu.model import Bill, Vote
-from karbes.score import rubric2
+from karbes.score import rubric3
 from karbes.score.jev import Scored
 
 log = logging.getLogger(__name__)
@@ -81,21 +81,41 @@ def pack_raster(frames: list[np.ndarray]) -> bytes:
     )
 
 
+def legibility(scored: Scored) -> float:
+    """How much of a bill the rubric can actually see: sum of |score x confidence|."""
+    return sum(abs(scored.scores.get(k, 0.0) * scored.confidence.get(k, 0.0)) for k in rubric3.KEYS)
+
+
 def pick_bill(
     bills: dict[str, Bill], votes: list[Vote], scores: dict[str, Scored]
 ) -> tuple[Bill, Vote]:
-    """The most consequential bill the fly can actually smell. Never an agreement rule."""
+    """The most consequential bill the fly can actually smell. Never an agreement rule.
+
+    **Salience alone is the wrong rule for a demonstration.** It selected the Bronze Soldier
+    removal, which is maximally salient and almost invisible to this rubric: a monument is
+    not a tax, a wage or a hospital, so every channel read near zero and the fly had nothing
+    to walk toward. The rule is now salience weighted by legibility — still a property of
+    the bill, still blind to how anyone voted, but it will not hand the fly a bill it cannot
+    smell. Ties break on the earlier date.
+    """
     candidates = []
     for vote in votes:
         bill = bills.get(vote.draft_uuid)
         scored = scores.get(vote.draft_uuid)
         if bill is None or scored is None or not vote.discriminative:
             continue
-        candidates.append((scored.scores.get("salience", 0.0), vote.when, bill, vote))
+        rank = scored.scores.get("salience", 0.0) * legibility(scored)
+        candidates.append((rank, vote.when, bill, vote, scored))
     if not candidates:
         raise ValueError("no scored, discriminative bill in the corpus")
-    salience, _, bill, vote = max(candidates, key=lambda c: (c[0], -_epoch(c[1])))
-    log.info("selected %r (salience %.2f) of %d candidates", bill.title, salience, len(candidates))
+    rank, _, bill, vote, scored = max(candidates, key=lambda c: (c[0], -_epoch(c[1])))
+    log.info(
+        "selected %r (salience %.2f x legibility %.2f) of %d candidates",
+        bill.title,
+        scored.scores.get("salience", 0.0),
+        legibility(scored),
+        len(candidates),
+    )
     return bill, vote
 
 
@@ -111,7 +131,7 @@ def blank_score() -> Scored:
     this delivers a quarter of the drive it should and the measurement lands under the
     noise. Use `probe_score` for that.
     """
-    keys = (*rubric2.KEYS, "salience")
+    keys = (*rubric3.KEYS, "salience")
     return Scored(
         scores=dict.fromkeys(keys, 0.0),
         confidence=dict.fromkeys(keys, 1.0),
@@ -372,7 +392,7 @@ def build(inputs: Inputs) -> Bundle:
             "bearings": {k: round(v, 5) for k, v in seeing.bearings.items()},
             "ring": arena.RING,
             "arrive_radius": arena.ARRIVE_RADIUS,
-            "labels": dict(rubric2.LABELS),
+            "labels": dict(rubric3.LABELS),
             "step_seconds": arena.STEP_SECONDS,
             "frames_per_step": arena.FRAMES_PER_STEP,
             "blind": trajectory(blind),
@@ -431,9 +451,7 @@ def build(inputs: Inputs) -> Bundle:
         },
         "audit": {
             "driven_bodies": {
-                name: [int(b) for b in pops.orn[name]]
-                for pair in CHANNEL_ORNS.values()
-                for name in pair
+                name: [int(b) for b in pops.orn[name]] for name in CHANNEL_ORNS.values()
             },
             "dna_left_bodies": [int(b) for b in pops.dna_left],
             "dna_right_bodies": [int(b) for b in pops.dna_right],
@@ -465,14 +483,17 @@ def _channels(scored: Scored) -> list[dict]:
     """The nine Jev channels as the page draws them: score, confidence, and the drive."""
     drive = encode.channel_drive(scored)
     out = []
-    for key, question, neg, pos in rubric2.QUESTIONS:
+    for key, question, neg, pos, salience, divisive in rubric3.QUESTIONS:
         out.append(
             {
                 "key": key,
                 "question": question,
                 "negative": neg,
                 "positive": pos,
-                "orn": list(CHANNEL_ORNS[key]),
+                "label": rubric3.LABELS[key],
+                "voter_salience": salience,
+                "divisive": divisive,
+                "orn": CHANNEL_ORNS[key],
                 "score": round(scored.scores.get(key, 0.0), 4),
                 "confidence": round(scored.confidence.get(key, 0.0), 4),
                 "drive": round(drive[key], 4),
@@ -484,7 +505,10 @@ def _channels(scored: Scored) -> list[dict]:
             "question": "How much does this bill actually change?",
             "negative": "pure housekeeping",
             "positive": "central political controversy",
-            "orn": [],
+            "orn": None,
+            "label": "how much it changes",
+            "voter_salience": None,
+            "divisive": False,
             "score": round(scored.scores.get("salience", 0.0), 4),
             "confidence": round(scored.confidence.get("salience", 0.0), 4),
             "drive": round(encode.salience_gain(scored.scores.get("salience", 0.0)), 4),

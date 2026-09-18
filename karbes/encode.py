@@ -2,7 +2,7 @@
 
 **The side carries the sign.** Scores are signed and firing rates are not, so the earlier
 encoder gave each channel a pole pair — one glomerulus for negative, one for positive —
-and drove both antennae identically. That was incompatible with a left-minus-right readout
+and drove both antennae identically. One glomerulus per channel is now enough. That was incompatible with a left-minus-right readout
 by construction: a bilaterally symmetric stimulus has no reason to move an antisymmetric
 statistic, and flybrain measured exactly that on this connectome, a turn response to a
 left-vs-right stimulus of "0.0000, identical to four decimals".
@@ -10,10 +10,6 @@ left-vs-right stimulus of "0.0000, identical to four decimals".
 So a positive score now drives the **right** antenna harder and a negative score the left,
 which is a stimulus the steering circuit is actually built to resolve. Two consequences:
 
-* `CHANNEL_ORNS` keeps its pole pairs, but the pair no longer carries the sign. Both
-  members are driven identically. The table is left alone rather than re-drawn, because
-  the channel-to-glomerulus assignment is pre-registered and re-drawing it to suit a new
-  encoder is the kind of thing this project exists not to do.
 * Laterality comes from `rootSide`, the only side ORNs carry. The 409 whose rootSide is
   unknown are dropped rather than guessed.
 
@@ -79,21 +75,21 @@ def stimulus(
     bodies: list[int] = []
     rates: list[float] = []
     for channel, signed in drive.items():
-        for name in CHANNEL_ORNS[channel]:
-            ids = pops.orn[name]
-            side_ids = {"L": [b for b in ids.tolist() if b in left],
-                        "R": [b for b in ids.tolist() if b in right]}
-            n_l, n_r = len(side_ids["L"]), len(side_ids["R"])
-            if not n_l or not n_r:
-                raise ValueError(f"ORN type {name!r} has an empty side: L={n_l} R={n_r}")
-            mean_n = (n_l + n_r) / 2
-            hz = {
-                "R": (BACKGROUND_HZ + PEAK_HZ * max(signed, 0.0)) * mean_n / n_r,
-                "L": (BACKGROUND_HZ + PEAK_HZ * max(-signed, 0.0)) * mean_n / n_l,
-            }
-            for side in ("L", "R"):
-                bodies.extend(side_ids[side])
-                rates.extend([hz[side]] * len(side_ids[side]))
+        name = CHANNEL_ORNS[channel]
+        ids = pops.orn[name]
+        side_ids = {"L": [b for b in ids.tolist() if b in left],
+                    "R": [b for b in ids.tolist() if b in right]}
+        n_l, n_r = len(side_ids["L"]), len(side_ids["R"])
+        if not n_l or not n_r:
+            raise ValueError(f"ORN type {name!r} has an empty side: L={n_l} R={n_r}")
+        mean_n = (n_l + n_r) / 2
+        hz = {
+            "R": (BACKGROUND_HZ + PEAK_HZ * max(signed, 0.0)) * mean_n / n_r,
+            "L": (BACKGROUND_HZ + PEAK_HZ * max(-signed, 0.0)) * mean_n / n_l,
+        }
+        for side in ("L", "R"):
+            bodies.extend(side_ids[side])
+            rates.extend([hz[side]] * len(side_ids[side]))
 
     order = np.argsort(np.asarray(bodies))
     ordered = np.asarray(bodies)[order]

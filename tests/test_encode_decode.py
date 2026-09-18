@@ -13,10 +13,10 @@ import pytest
 from karbes import decode, encode
 from karbes.graph.populations import CHANNEL_ORNS, Populations
 from karbes.riigikogu.model import EI_HAALETANUD, POOLT, VASTU
-from karbes.score import rubric2
+from karbes.score import rubric3
 from karbes.score.jev import Scored
 
-EVERY_ORN = [name for pair in CHANNEL_ORNS.values() for name in pair]
+EVERY_ORN = list(CHANNEL_ORNS.values())
 PER_SIDE = 10
 
 
@@ -55,8 +55,8 @@ def pops() -> Populations:
 
 
 def scored(**overrides: float) -> Scored:
-    scores = dict.fromkeys(rubric2.KEYS, 0.0) | {"salience": 1.0}
-    conf = dict.fromkeys(rubric2.KEYS, 1.0) | {"salience": 1.0}
+    scores = dict.fromkeys(rubric3.KEYS, 0.0) | {"salience": 1.0}
+    conf = dict.fromkeys(rubric3.KEYS, 1.0) | {"salience": 1.0}
     for key, value in overrides.items():
         scores[key] = value
     return Scored(scores=scores, confidence=conf, input_tokens=0)
@@ -75,16 +75,16 @@ def test_a_zero_score_drives_both_antennae_equally(pops):
 
 
 def test_a_positive_score_leads_with_the_right_antenna(pops):
-    r = rates_by_body(scored(security=1.0), pops)
-    ids = pops.orn[CHANNEL_ORNS["security"][0]]
+    r = rates_by_body(scored(defence=1.0), pops)
+    ids = pops.orn[CHANNEL_ORNS["defence"]]
     left, right = ids[:PER_SIDE], ids[PER_SIDE:]
     assert all(r[int(b)] == pytest.approx(encode.BACKGROUND_HZ + encode.PEAK_HZ) for b in right)
     assert all(r[int(b)] == pytest.approx(encode.BACKGROUND_HZ) for b in left)
 
 
 def test_a_negative_score_leads_with_the_left_antenna(pops):
-    r = rates_by_body(scored(pay=-1.0), pops)
-    ids = pops.orn[CHANNEL_ORNS["pay"][0]]
+    r = rates_by_body(scored(taxes=-1.0), pops)
+    ids = pops.orn[CHANNEL_ORNS["taxes"]]
     left, right = ids[:PER_SIDE], ids[PER_SIDE:]
     assert all(r[int(b)] == pytest.approx(encode.BACKGROUND_HZ + encode.PEAK_HZ) for b in left)
     assert all(r[int(b)] == pytest.approx(encode.BACKGROUND_HZ) for b in right)
@@ -93,20 +93,20 @@ def test_a_negative_score_leads_with_the_left_antenna(pops):
 def test_confidence_scales_the_drive_and_zero_confidence_silences_it(pops):
     """The whole reason Jev replaced the LLM rubric: a channel the model could not read
     must drive the fly weakly, not drive it with noise dressed as signal."""
-    s = scored(security=1.0)
-    s.confidence["security"] = 0.25
-    right = pops.orn[CHANNEL_ORNS["security"][0]][PER_SIDE:]
+    s = scored(defence=1.0)
+    s.confidence["defence"] = 0.25
+    right = pops.orn[CHANNEL_ORNS["defence"]][PER_SIDE:]
     r = rates_by_body(s, pops)
     assert r[int(right[0])] == pytest.approx(encode.BACKGROUND_HZ + 0.25 * encode.PEAK_HZ)
 
-    s.confidence["security"] = 0.0
+    s.confidence["defence"] = 0.0
     assert rates_by_body(s, pops)[int(right[0])] == pytest.approx(encode.BACKGROUND_HZ)
 
 
 def test_salience_scales_the_stimulus_but_never_the_background(pops):
-    s = scored(security=1.0)
+    s = scored(defence=1.0)
     s.scores["salience"] = 0.0
-    right = pops.orn[CHANNEL_ORNS["security"][0]][PER_SIDE:]
+    right = pops.orn[CHANNEL_ORNS["defence"]][PER_SIDE:]
     r = rates_by_body(s, pops)
     assert r[int(right[0])] == pytest.approx(
         encode.BACKGROUND_HZ + encode.SALIENCE_FLOOR * encode.PEAK_HZ
@@ -115,16 +115,17 @@ def test_salience_scales_the_stimulus_but_never_the_background(pops):
 
 def test_every_rate_stays_inside_the_measured_orn_range(pops):
     """Pre-registered, not tuned: ORNs are measured firing at roughly 5-200 Hz."""
-    for key in rubric2.KEYS:
+    for key in rubric3.KEYS:
         for value in (-1.0, 1.0):
             for hz in rates_by_body(scored(**{key: value}), pops).values():
                 assert 5.0 <= hz <= 200.0
 
 
 def test_an_uneven_side_is_not_itself_a_stimulus(pops):
-    """rootSide gives 363 left ORNs against 525 right. If drive were a flat per-neuron
-    rate, the right antenna would shout permanently and the fly would always turn."""
-    name = CHANNEL_ORNS["pay"][0]
+    """rootSide gives 276 left receptor neurons against 313 right. If drive were a flat
+    per-neuron rate, the right antenna would shout permanently and the fly would always
+    turn that way regardless of the bill."""
+    name = CHANNEL_ORNS["taxes"]
     ids = pops.orn[name]
     # Make this glomerulus lopsided: 3 left, 17 right.
     pops.orn_left = np.array(

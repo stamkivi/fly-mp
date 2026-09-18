@@ -40,20 +40,21 @@ def test_body_ids_stay_integers(pops):
 def test_channel_keys_track_the_rubric(pops):
     """The ORN table and the scoring rubric must name the same channels. They have drifted
     apart once already, when the rubric was rewritten as concrete questions."""
-    from karbes.score import rubric2
+    from karbes.score import rubric3
 
-    assert tuple(P.CHANNEL_ORNS) == rubric2.KEYS
+    assert tuple(P.CHANNEL_ORNS) == rubric3.KEYS
 
 
-def test_every_channel_has_two_distinct_poles(pops):
+def test_every_channel_has_its_own_glomerulus(pops):
+    """One population per channel, all disjoint — the pole pair went away when the side
+    started carrying the sign."""
     channels = pops.channels()
     assert set(channels) == set(P.CHANNEL_ORNS)
     seen = set()
-    for neg, pos in channels.values():
-        assert len(neg) > 0 and len(pos) > 0
-        assert not set(neg.tolist()) & set(pos.tolist())
-        seen |= set(neg.tolist()) | set(pos.tolist())
-    # 16 disjoint populations, so the union is the sum of the parts.
+    for ids in channels.values():
+        assert len(ids) > 0
+        assert not seen & set(ids.tolist())
+        seen |= set(ids.tolist())
     assert len(seen) == sum(len(v) for v in pops.orn.values())
 
 

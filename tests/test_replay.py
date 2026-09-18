@@ -15,7 +15,7 @@ import pytest
 
 from karbes import replay
 from karbes.riigikogu.model import FLY_STATES
-from karbes.score import rubric2
+from karbes.score import rubric3
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -120,8 +120,8 @@ def test_the_walk_actually_goes_somewhere(bundle):
 
 
 def test_every_pot_is_a_rubric_channel(bundle):
-    assert set(bundle["arena"]["pots"]) == set(rubric2.KEYS)
-    assert set(bundle["arena"]["bearings"]) == set(rubric2.KEYS)
+    assert set(bundle["arena"]["pots"]) == set(rubric3.KEYS)
+    assert set(bundle["arena"]["bearings"]) == set(rubric3.KEYS)
     assert all(v > 0 for v in bundle["arena"]["pots"].values())
 
 

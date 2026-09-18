@@ -79,21 +79,39 @@ canvas{display:block;width:100%;height:100%}
 .ballot button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ballot small{display:block;font-weight:400;font-size:11px;color:var(--mute);
               font-family:var(--mono);margin-top:1px}
+.whatis{margin-top:18px;background:none;border:0;border-bottom:1px dotted var(--mute);
+        font-family:var(--mono);font-size:11.5px;color:var(--mute);cursor:pointer;padding:2px 0}
+.whatis:hover{color:var(--ink);border-color:var(--ink)}
+.whatis-body{margin:12px auto 0;max-width:54ch;font-size:13.5px;color:var(--mute);text-align:left}
+
+/* pot tooltip */
+.tip{position:absolute;pointer-events:none;background:var(--card);border:1px solid var(--rule);
+     border-radius:7px;padding:9px 11px;max-width:270px;box-shadow:0 4px 18px rgba(0,0,0,.09);
+     font-size:12.5px;line-height:1.4;opacity:0;transition:opacity .12s;z-index:5}
+.tip.on{opacity:1}
+.tip b{display:block;font-size:12.5px;margin-bottom:3px}
+.tip .q{color:var(--mute);font-family:var(--body)}
+.tip .n{font-family:var(--mono);font-size:11px;color:var(--mute);margin-top:5px}
 
 /* ---------------- outcome ---------------- */
-.outcome{max-width:760px;width:100%}
-.outcome h2{font-family:var(--display);font-weight:600;font-size:26px;margin:0 0 4px;
-            text-align:center}
-.outcome .sub{text-align:center;color:var(--mute);font-size:14px;margin:0 0 18px}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-@media(max-width:760px){.cards{grid-template-columns:repeat(2,1fr)}}
-.card{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:13px}
+/* The outcome sits under the arena rather than over it: the trails are the result, and
+   covering them with a sheet the moment the fly stopped meant you never got to read it. */
+.result{display:grid;grid-template-columns:minmax(200px,1fr) 2.4fr auto;gap:14px;
+        align-items:center;background:var(--card);border:1px solid var(--rule);
+        border-radius:10px;padding:12px 14px;animation:rise .4s cubic-bezier(.2,.7,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(max-width:900px){.result{grid-template-columns:1fr}}
+.result-head h2{font-family:var(--display);font-weight:600;font-size:17px;margin:0;line-height:1.2}
+.result-head .sub{color:var(--mute);font-size:12.5px;margin:3px 0 0}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:620px){.cards{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--paper);border:1px solid var(--rule);border-radius:7px;padding:9px 10px}
 .card.hi{border-color:var(--seen);box-shadow:0 0 0 2px rgba(226,98,44,.12)}
 .card .k{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
          color:var(--mute)}
-.card .v{font-family:var(--display);font-size:20px;margin-top:5px;line-height:1.15}
+.card .v{font-family:var(--display);font-size:17px;margin-top:3px;line-height:1.15}
 .card .n{font-family:var(--mono);font-size:10.5px;color:var(--mute);margin-top:6px;line-height:1.45}
-.again{display:block;margin:18px auto 0;font-family:var(--mono);font-size:12px;
+.again{font-family:var(--mono);font-size:12px;white-space:nowrap;
        background:none;border:1px solid var(--rule);border-radius:6px;padding:9px 16px;
        color:var(--ink);cursor:pointer}
 .again:hover{border-color:var(--accent)}
@@ -123,7 +141,7 @@ table.facts td:first-child{color:var(--mute);width:38%;padding-right:16px}
   <div class="board">
     <div class="panel">
       <canvas id="arena" role="img" aria-label="The arena."></canvas>
-      <div class="tag">the questions this bill raises</div>
+      <div class="tag">what this bill changes</div>
       <div class="tagr" id="clock"></div>
     </div>
     <div class="panel">
@@ -137,8 +155,6 @@ table.facts td:first-child{color:var(--mute);width:38%;padding-right:16px}
 
   <div class="veil" id="veil-launch">
     <div class="launch">
-      <h1 id="launch-title">A fly is about to vote on this bill</h1>
-      <p id="launch-lede"></p>
       <div class="bill">
         <div class="k" id="bill-kicker"></div>
         <h2 id="bill-title"></h2>
@@ -150,14 +166,17 @@ table.facts td:first-child{color:var(--mute);width:38%;padding-right:16px}
         <button data-vote="VASTU">Vastu<small>against</small></button>
         <button data-vote="EI_HAALETANUD">Ei hääletanud<small>decline</small></button>
       </div>
+      <button class="whatis" id="whatis" aria-expanded="false">then a fly votes · what is this?</button>
+      <p class="whatis-body" id="whatis-body" hidden></p>
     </div>
   </div>
 
-  <div class="veil gone" id="veil-outcome">
-    <div class="outcome">
+  <div class="result" id="result" hidden>
+    <div class="result-head">
       <h2 id="outcome-title"></h2>
       <p class="sub" id="outcome-sub"></p>
-      <div class="cards">
+    </div>
+    <div class="cards">
         <div class="card" id="card-you"><div class="k">You</div>
           <div class="v" id="you-v">—</div><div class="n" id="you-n"></div></div>
         <div class="card" id="card-blind"><div class="k">On the bill alone</div>
@@ -167,8 +186,7 @@ table.facts td:first-child{color:var(--mute);width:38%;padding-right:16px}
         <div class="card" id="card-cham"><div class="k">The Riigikogu</div>
           <div class="v" id="cham-v">—</div><div class="n" id="cham-n"></div></div>
       </div>
-      <button class="again" id="again">Send it in again</button>
-    </div>
+    <button class="again" id="again">Send it in again</button>
   </div>
 </main>
 
@@ -325,27 +343,87 @@ function arenaScale(){
   return Math.min(AW, AH) / (2 * far * 1.16);
 }
 
-function drawFly(cx, cy, heading, colour, scale){
-  actx.save(); actx.translate(cx, cy); actx.rotate(-heading);
-  actx.fillStyle = colour;
-  actx.globalAlpha = .34;                                    // wings
-  actx.beginPath(); actx.ellipse(-1.2*scale, -2.4*scale, 3.4*scale, 1.5*scale, -0.5, 0, 7); actx.fill();
-  actx.beginPath(); actx.ellipse(-1.2*scale,  2.4*scale, 3.4*scale, 1.5*scale,  0.5, 0, 7); actx.fill();
-  actx.globalAlpha = .85;                                    // legs
-  actx.strokeStyle = colour; actx.lineWidth = Math.max(1, 0.32*scale); actx.lineCap = "round";
-  for (const [ax, ay, bx, by] of [[0.6,1.2,-0.9,3.2],[0.6,-1.2,-0.9,-3.2],
-                                  [-0.9,1.3,-2.8,3.0],[-0.9,-1.3,-2.8,-3.0],
-                                  [1.9,1.0,3.1,2.6],[1.9,-1.0,3.1,-2.6]]){
-    actx.beginPath();
-    actx.moveTo(ax*scale, ay*scale); actx.lineTo(bx*scale, by*scale); actx.stroke();
+/* A fly seen from above, drawn to roughly real proportions: head about a fifth of the
+   body, thorax a third, abdomen the rest, wings overhanging past the tip. The earlier
+   version was a dart with two blobs and read as a cursor, not an animal. */
+function drawFly(cx, cy, heading, tint, scale, alpha){
+  const S = scale, dark = "#2A2724";
+  actx.save();
+  actx.globalAlpha = alpha === undefined ? 1 : alpha;
+  actx.translate(cx, cy); actx.rotate(-heading);
+
+  // wings: translucent, swept back, with a hint of vein
+  for (const sign of [-1, 1]){
+    actx.save(); actx.rotate(sign * 0.42); actx.translate(-1.1*S, 0);
+    const wg = actx.createLinearGradient(0, 0, -4.6*S, 0);
+    wg.addColorStop(0, "rgba(206,214,222,.62)");
+    wg.addColorStop(1, "rgba(206,214,222,.16)");
+    actx.fillStyle = wg;
+    actx.beginPath(); actx.ellipse(-2.3*S, sign*1.5*S, 3.5*S, 1.25*S, sign*0.12, 0, 7); actx.fill();
+    actx.strokeStyle = "rgba(150,162,172,.45)"; actx.lineWidth = Math.max(.5, .12*S);
+    actx.beginPath(); actx.moveTo(-.4*S, sign*.9*S); actx.lineTo(-4.6*S, sign*1.9*S); actx.stroke();
+    actx.restore();
   }
-  actx.globalAlpha = 1;                                      // abdomen, thorax, head
-  actx.beginPath(); actx.ellipse(-1.9*scale, 0, 2.6*scale, 1.55*scale, 0, 0, 7); actx.fill();
-  actx.beginPath(); actx.ellipse(0.9*scale, 0, 1.9*scale, 1.5*scale, 0, 0, 7); actx.fill();
-  actx.beginPath(); actx.arc(2.9*scale, 0, 1.35*scale, 0, 7); actx.fill();
+
+  // legs
+  actx.strokeStyle = dark; actx.lineWidth = Math.max(.8, .26*S); actx.lineCap = "round";
+  for (const sign of [-1, 1]){
+    for (const [hx, kx, ky, tx, ty] of [[1.0, .2, 2.0, -1.0, 3.1],
+                                        [0.2, -.9, 2.1, -2.2, 2.9],
+                                        [-0.5, -1.9, 1.9, -3.4, 2.4]]){
+      actx.beginPath();
+      actx.moveTo(hx*S, sign*.7*S);
+      actx.lineTo(kx*S, sign*ky*S);
+      actx.lineTo(tx*S, sign*ty*S);
+      actx.stroke();
+    }
+  }
+
+  // abdomen, tapered, with segment bands
+  const ab = actx.createLinearGradient(-5.4*S, 0, -1*S, 0);
+  ab.addColorStop(0, tint); ab.addColorStop(1, dark);
+  actx.fillStyle = ab;
+  actx.beginPath(); actx.ellipse(-3.0*S, 0, 2.5*S, 1.45*S, 0, 0, 7); actx.fill();
+  actx.strokeStyle = "rgba(255,255,255,.18)"; actx.lineWidth = Math.max(.5, .2*S);
+  for (const bx of [-2.1, -3.0, -3.9]){
+    actx.beginPath(); actx.ellipse(bx*S, 0, .2*S, 1.28*S, 0, 0, 7); actx.stroke();
+  }
+
+  // thorax
+  actx.fillStyle = dark;
+  actx.beginPath(); actx.ellipse(-0.2*S, 0, 1.75*S, 1.5*S, 0, 0, 7); actx.fill();
+  actx.fillStyle = "rgba(255,255,255,.10)";
+  actx.beginPath(); actx.ellipse(-0.4*S, -.4*S, 1.1*S, .6*S, -.3, 0, 7); actx.fill();
+
+  // head and the two compound eyes
+  actx.fillStyle = dark;
+  actx.beginPath(); actx.arc(1.9*S, 0, 1.25*S, 0, 7); actx.fill();
+  actx.fillStyle = "#B4442A";
+  for (const sign of [-1, 1]){
+    actx.beginPath(); actx.ellipse(2.1*S, sign*.62*S, .95*S, .72*S, sign*.35, 0, 7); actx.fill();
+  }
+  actx.fillStyle = "rgba(255,255,255,.35)";
+  for (const sign of [-1, 1]){
+    actx.beginPath(); actx.ellipse(2.45*S, sign*.75*S, .26*S, .2*S, 0, 0, 7); actx.fill();
+  }
   actx.restore();
 }
 
+/* Position and heading between two steps, so the fly glides instead of snapping. */
+function at(arm, step, sub){
+  const path = A[arm].path, head = A[arm].heading;
+  const i = Math.max(0, Math.min(step, path.length - 1));
+  const j = Math.min(i + 1, path.length - 1);
+  const t = i === j ? 0 : Math.max(0, Math.min(1, sub));
+  let dh = head[j] - head[i];
+  while (dh > Math.PI) dh -= 2*Math.PI;
+  while (dh < -Math.PI) dh += 2*Math.PI;
+  return [path[i][0] + (path[j][0] - path[i][0]) * t,
+          path[i][1] + (path[j][1] - path[i][1]) * t,
+          head[i] + dh * t];
+}
+
+let clockMs = 0;
 function drawArena(step, sub){
   if (!AW) sizeArena();
   const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -366,13 +444,22 @@ function drawArena(step, sub){
     const px = X(A.ring*Math.cos(bear)), py = Y(A.ring*Math.sin(bear));
     const s = A.pots[name] / maxPot;
     const r = (7 + 20*s) * dpr;
-    const grad = actx.createRadialGradient(px, py, 0, px, py, r*2.1);
-    grad.addColorStop(0, `rgba(27,107,140,${0.10 + 0.26*s})`);
+    // A haze, then rings drifting out of it: the pots have to look like they are giving
+    // something off, or the fly appears to be walking between abstract markers.
+    const grad = actx.createRadialGradient(px, py, 0, px, py, r*2.3);
+    grad.addColorStop(0, `rgba(27,107,140,${0.09 + 0.24*s})`);
     grad.addColorStop(1, "rgba(27,107,140,0)");
     actx.fillStyle = grad;
-    actx.beginPath(); actx.arc(px, py, r*2.1, 0, 7); actx.fill();
-    actx.fillStyle = `rgba(27,107,140,${0.30 + 0.55*s})`;
-    actx.beginPath(); actx.arc(px, py, r*0.36, 0, 7); actx.fill();
+    actx.beginPath(); actx.arc(px, py, r*2.3, 0, 7); actx.fill();
+    const phase = (clockMs / 2600 + A.bearings[name] * 0.22) % 1;
+    for (let ring = 0; ring < 3; ring++){
+      const t = (phase + ring / 3) % 1;
+      actx.strokeStyle = `rgba(27,107,140,${(0.30 + 0.34*s) * (1 - t) * (0.35 + 0.65*s)})`;
+      actx.lineWidth = Math.max(1, 1.1*dpr*(1 - t*0.5));
+      actx.beginPath(); actx.arc(px, py, r*(0.5 + 1.9*t), 0, 7); actx.stroke();
+    }
+    actx.fillStyle = `rgba(27,107,140,${0.34 + 0.52*s})`;
+    actx.beginPath(); actx.arc(px, py, r*0.34, 0, 7); actx.fill();
 
     const done = shown >= nSeen - 1;
     const chosen = done && A.seeing.settled_on === name;
@@ -388,15 +475,19 @@ function drawArena(step, sub){
   actx.textAlign = "left"; actx.textBaseline = "alphabetic";
 
   const trail = (arm, colour, dash, upto) => {
-    const pts = A[arm].path.slice(0, Math.min(upto, A[arm].path.length - 1) + 1);
-    if (pts.length < 2) return;
+    const path = A[arm].path;
+    const last = Math.min(upto, path.length - 1);
+    if (last < 1) return;
     actx.setLineDash(dash); actx.strokeStyle = colour;
     actx.lineWidth = 2.2*dpr; actx.lineJoin = "round"; actx.lineCap = "round";
     actx.beginPath();
-    for (let i = 0; i < pts.length; i++){
-      const px = X(pts[i][0]), py = Y(pts[i][1]);
+    for (let i = 0; i <= last; i++){
+      const px = X(path[i][0]), py = Y(path[i][1]);
       i ? actx.lineTo(px, py) : actx.moveTo(px, py);
     }
+    // the partial segment the fly is currently walking, so the trail grows continuously
+    const tip = at(arm, last, sub);
+    actx.lineTo(X(tip[0]), Y(tip[1]));
     actx.stroke(); actx.setLineDash([]);
   };
   if (revealed) trail("blind", "#C4BFB5", [5*dpr, 5*dpr], Math.min(shown, nBlind - 1));
@@ -408,14 +499,25 @@ function drawArena(step, sub){
       actx.strokeStyle = "rgba(226,98,44,.35)"; actx.lineWidth = 1.2*dpr;
       actx.beginPath(); actx.arc(X(rp[0]), Y(rp[1]), 11*dpr, 0, 7); actx.stroke();
     }
-    if (shown < nBlind){
-      const bp = A.blind.path[Math.min(shown, nBlind-1)];
-      const bh = A.blind.heading[Math.min(shown, nBlind-1)];
-      actx.globalAlpha = .5; drawFly(X(bp[0]), Y(bp[1]), bh, "#9A958C", 4.4*dpr); actx.globalAlpha = 1;
-    }
+    const bp = at("blind", Math.min(shown, nBlind - 1), sub);
+    drawFly(X(bp[0]), Y(bp[1]), bp[2], "#B6B0A6", 3.4*dpr, .62);
   }
-  const sp = A.seeing.path[shown], sh = A.seeing.heading[shown];
-  drawFly(X(sp[0]), Y(sp[1]), sh, revealed ? "#E2622C" : "#1B6B8C", 5.4*dpr);
+  const sp = at("seeing", shown, sub);
+  drawFly(X(sp[0]), Y(sp[1]), sp[2], revealed ? "#E2622C" : "#2E6E8E", 4.2*dpr);
+
+  // once both have stopped, name them where they stand rather than in a legend elsewhere
+  if (shown >= nSeen - 1){
+    actx.font = `500 ${11.5*dpr}px "IBM Plex Mono",monospace`;
+    const mark = (pt, text, colour) => {
+      actx.fillStyle = colour;
+      const px = X(pt[0]), py = Y(pt[1]);
+      actx.textAlign = px > AW*0.62 ? "right" : "left";
+      actx.fillText(text, px + (actx.textAlign === "right" ? -14*dpr : 14*dpr), py - 13*dpr);
+      actx.textAlign = "left";
+    };
+    mark(A.blind.path[nBlind-1], "on the bill alone", "#9A958C");
+    mark(A.seeing.path[nSeen-1], "knowing who tabled it", "#E2622C");
+  }
 }
 
 /* ================= narration ================= */
@@ -437,11 +539,19 @@ document.getElementById("bill-title").textContent = bill.title;
 document.getElementById("bill-meta").textContent =
   [bill.committee, cham.when ? cham.when.slice(0,10) : null].filter(Boolean).join("  ·  ");
 {
-  const strongest = POTS.reduce((x,y) => A.pots[x] >= A.pots[y] ? x : y);
-  document.getElementById("launch-lede").textContent =
-    `We scored what this bill actually does on eight questions, turned each into a smell, and `
-    + `put them round a ring. A simulated fly brain walks toward whichever pulls hardest — `
-    + `${LABELS[strongest] || strongest}, here. Where it ends up is how it votes.`;
+  const body = document.getElementById("whatis-body");
+  const btn = document.getElementById("whatis");
+  body.textContent =
+    "The eight questions this bill raises are laid out as eight smells around a ring, each as "
+    + "strong as that question applies. A simulated fly brain — a real connectome, 166,700 "
+    + "neurons — walks the fly toward whichever pulls hardest. Where it ends up is its vote. "
+    + "Partway through it is told one more thing, through a second sense: who tabled the bill.";
+  btn.onclick = () => {
+    const open = body.hasAttribute("hidden");
+    body.toggleAttribute("hidden", !open);
+    btn.setAttribute("aria-expanded", String(open));
+    btn.textContent = open ? "hide" : "then a fly votes · what is this?";
+  };
 }
 document.getElementById("regions").innerHTML = GROUPS.map(g => {
   const c = REGION_COLOUR[g] || [120,120,120];
@@ -472,18 +582,18 @@ document.getElementById("facts").innerHTML = [
 /* ================= playback ================= */
 const STEP_MS = REDUCED ? 120 : 420;
 const veilLaunch = document.getElementById("veil-launch");
-const veilOutcome = document.getElementById("veil-outcome");
+const resultEl = document.getElementById("result");
 let yourVote = null, started = 0, running = false, raf = 0;
 
 document.querySelectorAll(".ballot button").forEach(b => {
   b.onclick = () => { yourVote = b.dataset.vote; launch(); };
 });
-document.getElementById("again").onclick = () => { veilOutcome.classList.add("gone"); launch(); };
+document.getElementById("again").onclick = launch;
 
 function launch(){
   cancelAnimationFrame(raf);
   veilLaunch.classList.add("gone");
-  veilOutcome.classList.add("gone");
+  resultEl.hidden = true;
   heat.fill(0);
   running = true; started = performance.now();
   say("the fly is in the arena, smelling the bill", true);
@@ -511,6 +621,7 @@ function tick(now){
   for (let i = 0; i < K; i++) if (heat[i] > 0) heat[i] *= decay;
   lastNow = now;
 
+  clockMs = elapsed;
   drawArena(step, sub);
   drawBrain(frame);
   document.getElementById("clock").textContent =
@@ -541,7 +652,7 @@ function finish(){
     ? "Same brain, same bill, same seed. The only difference is one bit of procedure."
     : "It reached a different question once it saw the initiator, but landed the same way.";
   say(v.flipped ? "the initiator changed its mind" : "it has decided", false);
-  veilOutcome.classList.remove("gone");
+  resultEl.hidden = false;
 }
 
 function describe(step){
@@ -561,6 +672,40 @@ function describe(step){
     + `positions, seen from above: two optic lobes and the central brain, with the nerve cord `
     + `trailing away. Firing rates are ${rates}.`);
 }
+
+/* Hovering a pot explains it, so the questions do not have to be explained up front. */
+const tip = document.createElement("div");
+tip.className = "tip";
+arena.parentElement.appendChild(tip);
+const CHAN = {};
+for (const c of B.channels) CHAN[c.key] = c;
+function potAt(ev){
+  const r = arena.getBoundingClientRect();
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const mx = (ev.clientX - r.left) * dpr, my = (ev.clientY - r.top) * dpr;
+  const k = arenaScale(), ox = AW/2, oy = AH/2;
+  for (const name of POTS){
+    const b = A.bearings[name];
+    const px = ox + A.ring*Math.cos(b)*k, py = oy - A.ring*Math.sin(b)*k;
+    if (Math.hypot(mx - px, my - py) < 34*dpr) return name;
+  }
+  return null;
+}
+arena.addEventListener("mousemove", ev => {
+  const name = potAt(ev);
+  if (!name){ tip.classList.remove("on"); return; }
+  const c = CHAN[name] || {};
+  tip.innerHTML = `<b>${LABELS[name] || name}</b>`
+    + `<span class="q">${c.question || ""}</span>`
+    + `<div class="n">scored ${c.score >= 0 ? "+" : ""}${(c.score ?? 0).toFixed(2)}`
+    + ` · confidence ${((c.confidence ?? 0)).toFixed(2)}`
+    + ` · pull ${A.pots[name].toFixed(2)}</div>`;
+  const r = arena.getBoundingClientRect();
+  tip.style.left = Math.min(r.width - 280, ev.clientX - r.left + 14) + "px";
+  tip.style.top = Math.max(8, ev.clientY - r.top - 10) + "px";
+  tip.classList.add("on");
+});
+arena.addEventListener("mouseleave", () => tip.classList.remove("on"));
 
 function layout(){ sizeArena(); sizeBrain(); drawArena(0, 0); drawBrain(0); describe(0); }
 addEventListener("resize", () => { layers = null; layout(); });
