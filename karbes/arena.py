@@ -46,9 +46,14 @@ log = logging.getLogger(__name__)
 #: Neural time simulated per step of the walk.
 STEP_SECONDS = 0.15
 
-#: Steps per bill. Sixteen at 150 ms is 2.4 s of neural time, which is long enough for the
-#: feedback to commit and short enough to watch.
-STEPS = 16
+#: Steps per bill. Sixteen was not enough to arrive anywhere: the fly spent its whole budget
+#: still crossing the ring, so which pot it was "nearest" was decided by where it happened
+#: to run out of steps. Forty at 150 ms is six seconds of neural time and lets it finish.
+STEPS = 40
+
+#: How close counts as arriving. The walk stops here rather than running out the clock, so
+#: the fly reaches a pot instead of being adjudicated mid-stride.
+ARRIVE_RADIUS = 0.22
 
 #: **Approach, not avoidance.** Measured: odour on the fly's right makes the turn index
 #: *more positive* by 0.125, and heading is a standard maths angle, so `heading += turn`
@@ -67,11 +72,12 @@ TURN_GAIN = 1.2
 
 #: Body lengths travelled per step.
 #:
-#: **Chosen so the fly can actually cross the arena**, which is the only defensible
-#: criterion available and is outcome-blind: at 0.055 its whole 16-step budget covered 0.88
-#: against a ring of 1.0, so it never reached a pot and "nearest" was decided by which way
-#: it happened to be drifting near the centre. At 0.12 it can reach the ring and overshoot.
-SPEED = 0.12
+#: **Chosen so the fly crosses the arena in a watchable number of steps**, which is the only
+#: defensible criterion available and is outcome-blind. At 0.055 its whole budget covered
+#: 0.88 against a ring of 1.0, so it never arrived and "nearest" was decided by where it ran
+#: out of steps. At 0.12 it arrived on step 12 — the same step the procedural bit was due to
+#: land, so the reveal never got to act on anything. This leaves room for both.
+SPEED = 0.085
 
 #: Ring radius the pots sit on, in the same units.
 RING = 1.0
@@ -83,19 +89,20 @@ ANTENNA_SHARPNESS = 0.85
 POT_FLOOR = 0.06
 
 #: Raster frames captured per step.
-FRAMES_PER_STEP = 6
+FRAMES_PER_STEP = 4
 
-#: The step at which the fly learns who tabled the bill.
+#: The step at which the fly learns who tabled the bill. Scaled with `STEPS` so the reveal
+#: still lands partway through rather than after the fly has already committed.
 #:
 #: **The procedural signal is an event, not a state.** Constant rotational optic flow makes
 #: a fly turn continuously — that is the optomotor response to a rotating drum, and it is
 #: what the first version did: the seeing fly simply orbited. So the bit arrives partway
 #: through, as a transient, and the two arms are bit-identical before it. Their paths then
 #: diverge from exactly one frame, which is the whole thing worth watching.
-REVEAL_STEP = 8
+REVEAL_STEP = 7
 
 #: How many steps the procedural stimulus lasts once it arrives. A looming object passes.
-REVEAL_STEPS = 4
+REVEAL_STEPS = 6
 
 
 def turn_baseline(pops: Populations, engine: Engine, seeds: int = 8) -> float:
@@ -162,6 +169,7 @@ class Walk:
     steps: list[Step] = field(default_factory=list)
     settled_on: str | None = None
     escaped: bool = False
+    arrived: bool = False
     pots: dict[str, float] = field(default_factory=dict)
     bearings: dict[str, float] = field(default_factory=dict)
     #: One continuous raster across the whole walk, `FRAMES_PER_STEP` frames per step.
@@ -298,6 +306,12 @@ def walk(
         if escaped:
             out.escaped = True
             log.info("bill %s: the fly bolted at step %d", bill.uuid[:8], step)
+            break
+        reached = math.hypot(RING * math.cos(where[nearest]) - x, RING * math.sin(where[nearest]) - y)
+        if reached <= ARRIVE_RADIUS:
+            out.arrived = True
+            out.settled_on = nearest
+            log.info("bill %s: arrived at %s on step %d", bill.uuid[:8], nearest, step)
             break
 
     if not out.escaped and out.steps:

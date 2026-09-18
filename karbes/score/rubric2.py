@@ -72,6 +72,19 @@ QUESTIONS: tuple[tuple[str, str, str, str], ...] = (
 
 KEYS: tuple[str, ...] = tuple(k for k, _, _, _ in QUESTIONS)
 
+#: Short human labels. The keys are fine in a manifest and useless on a page: nobody
+#: arriving cold knows what "burden" or "place" is supposed to mean.
+LABELS: dict[str, str] = {
+    "pay": "what people pay",
+    "spend": "what the state spends",
+    "burden": "who carries it",
+    "place": "city or countryside",
+    "power_over": "power over people",
+    "who_decides": "who gets to decide",
+    "nature": "nature",
+    "security": "defence",
+}
+
 #: Plain tags, for display and for the metadata control. They do not drive neurons.
 AFFECTS = (
     "children",

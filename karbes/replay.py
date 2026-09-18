@@ -337,6 +337,7 @@ def build(inputs: Inputs) -> Bundle:
             "seeing": [s.seeing for s in w.steps],
             "settled_on": w.settled_on,
             "escaped": w.escaped,
+            "arrived": w.arrived,
             "steps": len(w.steps),
         }
 
@@ -370,6 +371,8 @@ def build(inputs: Inputs) -> Bundle:
             "pots": {k: round(v, 4) for k, v in seeing.pots.items()},
             "bearings": {k: round(v, 5) for k, v in seeing.bearings.items()},
             "ring": arena.RING,
+            "arrive_radius": arena.ARRIVE_RADIUS,
+            "labels": dict(rubric2.LABELS),
             "step_seconds": arena.STEP_SECONDS,
             "frames_per_step": arena.FRAMES_PER_STEP,
             "blind": trajectory(blind),
