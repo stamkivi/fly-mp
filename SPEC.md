@@ -1320,81 +1320,69 @@ correlations, which is why it is in the chorus run rather than assumed from this
 
 ---
 
-## Iteration 5 — the fly reads a law (2026-09-19)
+## Iteration 5 — the fly takes the chair (2026-09-19)
 
-*Supersedes iteration 4's framing. Iteration 4's measurements stand and are not deleted; what
-is retired is the idea that the fly's **verdict** is the deliverable.*
+*Supersedes iteration 4's framing and an earlier draft of this section ("the fly reads a
+law", written 2026-09-19 00:15 and retired the same night). Iteration 4's measurements
+stand. The full measured record is in FINDINGS §"Iteration 5".*
 
-### Why iteration 4 had to be retired
+### Why the chair
 
-It produced a defensible null and an unwatchable page. The root cause was structural, not
-editorial: an LLM compressed each bill to ten numbers and the connectome was handed those ten
-numbers and asked for one number back. In that regime 166,700 neurons are a fixed nonlinear
-projection — the model's only state is a 20 ms membrane and a 5 ms synapse, no plasticity, no
-adaptation — so a 16-parameter regression matches it and degree-preserving shuffles beat it.
-All the information lived in the scorer. The connectome was decoration, and every attempt to
-make the page interesting was a redesign of an empty box.
+The model is a reflex machine and this was measured, not assumed: the ring attractor holds
+nothing after input stops; the only state is a 20 ms membrane and a 5 ms synapse. A brain
+like that cannot hold a position, cannot read (text through 892 ommatidia is stroke density
+and the mushroom body is saturated at every drive), and cannot lean in (no approach reflex at
+the DNa readout). What it can do, reliably and lateralised, is **bolt from something coming at
+it**: looming → LC4/LPLC2 → DNp01, 5/5 at every dose, thrown away from the side it came from
+at +0.67 / −0.92.
 
-### What the model can actually compute
+The one role in a parliament that is supposed to be a reflex is the chair: react to conduct,
+not content. So the fly sits in the Speaker's seat and a sitting is played to it.
 
-From the equations, not from hope:
+### Why the transcript, not the bills
 
-* **Pattern separation** — 4,064 Kenyon cells recoding ~50 glomeruli. Measured igniting at
-  **15 ms** after stimulus onset.
-* **Contrast enhancement** — antennal-lobe lateral inhibition (`lLN1_bc`, `lLN2P_b`), measured
-  at 5 ms.
-* **Temporal integration over ~20 ms.** Real dynamics, and the only memory it has.
-* **Approach/avoid** (DNa) and **escape** (DNp01 giant fibre). Real motor primitives.
+`/api/steno/verbatims` carries every utterance with a timestamp to the second, the speaker,
+the text, and the disturbances, votes and bell inline. It is a lateralised, timed,
+intensity-coded stream — the one kind of signal this brain is built for — and it carries its
+own ground truth: the stenographer's `(Helistab kella.)`, the chair's *Palun vaikust!*, and
+named heckles from the floor.
 
-It cannot learn, cannot remember past ~20 ms, and cannot hold a position.
+### The stimulus, three rules, declared
 
-So prediction is out — it is a classifier task and loses to logistic regression, as iteration 4
-measured. What is in is a **high-dimensional temporal input**, which is the only regime where
-the wiring can matter.
+* **A speech is a scent from the speaker's side** (ORNs on that side, 30 Hz, duration growing
+  with the log of length, then 150 ms dark). The onset out of silence is the wave. Scent never
+  reaches the giant fibre — which is why speeches take this route: through T4/T5 the escape
+  fires on every civil sentence, measured, and a chair that bolts at every speaker is not a
+  chair.
+* **Hostility makes it loom.** One five-level Jev question per speech with calibrated
+  confidence; `hostility = max(0,(2−score)/2)·confidence`; looming zero below a knee of 0.3,
+  40 Hz at 1.0. Validated on the one reprimand in the record.
+* **A heckle lunges** from the heckler's seat; **a vote fills the hall**.
 
-### The build
+Side is political laterality from the seating chart — coalition to the Speaker's right,
+opposition to the left, the Riigikogu's actual numbered plan being unpublished — and the page
+says so. Members appear by faction and role, never by name.
 
-**One bill, read start to finish, word by word.** `Kriisiolukorra ja riigikaitse seadus` — the
-Crisis Situation and National Defence Act — title plus explanatory memorandum, 435 Estonian
-words, verbatim from cache.
+### What is recorded and what the page keeps
 
-**Sense 1: vision, and it is the text itself.** Each word is rendered to an image and sampled
-onto the fly's own ommatidial lattice — `assignedOlHex1`/`assignedOlHex2`, **892 distinct
-columns**, a 36×39 hex grid — then swept across the eye. Drive enters at **L1 (ON) and L2
-(OFF)**, 1,767 cells each, which is where it must enter: photoreceptors are histaminergic and
-carry zero outgoing edges in this pack. Everything after that — Mi1/Mi9, Tm1/Tm2, T4/T5, lobula
-plate, DNa — is the measured connectome doing the real computation, unmodified.
+Per event: giant-fibre spikes (the fly's bell, threshold 8), the DNa turn, the frames at 10
+fps, and the first 40 ms at 5 ms resolution (the wave, slowed on screen). The brain forgets in
+100 ms; **the page does not**: a live tally of mean reaction by kind of event, bells by side,
+recoil direction, rings at a seat already rung at, thank-yous greeted as new, and the running
+comparison with the real chair's order calls, bell and time calls.
 
-At 892 columns a fly resolves *sõda* and smears *kriisiolukorra*. **The fly cannot read, and
-the piece shows exactly why rather than asserting it.** That is optics, not editorial.
+### Pre-committed, not fitted
 
-**Sense 2: smell, and it carries meaning.** Word embeddings projected onto the ~50 glomeruli,
-so semantically near words smell near. Engineered and declared, as always. This is the only
-place ideas enter, and it is a placement of words in a space rather than a judgment about the
-bill — the distinction that failed in iteration 4.
-
-**Readout.** DNa left/right → approach or avoid, per word, as a trace under the text. DNp01 →
-escape: when a word looms hard enough the fly bolts. Aggregated at the end into POOLT/VASTU
-against what the Riigikogu actually did — a closing beat, not a claim.
-
-**The visual.** The 2-D dorsal confocal plate from `plate.py` with the activity wave over it;
-the fly's-eye view of the current word beside it; the text streaming with its trace.
-
-### The line the piece hangs on
-
-> The fly's working memory is 20 milliseconds. It can hold about one word — and it cannot read
-> that word, because at its resolution a word is a blur. Here is what it does anyway.
+BELL_GF, the knee, and the rates were set from the capability measurements before the day was
+run and not moved afterwards. The damping — a speech's own scent halving its own looming's
+effect on the giant fibre — was found in the run, not designed, and stays.
 
 ### Explicitly rejected, so it is not re-proposed
 
-* **Predicting how an MP votes.** A classifier task; loses to logistic regression, measured.
-* **A gallery of bills.** One bill, one spectacle. Decided 2026-09-19.
-* **3-D rotating brain.** The 2-D plate is proven and cheaper. Decided 2026-09-19.
-* **Hashing words to glomeruli.** Arbitrary mappings produce uninterpretable reactions, which
-  is the emptiness iteration 4 already demonstrated.
-* **Tuning drive down to biological Kenyon-cell sparsity.** Noted as a real artefact — 61.7%
-  of KCs fire against ~5% in a real fly, because ten glomeruli at 135 Hz is a supernormal
-  odour — and deliberately not treated as a blocker.
+Predicting how members vote; hashing or embedding words to glomeruli; reading text through
+the eye; hearing as the lateral channel (unreliable); innate aversive smell as the recoil
+(dead with dose); per-faction ring rates on the page (question time is adversarial by role);
+a 3-D rotating brain; a gallery of sittings before one sitting is right.
 
 ---
 
