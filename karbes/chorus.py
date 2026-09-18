@@ -183,6 +183,8 @@ def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> d
         "axis_range": list(cmap.axis_range),
         "party_spacing": cmap.spread,
         "flies": flies,
-        "within_brain_spread": round(within, 3),
-        "across_wiring_spread": round(across, 3),
+        # JSON has no NaN, and a page that reads NaN as a number prints one. A spread that
+        # could not be measured is absent, not zero.
+        "within_brain_spread": None if np.isnan(within) else round(within, 3),
+        "across_wiring_spread": None if np.isnan(across) else round(across, 3),
     }

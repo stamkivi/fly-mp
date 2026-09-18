@@ -51,6 +51,17 @@ DEPTH_FLOOR = 0.42
 #: Without it the densest rind stays saturated blue, which no real plate does.
 WHITE_KNEE = 0.62
 
+#: The driver channel is 32 cells against 141,749, so at the counterstain's footprint it is
+#: 32 invisible specks. A real driver line is imaged at its own gain and its cells are large;
+#: this is that gain, not extra cells.
+DRIVER_SPLAT = 4.5
+DRIVER_GAIN = 9.0
+
+#: Depth of field. Cells below the focal plane are rendered through a wider footprint, which
+#: is what makes a confocal projection look like one rather than like a flat scatter.
+FAR_SPLAT = 3.4
+FOCUS = 0.55  # fraction of the depth range that is in focus
+
 
 @dataclass
 class Plate:
@@ -68,12 +79,14 @@ class Plate:
         return path
 
 
-def _splat(xy: np.ndarray, depth: np.ndarray, shape: tuple[int, int]) -> np.ndarray:
+def _splat(
+    xy: np.ndarray, depth: np.ndarray, shape: tuple[int, int], sigma: float = SPLAT
+) -> np.ndarray:
     """Accumulate points into a float image, dimmer with depth, with a soft footprint.
 
-    Bilinear deposition rather than nearest, then one small blur: at 139,662 points a
-    per-point Gaussian costs minutes and looks identical to depositing sharp and blurring
-    once, because every footprint is the same size.
+    Bilinear deposition rather than nearest, then one blur: at 141,781 points a per-point
+    Gaussian costs minutes and looks identical to depositing sharp and blurring once,
+    because within one call every footprint is the same size.
     """
     from scipy.ndimage import gaussian_filter
 
@@ -92,7 +105,7 @@ def _splat(xy: np.ndarray, depth: np.ndarray, shape: tuple[int, int]) -> np.ndar
         (1, 1, fx * fy),
     ):
         np.add.at(buf, (y0 + dy, x0 + dx), (f * weight).astype(np.float32))
-    return gaussian_filter(buf, SPLAT)
+    return gaussian_filter(buf, sigma)
 
 
 def render(
@@ -116,7 +129,8 @@ def render(
     span_x, span_z = maxX - minX, maxZ - minZ
     w = width * SUPERSAMPLE
     scale = w * (1 - 2 * MARGIN) / span_x
-    h = round(float(span_z * scale + 2 * MARGIN * w))
+    # a whole number of supersampled rows, or the downsample cannot reshape
+    h = round(float(span_z * scale + 2 * MARGIN * w) / SUPERSAMPLE) * SUPERSAMPLE
     px = (x - minX) * scale + MARGIN * w
     py = (z - minZ) * scale + MARGIN * w
 
@@ -126,8 +140,16 @@ def render(
     bright = DEPTH_FLOOR + (1 - DEPTH_FLOOR) * near**1.3
 
     xy = np.stack([px, py], axis=1)
-    counter = _splat(xy[~driver], bright[~driver], (h, w))
-    labelled = _splat(xy[driver], bright[driver] * 3.0, (h, w)) if driver.any() else None
+    focused = near >= 1 - FOCUS
+    counter = _splat(xy[~driver & focused], bright[~driver & focused], (h, w))
+    counter = counter + _splat(
+        xy[~driver & ~focused], bright[~driver & ~focused], (h, w), FAR_SPLAT
+    )
+    labelled = (
+        _splat(xy[driver], bright[driver] * DRIVER_GAIN, (h, w), DRIVER_SPLAT)
+        if driver.any()
+        else None
+    )
 
     def tone(a: np.ndarray) -> np.ndarray:
         # Filmic-ish: linear near zero, compressive at the top, so dense regions stay

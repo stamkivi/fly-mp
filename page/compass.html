@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kärbes — twenty politicians from one fly brain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F6F4EF;--card:#FFF;--ink:#1B1A18;--mute:#6E6A63;--rule:#E2DED5;--fly:#E2622C;
+      --dark:#07090E;--display:"Fraunces",Georgia,serif;--body:"IBM Plex Sans",system-ui,sans-serif;
+      --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);line-height:1.55;
+     -webkit-font-smoothing:antialiased}
+
+/* ---------------- hero ---------------- */
+.hero{position:relative;min-height:100svh;background:var(--dark);color:#EEF2F8;
+      display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.hero img.plate{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(1.06);
+     width:min(1400px,132vw);opacity:.92;animation:drift 34s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate(-50%,-50%) scale(1.04)}
+                 to{transform:translate(-50%,-52%) scale(1.12)}}
+.hero:after{content:"";position:absolute;inset:0;
+     background:radial-gradient(120% 80% at 50% 45%,rgba(7,9,14,.15),rgba(7,9,14,.86) 72%)}
+.hero .inner{position:relative;z-index:2;max-width:980px;margin:0 auto;padding:0 28px}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+        color:#8FA3BE}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(34px,6.4vw,74px);line-height:1.02;
+   margin:16px 0 18px;letter-spacing:-.01em}
+.hero p{font-size:clamp(16px,2vw,19px);color:#C3CEDD;max-width:60ch;margin:0 0 10px}
+.hero .cue{margin-top:34px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+     text-transform:uppercase;color:#7E93AF}
+.plate-note{position:absolute;left:0;right:0;bottom:14px;z-index:2;text-align:center;
+     font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:#5C6E87;padding:0 20px}
+
+/* ---------------- scrollytelling ---------------- */
+.story{position:relative;max-width:1280px;margin:0 auto;padding:0 24px;
+       display:grid;grid-template-columns:1fr 380px;gap:40px;align-items:start}
+.sticky{position:sticky;top:0;height:100svh;display:flex;align-items:center}
+#compass{width:100%;height:min(86svh,860px);display:block}
+.steps{padding:16svh 0 30svh}
+.step{min-height:78svh;display:flex;align-items:center}
+.step .card{background:var(--card);border:1px solid var(--rule);border-radius:12px;
+     padding:22px 24px;box-shadow:0 1px 2px rgba(0,0,0,.03);opacity:.32;transform:translateY(8px);
+     transition:opacity .4s,transform .4s}
+.step.on .card{opacity:1;transform:none}
+.step h2{font-family:var(--display);font-weight:600;font-size:23px;margin:0 0 10px;line-height:1.2}
+.step p{margin:0 0 10px;font-size:15px;color:#3C3A36}
+.step p:last-child{margin-bottom:0}
+.step .fine{font-size:12.5px;color:var(--mute)}
+.num{font-family:var(--mono);font-weight:500;color:var(--ink)}
+.hero .num{color:#E9EFF7}
+@media(max-width:940px){
+  .story{grid-template-columns:1fr;gap:0}
+  .sticky{height:62svh;top:0;background:var(--paper);z-index:3}
+  #compass{height:58svh}
+  .steps{padding:4svh 0 18svh}
+  .step{min-height:auto;margin-bottom:26px}
+  .step .card{opacity:1;transform:none}
+}
+
+/* ---------------- coda ---------------- */
+.coda{max-width:760px;margin:0 auto;padding:40px 24px 90px}
+.coda h2{font-family:var(--display);font-weight:600;font-size:27px;margin:34px 0 12px}
+.coda p{font-size:15.5px;margin:0 0 14px}
+.coda .fine{font-size:12.5px;color:var(--mute);line-height:1.7}
+.figures{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;
+     margin:22px 0 8px}
+.fig{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:13px 14px}
+.fig b{display:block;font-family:var(--mono);font-size:22px;font-weight:500;line-height:1.1}
+.fig span{font-size:11.5px;color:var(--mute);display:block;margin-top:5px}
+hr{border:0;border-top:1px solid var(--rule);margin:34px 0}
+a{color:inherit}
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <img class="plate" src="data:image/jpeg;base64,__BRAIN_B64__"
+       alt="A dorsal view of the male Drosophila central brain, rendered from 126,072 real cell-body
+            coordinates as a two-channel fluorescence plate. The magenta cells are the descending
+            neurons the vote is read from.">
+  <div class="inner">
+    <div class="kicker">MaleCNS v1.0 · Riigikogu XV · simulated</div>
+    <h1>Twenty politicians<br>from one fly brain</h1>
+    <p>A complete <i>Drosophila</i> connectome was given <span class="num">__N_BILLS__</span> real
+       votes from the Estonian parliament and asked to take a position on each one.</p>
+    <p>Then the same brain was rewired at random — every neuron keeping its exact number of
+       inputs and outputs — and asked again. <span class="num">__N_REWIRED__</span> times.</p>
+    <div class="cue">Scroll</div>
+  </div>
+  <div class="plate-note">Above: 126,072 real soma positions from MaleCNS v1.0, dorsal view.
+    Magenta: the 32 DNa descending neurons this experiment reads. Not a photograph of a
+    specimen — a rendering of measured coordinates.</div>
+</section>
+
+<div class="story">
+  <div class="sticky"><canvas id="compass"></canvas></div>
+  <div class="steps">
+
+    <section class="step" data-stage="0"><div class="card">
+      <h2>First, the chamber</h2>
+      <p>Every one of the <span class="num">__N_MEMBERS__</span> members of the Riigikogu who
+         belongs to a party, placed by nothing but how they voted. Bills in, positions out —
+         no labels, no manifestos.</p>
+      <p class="fine">The space is recovered from the vote matrix alone. Faction colour is
+         painted on afterwards, as a check, never as an input.</p>
+    </div></section>
+
+    <section class="step" data-stage="1"><div class="card">
+      <h2>The axes are not ours</h2>
+      <p>A voting space has no natural units, so this one is anchored to somebody else's:
+         the Chapel Hill Expert Survey, where political scientists place each Estonian party
+         on economic left–right and on the liberal–conservative axis.</p>
+      <p class="fine">Hold out an entire party and the map still puts its members within
+         <span class="num">__ERR_Y__</span> on the vertical — but only
+         <span class="num">__ERR_X__</span> on the horizontal. This parliament's roll-calls
+         carry cultural position sharply and economic position barely. The picture has a
+         sharp vertical and a soft horizontal, and that is a finding rather than a caveat.</p>
+    </div></section>
+
+    <section class="step" data-stage="2"><div class="card">
+      <h2>Kärbes takes a seat</h2>
+      <p>The fly reads each bill through its antennae — ten scored policy channels driving
+         ten olfactory glomeruli, left side for against, right side for in favour — and the
+         answer is read out of its descending neurons as a turn.</p>
+      <p>Over <span class="num">__N_BILLS__</span> bills that record lands it nearest
+         <span class="num">__KARBES_PARTY__</span>.</p>
+      <p class="fine">The input–output mapping is engineered, not discovered. There are no
+         aye neurons in a fly.</p>
+    </div></section>
+
+    <section class="step" data-stage="3"><div class="card">
+      <h2>Run the same brain again</h2>
+      <p>Same connectome, same bills, different input noise —
+         <span class="num">__N_REAL__</span> runs in all. If the seat were an artefact of the
+         random spike trains, these would land anywhere.</p>
+      <p class="fine">They move <span class="num">__WITHIN__</span> compass units. Any
+         difference smaller than that means nothing.</p>
+    </div></section>
+
+    <section class="step" data-stage="4"><div class="card">
+      <h2>Now cut every wire and reconnect it at random</h2>
+      <p><span class="num">__N_REWIRED__</span> degree-preserving shuffles. Every neuron keeps
+         its in-degree, its out-degree, its transmitter sign and its total output. The only
+         thing that changes is who reaches whom.</p>
+      <p>__HEAD_VERDICT__</p>
+      <p class="fine">They end up nearest <span class="num">__PARTIES_HIT__</span>. For scale,
+         the average distance between two Estonian parties on this compass is
+         <span class="num">__SPACING__</span>.</p>
+    </div></section>
+
+    <section class="step" data-stage="5"><div class="card">
+      <h2>What this is and is not</h2>
+      <p>It is not a prediction. The real connectome scores
+         <span class="num">__KARBES_AUC__</span> at telling which bills advanced, and several
+         of the shuffled brains score higher. If you wanted to predict the Riigikogu you
+         would fit a regression and skip the fly.</p>
+      <p>It is a statement about individuality. Identical parts, identical statistics,
+         identical input, identical readout — and the wiring alone decides which politician
+         you get.</p>
+    </div></section>
+
+  </div>
+</div>
+
+<div class="coda">
+  <div class="figures">
+    <div class="fig"><b>__N_BILLS__</b><span>contested bills, each simulated through a whole
+      central nervous system</span></div>
+    <div class="fig"><b>__ACROSS__</b><span>compass units between two rewirings, on average</span></div>
+    <div class="fig"><b>__WITHIN__</b><span>compass units between two runs of the same
+      wiring</span></div>
+    <div class="fig"><b>__SPACING__</b><span>compass units between two Estonian parties</span></div>
+  </div>
+
+  <h2>How a bill becomes a smell</h2>
+  <p>Each bill is scored on ten policy channels drawn from the topics Estonian voters
+     actually rank — cost of living, healthcare, defence, social security, taxes, education,
+     wages, energy, business, immigration. Each channel drives one named olfactory glomerulus.
+     The sign of the score picks the side of the head, so a bill that raises costs and cuts
+     defence smells asymmetric, and the brain turns.</p>
+  <p>The vote is the sign of that turn, read from the DNa family of descending neurons — the
+     cells a real fly uses to steer — past a dead band measured on the network itself. Nothing
+     is tuned to agree with any faction. The primary statistic is threshold-free.</p>
+
+  <h2>What the control is for</h2>
+  <p>A degree-preserving shuffle keeps every summary statistic a connectome has: each neuron's
+     number of partners, its transmitter, its total output. If the fly's politics survived the
+     shuffle unchanged, the politics would live in those statistics and the connectome would be
+     doing no work. If it lands somewhere else, the specific wiring is doing the work. That was
+     written down before the shuffles were run.</p>
+
+  <hr>
+  <p class="fine">
+    <b>Simulated.</b> A leaky integrate-and-fire model of a measured connectome, not a fly.
+    No claim is made about what the fly experiences, and the mapping from bills to odours to
+    votes is engineered rather than discovered.<br><br>
+    <b>Data.</b> Connectome: MaleCNS v1.0, CC BY 4.0 — cite the dataset and the associated
+    <i>Cell</i> paper. Votes and bills: Riigikogu open data, CC BY-SA 3.0. Party positions:
+    Chapel Hill Expert Survey 2024 (Rovny et al., <i>25 Years of Political Party Positions in
+    Europe: The Chapel Hill Expert Survey, 1999–2024</i>). Simulation engine:
+    <span class="num">mlx-lif-engine</span> (MIT), implementing Shiu et al. 2024,
+    <i>Nature</i> 634:210.<br><br>
+    <b>Photograph.</b> The fly is André Karwath's dorsal <i>Drosophila melanogaster</i>,
+    CC BY-SA 2.5.<br><br>
+    <b>People.</b> Members' voting records are public data. The subject here is the fly.
+  </p>
+</div>
+
+<script id="chorus" type="application/json">__CHORUS_JSON__</script>
+<script>
+const D = JSON.parse(document.getElementById("chorus").textContent);
+const COLOUR = {REF:"#E0A200",E200:"#D4267E",SDE:"#D14B4E",Isamaa:"#5F9BC4",
+                EKRE:"#2A3DA0",KESK:"#2F9B6B"};
+const SHORT = {"Eesti Reformierakonna fraktsioon":"REF","Eesti 200 fraktsioon":"E200",
+  "Sotsiaaldemokraatliku Erakonna fraktsioon":"SDE","Isamaa fraktsioon":"Isamaa",
+  "Eesti Konservatiivse Rahvaerakonna fraktsioon":"EKRE","Eesti Keskerakonna fraktsioon":"KESK"};
+
+const FLY = new Image(); FLY.src = "data:image/png;base64,__FLY_B64__";
+let flyReady = false; FLY.onload = () => { flyReady = true; draw(); };
+
+const cv = document.getElementById("compass"), ctx = cv.getContext("2d");
+let W = 0, H = 0, dpr = 1;
+
+/* The drawing domain is taken from everything that will be plotted, so no point can fall
+   off the edge and quietly stop existing. */
+const pts = [].concat(
+  Object.values(D.parties).map(p => [p.x, p.y]),
+  D.members.map(m => [m.x, m.y]),
+  D.flies.map(f => [f.x, f.y]));
+const pad = 0.9;
+const X0 = Math.min(...pts.map(p => p[0])) - pad, X1 = Math.max(...pts.map(p => p[0])) + pad;
+const Y0 = Math.min(...pts.map(p => p[1])) - pad, Y1 = Math.max(...pts.map(p => p[1])) + pad;
+
+let box = {l:0,t:0,w:0,h:0};
+function sx(x){ return box.l + (x - X0) / (X1 - X0) * box.w; }
+/* High GAL-TAN — traditional, national — is drawn at the top, as on every compass a reader
+   has seen before. */
+function sy(y){ return box.t + (1 - (y - Y0) / (Y1 - Y0)) * box.h; }
+
+function size(){
+  const r = cv.getBoundingClientRect();
+  dpr = Math.min(devicePixelRatio || 1, 2);
+  W = Math.round(r.width * dpr); H = Math.round(r.height * dpr);
+  cv.width = W; cv.height = H;
+  const m = 46 * dpr, bottom = 62 * dpr;
+  box = {l:m, t:m, w:W - m*2, h:H - m - bottom};
+}
+
+let stage = 0, t0 = performance.now(), from = 0;
+function ease(a){ return a<0 ? 0 : a>1 ? 1 : 1 - Math.pow(1-a, 3); }
+/* Each stage fades in over its own second, so a fast scroll does not skip the reveal. */
+function alphaFor(s){
+  const done = Math.min(1, (performance.now() - t0) / 900);
+  if (s < stage) return 1;
+  if (s > stage) return 0;
+  return from >= stage ? 1 : ease(done);
+}
+
+function grid(){
+  ctx.save();
+  ctx.strokeStyle = "#E2DED5"; ctx.lineWidth = dpr;
+  ctx.strokeRect(box.l, box.t, box.w, box.h);
+  ctx.setLineDash([3*dpr, 4*dpr]);
+  const mx = sx(5), my = sy(5);
+  ctx.beginPath(); ctx.moveTo(mx, box.t); ctx.lineTo(mx, box.t+box.h);
+  ctx.moveTo(box.l, my); ctx.lineTo(box.l+box.w, my); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#6E6A63";
+  ctx.font = `${10.5*dpr}px "IBM Plex Mono",monospace`;
+  ctx.textAlign = "left";  ctx.fillText("ECONOMIC LEFT", box.l + 8*dpr, my - 8*dpr);
+  ctx.textAlign = "right"; ctx.fillText("ECONOMIC RIGHT", box.l+box.w - 8*dpr, my - 8*dpr);
+  ctx.textAlign = "center";
+  ctx.fillText("TRADITIONAL · NATIONAL", box.l+box.w/2, box.t-14*dpr);
+  ctx.fillText("LIBERAL · GREEN", box.l+box.w/2, box.t+box.h+22*dpr);
+  ctx.restore();
+}
+
+function members(a){
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  for (const m of D.members){
+    ctx.fillStyle = COLOUR[SHORT[m.faction]] || "#A9A49B";
+    ctx.beginPath(); ctx.arc(sx(m.x), sy(m.y), 3.1*dpr, 0, 6.2832); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function parties(a){
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.font = `600 ${12*dpr}px "IBM Plex Sans",sans-serif`;
+  for (const [name, p] of Object.entries(D.parties)){
+    const x = sx(p.x), y = sy(p.y), c = COLOUR[name] || "#A9A49B";
+    ctx.strokeStyle = c; ctx.lineWidth = 1.6*dpr;
+    ctx.beginPath(); ctx.arc(x, y, 13*dpr, 0, 6.2832); ctx.stroke();
+    ctx.fillStyle = c;
+    ctx.beginPath(); ctx.arc(x, y, 4.2*dpr, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = "#1B1A18"; ctx.textAlign = "center";
+    ctx.fillText(name, x, y - 19*dpr);
+  }
+  ctx.restore();
+}
+
+function flyAt(x, y, px, alpha, halo){
+  ctx.save(); ctx.globalAlpha = alpha;
+  if (halo){
+    ctx.fillStyle = "rgba(226,98,44,.16)";
+    ctx.beginPath(); ctx.arc(x, y, px*0.92, 0, 6.2832); ctx.fill();
+  }
+  if (flyReady) ctx.drawImage(FLY, x - px/2, y - px/2, px, px);
+  else { ctx.fillStyle = "#1B1A18"; ctx.beginPath(); ctx.arc(x,y,px*0.28,0,6.2832); ctx.fill(); }
+  ctx.restore();
+}
+
+function label(text, x, y, colour){
+  ctx.save();
+  ctx.font = `500 ${11*dpr}px "IBM Plex Mono",monospace`;
+  ctx.textAlign = "center"; ctx.fillStyle = colour;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function errorBar(a){
+  if (a <= 0) return;
+  const [ex, ey] = D.axis_error;
+  const wx = (sx(X0 + ex) - sx(X0)), wy = (sy(Y0) - sy(Y0 + ey));
+  // The horizontal error is nearly half the plot wide. It has to fit inside the frame,
+  // because that width is the point.
+  const x = box.l + wx + 16*dpr, y = box.t + box.h - 46*dpr;
+  ctx.save(); ctx.globalAlpha = a * .85;
+  ctx.strokeStyle = "#6E6A63"; ctx.lineWidth = 1.2*dpr;
+  ctx.beginPath();
+  ctx.moveTo(x - wx, y); ctx.lineTo(x + wx, y);
+  ctx.moveTo(x, y - wy); ctx.lineTo(x, y + wy);
+  ctx.stroke();
+  ctx.fillStyle = "#6E6A63"; ctx.textAlign = "center";
+  ctx.font = `${9.5*dpr}px "IBM Plex Mono",monospace`;
+  ctx.fillText("held-out error", x, y + wy + 15*dpr);
+  ctx.restore();
+}
+
+function draw(){
+  if (!W) size();
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = "#FFFFFF"; ctx.fillRect(box.l, box.t, box.w, box.h);
+  grid();
+  members(alphaFor(0));
+  parties(alphaFor(1));
+  errorBar(alphaFor(1));
+
+  const karbes = D.flies.find(f => f.name === "karbes");
+  const phases = D.flies.filter(f => f.kind === "real" && f.name !== "karbes");
+  const rewired = D.flies.filter(f => f.kind === "rewired");
+
+  const aRe = alphaFor(4);
+  if (aRe > 0){
+    for (const f of rewired) flyAt(sx(f.x), sy(f.y), 30*dpr, aRe*0.95, false);
+  }
+  const aPh = alphaFor(3);
+  if (aPh > 0){
+    for (const f of phases) flyAt(sx(f.x), sy(f.y), 32*dpr, aPh*0.9, true);
+  }
+  const aK = alphaFor(2);
+  if (aK > 0 && karbes){
+    flyAt(sx(karbes.x), sy(karbes.y), 44*dpr, aK, true);
+    label("KÄRBES", sx(karbes.x), sy(karbes.y) + 36*dpr, "#E2622C");
+  }
+  requestAnimationFrame(draw);
+}
+
+addEventListener("resize", () => { size(); });
+size();
+requestAnimationFrame(draw);
+
+const obs = new IntersectionObserver(entries => {
+  for (const e of entries){
+    if (!e.isIntersecting) continue;
+    e.target.classList.add("on");
+    const s = Number(e.target.dataset.stage);
+    if (s !== stage){ from = stage; stage = s; t0 = performance.now(); }
+  }
+}, {rootMargin: "-45% 0px -45% 0px"});
+document.querySelectorAll(".step").forEach(el => obs.observe(el));
+
+cv.setAttribute("role","img");
+cv.setAttribute("aria-label",
+  `A political compass. ${D.members.length} members of the Riigikogu placed by their votes, `
+  + `six party positions from the Chapel Hill Expert Survey, and ${D.flies.length} simulated `
+  + `flies: the real connectome and its rewirings.`);
+</script>
+</body>
+</html>
