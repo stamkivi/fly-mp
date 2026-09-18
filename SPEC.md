@@ -1320,6 +1320,84 @@ correlations, which is why it is in the chorus run rather than assumed from this
 
 ---
 
+## Iteration 5 — the fly reads a law (2026-09-19)
+
+*Supersedes iteration 4's framing. Iteration 4's measurements stand and are not deleted; what
+is retired is the idea that the fly's **verdict** is the deliverable.*
+
+### Why iteration 4 had to be retired
+
+It produced a defensible null and an unwatchable page. The root cause was structural, not
+editorial: an LLM compressed each bill to ten numbers and the connectome was handed those ten
+numbers and asked for one number back. In that regime 166,700 neurons are a fixed nonlinear
+projection — the model's only state is a 20 ms membrane and a 5 ms synapse, no plasticity, no
+adaptation — so a 16-parameter regression matches it and degree-preserving shuffles beat it.
+All the information lived in the scorer. The connectome was decoration, and every attempt to
+make the page interesting was a redesign of an empty box.
+
+### What the model can actually compute
+
+From the equations, not from hope:
+
+* **Pattern separation** — 4,064 Kenyon cells recoding ~50 glomeruli. Measured igniting at
+  **15 ms** after stimulus onset.
+* **Contrast enhancement** — antennal-lobe lateral inhibition (`lLN1_bc`, `lLN2P_b`), measured
+  at 5 ms.
+* **Temporal integration over ~20 ms.** Real dynamics, and the only memory it has.
+* **Approach/avoid** (DNa) and **escape** (DNp01 giant fibre). Real motor primitives.
+
+It cannot learn, cannot remember past ~20 ms, and cannot hold a position.
+
+So prediction is out — it is a classifier task and loses to logistic regression, as iteration 4
+measured. What is in is a **high-dimensional temporal input**, which is the only regime where
+the wiring can matter.
+
+### The build
+
+**One bill, read start to finish, word by word.** `Kriisiolukorra ja riigikaitse seadus` — the
+Crisis Situation and National Defence Act — title plus explanatory memorandum, 435 Estonian
+words, verbatim from cache.
+
+**Sense 1: vision, and it is the text itself.** Each word is rendered to an image and sampled
+onto the fly's own ommatidial lattice — `assignedOlHex1`/`assignedOlHex2`, **892 distinct
+columns**, a 36×39 hex grid — then swept across the eye. Drive enters at **L1 (ON) and L2
+(OFF)**, 1,767 cells each, which is where it must enter: photoreceptors are histaminergic and
+carry zero outgoing edges in this pack. Everything after that — Mi1/Mi9, Tm1/Tm2, T4/T5, lobula
+plate, DNa — is the measured connectome doing the real computation, unmodified.
+
+At 892 columns a fly resolves *sõda* and smears *kriisiolukorra*. **The fly cannot read, and
+the piece shows exactly why rather than asserting it.** That is optics, not editorial.
+
+**Sense 2: smell, and it carries meaning.** Word embeddings projected onto the ~50 glomeruli,
+so semantically near words smell near. Engineered and declared, as always. This is the only
+place ideas enter, and it is a placement of words in a space rather than a judgment about the
+bill — the distinction that failed in iteration 4.
+
+**Readout.** DNa left/right → approach or avoid, per word, as a trace under the text. DNp01 →
+escape: when a word looms hard enough the fly bolts. Aggregated at the end into POOLT/VASTU
+against what the Riigikogu actually did — a closing beat, not a claim.
+
+**The visual.** The 2-D dorsal confocal plate from `plate.py` with the activity wave over it;
+the fly's-eye view of the current word beside it; the text streaming with its trace.
+
+### The line the piece hangs on
+
+> The fly's working memory is 20 milliseconds. It can hold about one word — and it cannot read
+> that word, because at its resolution a word is a blur. Here is what it does anyway.
+
+### Explicitly rejected, so it is not re-proposed
+
+* **Predicting how an MP votes.** A classifier task; loses to logistic regression, measured.
+* **A gallery of bills.** One bill, one spectacle. Decided 2026-09-19.
+* **3-D rotating brain.** The 2-D plate is proven and cheaper. Decided 2026-09-19.
+* **Hashing words to glomeruli.** Arbitrary mappings produce uninterpretable reactions, which
+  is the emptiness iteration 4 already demonstrated.
+* **Tuning drive down to biological Kenyon-cell sparsity.** Noted as a real artefact — 61.7%
+  of KCs fire against ~5% in a real fly, because ten glomeruli at 135 Hz is a supernormal
+  odour — and deliberately not treated as a blocker.
+
+---
+
 ## Current task: the one-bill replay slice
 
 Build a single ~20-second loop end to end on real data, before scaling to 30 bills or a season
