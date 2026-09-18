@@ -156,9 +156,14 @@ a{color:inherit}
     <section class="step" data-stage="5"><div class="card">
       <h2>What this is and is not</h2>
       <p>It is not a prediction. The real connectome scores
-         <span class="num">__KARBES_AUC__</span> at telling which bills advanced, and several
-         of the shuffled brains score higher. If you wanted to predict the Riigikogu you
-         would fit a regression and skip the fly.</p>
+         <span class="num">__KARBES_AUC__</span> at telling which bills advanced, and some of
+         the shuffled brains score higher — the best of them <span class="num">__AUC_BEST_FLY__</span>.
+         A logistic regression on the same scored channels plus the one procedural bit gets
+         <span class="num">__AUC_REG__</span>. That bit on its own gets
+         <span class="num">__AUC_BIT__</span>.</p>
+      <p class="fine">The regression is fitted to the outcome and the fly never sees it, so the
+         comparison flatters the regression. It is still the right comparison: if prediction
+         were the goal, nobody would simulate a brain to do it.</p>
       <p>It is a statement about individuality. Identical parts, identical statistics,
          identical input, identical readout — and the wiring alone decides which politician
          you get.</p>
@@ -186,6 +191,17 @@ a{color:inherit}
   <p>The vote is the sign of that turn, read from the DNa family of descending neurons — the
      cells a real fly uses to steer — past a dead band measured on the network itself. Nothing
      is tuned to agree with any faction. The primary statistic is threshold-free.</p>
+
+  <h2>The accuracy question, answered and closed</h2>
+  <p>Cross-validated on the same <span class="num">__N_BILLS__</span> bills: content alone
+     reaches <span class="num">__AUC_CONTENT__</span>; who tabled the bill alone reaches
+     <span class="num">__AUC_BIT__</span>; both together reach <span class="num">__AUC_REG__</span>.
+     In this parliament almost every government bill advances and almost no member's bill
+     does, so the procedural fact is nearly the whole signal and a linear model takes it
+     immediately.</p>
+  <p>The fly gets <span class="num">__KARBES_AUC__</span> from the same information routed
+     through 166,700 neurons. That is the pre-committed negative result, reported plainly:
+     the connectome adds nothing over a small linear readout.</p>
 
   <h2>What the control is for</h2>
   <p>A degree-preserving shuffle keeps every summary statistic a connectome has: each neuron's

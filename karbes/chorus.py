@@ -118,6 +118,9 @@ def stance(ballots: list[dict], vm, inverted: dict[str, bool]):
     return out
 
 
+BASELINE = Path("runs/baseline.json")
+
+
 def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> dict:
     """Read every record in `root`, recode it, and put it on the compass.
 
@@ -187,4 +190,9 @@ def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> d
         # could not be measured is absent, not zero.
         "within_brain_spread": None if np.isnan(within) else round(within, 3),
         "across_wiring_spread": None if np.isnan(across) else round(across, 3),
+        # What a regression gets from the same inputs. The fly is never fitted to the
+        # outcome and these are, so the comparison flatters them — which is the point.
+        "baseline": json.loads(BASELINE.read_text(encoding="utf-8"))
+        if BASELINE.exists()
+        else None,
     }

@@ -42,6 +42,7 @@ def copy(bundle: dict) -> dict[str, str]:
     rewired = [f for f in flies if f["kind"] == "rewired"]
     karbes = next(f for f in real if f["name"] == "karbes")
     ex, ey = bundle["axis_error"]
+    base = bundle.get("baseline") or {}
 
     ratio = across / within if not math.isnan(within) and within > 0 else math.nan
     if not math.isnan(ratio) and ratio >= 2:
@@ -85,6 +86,10 @@ def copy(bundle: dict) -> dict[str, str]:
         "__PARTIES_HIT__": html.escape(
             ", ".join(sorted({f["nearest_party"] for f in rewired}))
         ),
+        "__AUC_REG__": _fmt(base.get("content + who tabled it", float("nan")), 3),
+        "__AUC_BIT__": _fmt(base.get("who tabled it alone", float("nan")), 3),
+        "__AUC_CONTENT__": _fmt(base.get("content only", float("nan")), 3),
+        "__AUC_BEST_FLY__": _fmt(max(f["auc_advances"] for f in flies), 3),
     }
 
 
