@@ -7,6 +7,7 @@ is the fly, and a page that names who heckled whom is a different page.
 from __future__ import annotations
 
 import base64
+import html
 import json
 import logging
 from pathlib import Path
@@ -181,9 +182,13 @@ def _by_kind(s: Sitting, rec: Recording) -> dict:
     }
 
 
-def build(b: dict) -> str:
+def build(b: dict, others: dict[str, str] | None = None) -> str:
+    """`others` maps a sitting's date label to its published URL, for the top-bar links."""
     t = TEMPLATE.read_text(encoding="utf-8")
+    links = "".join(f'<a href="{u}">{html.escape(d)}</a>' for d, u in (others or {}).items())
     tokens = {
+        "__DATE__": html.escape(b["date"]),
+        "__OTHERS__": ("other sittings:" + links) if links else "",
         "__BUNDLE_JSON__": json.dumps(b, ensure_ascii=False).replace("</", "<\\/"),
         "__BRAIN_B64__": base64.b64encode(BRAIN.read_bytes()).decode(),
         "__FLY_B64__": base64.b64encode(FLY.read_bytes()).decode(),

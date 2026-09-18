@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kärbes takes the chair</title>
+<title>Kärbes takes the chair — __DATE__</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -18,6 +18,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidd
 .brand{font-family:var(--display);font-weight:600;font-size:22px}
 .brand span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-left:12px;font-weight:400}
 .clock{font-family:var(--mono);font-size:13px;color:var(--mute)}.clock b{color:var(--ink);font-weight:500;font-size:18px}
+.others{margin-right:18px;font-size:11px}.others a{color:var(--mute);text-decoration:none;border-bottom:1px dotted var(--rule);margin-left:10px}.others a:hover{color:var(--ink)}
 .board{display:grid;grid-template-columns:5fr 7fr;gap:12px;min-height:0}
 .panel{background:var(--panel);border:1px solid var(--rule);border-radius:12px;position:relative;overflow:hidden;min-height:0}
 canvas{display:block;width:100%;height:100%}
@@ -78,7 +79,7 @@ canvas{display:block;width:100%;height:100%}
 <div class="stage">
   <div class="top">
     <div class="brand">Kärbes<span>takes the chair · simulated</span></div>
-    <div class="clock" id="clock">Riigikogu, <b id="date">—</b> <b id="time">--:--</b></div>
+    <div class="clock" id="clock"><span class="others">__OTHERS__</span>Riigikogu, <b id="date">—</b> <b id="time">--:--</b></div>
   </div>
   <div class="board">
     <div class="panel" id="hallpanel">
@@ -236,32 +237,50 @@ let lit = {};  // place -> {t, kind, colour}
 function drawHall(){
   if (!HW) sizeHall();
   hctx.clearRect(0,0,HW,HH);
-  const wall = hctx.createLinearGradient(0,0,0,HH); wall.addColorStop(0,"#2B49A6"); wall.addColorStop(.5,"#1F3684"); wall.addColorStop(1,"#101A3A");
+  const wall = hctx.createLinearGradient(0,0,0,HH); wall.addColorStop(0,"#2E4DAB"); wall.addColorStop(.5,"#213A8A"); wall.addColorStop(1,"#101B3E");
   hctx.fillStyle = wall; hctx.fillRect(0,0,HW,HH);
-  // the far wall's arches, faintly, from the photograph
-  hctx.fillStyle = "rgba(255,255,255,.035)"; for (const cx of [0.16, 0.5, 0.84]){ hctx.beginPath(); hctx.ellipse(HW*cx, HH*0.19, HW*0.07, HH*0.10, 0, Math.PI, 0); hctx.fill(); hctx.fillRect(HW*cx-HW*0.07, HH*0.19, HW*0.14, HH*0.06); }
-  hctx.fillStyle = "rgba(255,255,255,.05)"; hctx.fillRect(HW/2 - HW*0.045, HH*0.26, HW*0.09, HH*0.55); // the aisle
+  // the far wall from the photograph: three arches, the door, and the clock above it
+  hctx.fillStyle = "rgba(255,255,255,.04)";
+  for (const cx of [0.16, 0.84]){ hctx.beginPath(); hctx.ellipse(HW*cx, HH*0.20, HW*0.075, HH*0.10, 0, Math.PI, 0); hctx.fill(); hctx.fillRect(HW*cx-HW*0.075, HH*0.20, HW*0.15, HH*0.07); }
+  hctx.fillStyle = "#0B1230"; hctx.fillRect(HW*0.463, HH*0.15, HW*0.074, HH*0.12);           // the door
+  hctx.fillStyle = "rgba(255,255,255,.06)"; hctx.fillRect(HW*0.455, HH*0.145, HW*0.09, 3*dpr);
+  const cr = HW*0.022, ccx = HW*0.5, ccy = HH*0.105;                                             // the clock
+  hctx.fillStyle = "#F2EFE6"; hctx.beginPath(); hctx.arc(ccx, ccy, cr, 0, 6.2832); hctx.fill();
+  hctx.strokeStyle = "#5B4A2E"; hctx.lineWidth = 1.5*dpr; hctx.stroke();
+  const ev = D.events[Math.max(0,curEv)]; if (ev){ const d = new Date(t0 + ev.t*1000 + 3*3600*1000); const h = d.getUTCHours()%12 + d.getUTCMinutes()/60, m = d.getUTCMinutes();
+    hctx.strokeStyle = "#1B1A18"; hctx.lineCap = "round"; hctx.lineWidth = 2*dpr; hctx.beginPath(); hctx.moveTo(ccx, ccy); hctx.lineTo(ccx + Math.sin(h/12*6.2832)*cr*0.55, ccy - Math.cos(h/12*6.2832)*cr*0.55); hctx.stroke();
+    hctx.lineWidth = 1.3*dpr; hctx.beginPath(); hctx.moveTo(ccx, ccy); hctx.lineTo(ccx + Math.sin(m/60*6.2832)*cr*0.82, ccy - Math.cos(m/60*6.2832)*cr*0.82); hctx.stroke(); }
+  // the floor and the aisle carpet
+  const floor = hctx.createLinearGradient(0,HH*0.28,0,HH*0.84); floor.addColorStop(0,"rgba(120,90,60,.10)"); floor.addColorStop(1,"rgba(120,90,60,.28)");
+  hctx.fillStyle = floor; hctx.fillRect(0, HH*0.28, HW, HH*0.56);
+  hctx.fillStyle = "rgba(170,60,50,.22)"; hctx.beginPath(); hctx.moveTo(HW*0.478, HH*0.28); hctx.lineTo(HW*0.522, HH*0.28); hctx.lineTo(HW*0.56, HH*0.84); hctx.lineTo(HW*0.44, HH*0.84); hctx.closePath(); hctx.fill();
   const order = D.seats.slice().sort((a,b)=>b.row-a.row), now = performance.now();
   for (const s of order){
     const p = seatPos[s.place]; if (!p) continue;
     const l = lit[s.place]; const a = l ? Math.max(0, 1-(now-l.t)/(l.kind==="heckle"?900:1600)) : 0;
-    if (a>0){ const R = p.w*2.2; const gr = hctx.createRadialGradient(p.x,p.y-p.h/2,0,p.x,p.y-p.h/2,R);
-      gr.addColorStop(0, l.kind==="heckle" ? `rgba(255,120,60,${.75*a})` : hexa(s.colour, .7*a)); gr.addColorStop(1,"rgba(0,0,0,0)");
+    if (a>0){ const R = p.w*2.4; const gr = hctx.createRadialGradient(p.x,p.y-p.h/2,0,p.x,p.y-p.h/2,R);
+      gr.addColorStop(0, l.kind==="heckle" ? `rgba(255,120,60,${.8*a})` : hexa(s.colour, .75*a)); gr.addColorStop(1,"rgba(0,0,0,0)");
       hctx.fillStyle=gr; hctx.fillRect(p.x-R,p.y-p.h/2-R,R*2,R*2); }
-    // desk, then chair, then the back-rest in the faction colour
-    hctx.fillStyle = `rgba(190,132,70,${0.55+0.4*p.scale})`; hctx.fillRect(p.x-p.w/2, p.y, p.w, 4*dpr*p.scale+2*dpr);
-    hctx.fillStyle = a>0 ? mix(s.colour, "#15161A", 0.35+0.65*a) : "#15161A"; roundRect(p.x-p.w*0.4, p.y-p.h, p.w*0.8, p.h, 3*dpr*p.scale); hctx.fill();
-    hctx.fillStyle = s.colour; hctx.globalAlpha = 0.5 + 0.5*a; hctx.fillRect(p.x-p.w*0.4, p.y-p.h, p.w*0.8, 3.5*dpr); hctx.globalAlpha = 1;
+    // desk with a lit edge, then the chair: a dark leather back with a rounded top and the faction's tab
+    hctx.fillStyle = `rgba(150,102,52,${0.5+0.4*p.scale})`; hctx.fillRect(p.x-p.w/2, p.y, p.w, 5*dpr*p.scale+2*dpr);
+    hctx.fillStyle = `rgba(215,160,95,${0.35+0.4*p.scale})`; hctx.fillRect(p.x-p.w/2, p.y, p.w, 1.2*dpr);
+    hctx.fillStyle = a>0 ? mix(s.colour, "#17181C", 0.3+0.7*a) : "#17181C"; roundRect(p.x-p.w*0.38, p.y-p.h, p.w*0.76, p.h+2*dpr, 4*dpr*p.scale+1.5*dpr); hctx.fill();
+    hctx.fillStyle = "rgba(255,255,255,.07)"; roundRect(p.x-p.w*0.30, p.y-p.h+2*dpr, p.w*0.60, p.h*0.35, 3*dpr); hctx.fill();
+    hctx.fillStyle = s.colour; hctx.globalAlpha = 0.6 + 0.4*a; hctx.fillRect(p.x-p.w*0.18, p.y-p.h-1.5*dpr, p.w*0.36, 3*dpr); hctx.globalAlpha = 1;
   }
-  hctx.fillStyle = "rgba(233,238,246,.08)"; hctx.fillRect(HW*0.56, HH*0.79, HW*0.40, 14*dpr);
-  hctx.fillStyle = "#9AA6B8"; hctx.font = `${9*dpr}px "IBM Plex Mono",monospace`; hctx.fillText("GOVERNMENT", HW*0.57, HH*0.79 + 10*dpr);
-  const desk = hctx.createLinearGradient(0,HH*0.84,0,HH); desk.addColorStop(0,"#66788F"); desk.addColorStop(1,"#3A4658");
+  // the government bench, front right, then the Speaker's desk with the fly on it
+  hctx.fillStyle = "rgba(233,238,246,.10)"; roundRect(HW*0.56, HH*0.785, HW*0.40, 16*dpr, 3*dpr); hctx.fill();
+  hctx.fillStyle = "#9AA6B8"; hctx.font = `${9*dpr}px "IBM Plex Mono",monospace`; hctx.fillText("GOVERNMENT", HW*0.575, HH*0.785 + 11*dpr);
+  const desk = hctx.createLinearGradient(0,HH*0.84,0,HH); desk.addColorStop(0,"#6A7C94"); desk.addColorStop(1,"#3A4658");
   hctx.fillStyle = desk; hctx.fillRect(0, HH*0.84, HW, HH*0.16);
   hctx.fillStyle = "#B07A3E"; hctx.fillRect(0, HH*0.84, HW, 5*dpr);
+  hctx.fillStyle = "rgba(255,255,255,.08)"; hctx.fillRect(0, HH*0.84+5*dpr, HW, 2*dpr);
   const age = (now-jolt.t)/800, k = age<1 ? (1-age)*(1-age) : 0;
   if (FLY.complete){ const fw = HW*0.17; hctx.save(); hctx.translate(HW*0.5 + jolt.x*k*dpr*1.8, HH*0.925 + jolt.y*k*dpr); hctx.rotate(-jolt.x*k*0.03);
     hctx.shadowColor="rgba(0,0,0,.6)"; hctx.shadowBlur=14*dpr; hctx.shadowOffsetY=6*dpr; hctx.drawImage(FLY, -fw/2, -fw/2, fw, fw); hctx.restore(); }
-  hctx.fillStyle = flash>0 ? "#FFD36E" : "#8E7A45"; hctx.beginPath(); hctx.arc(HW*0.70, HH*0.93, 6*dpr, 0, 6.28); hctx.fill();
+  // the bell on the desk, as in the photograph
+  hctx.fillStyle = flash>0 ? "#FFD36E" : "#8E7A45"; hctx.beginPath(); hctx.arc(HW*0.70, HH*0.925, 6*dpr, 0, 6.2832); hctx.fill();
+  hctx.fillStyle = "#5E5030"; hctx.fillRect(HW*0.70-1.5*dpr, HH*0.925-11*dpr, 3*dpr, 6*dpr);
   hctx.fillStyle = "#6F7D93"; hctx.font = `${9*dpr}px "IBM Plex Mono",monospace`; hctx.fillText("THE SPEAKER", HW*0.5 - 30*dpr, HH*0.99);
 }
 function hexa(hex, a){ const n = parseInt(hex.slice(1),16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; }
