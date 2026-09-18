@@ -75,6 +75,16 @@ def copy(bundle: dict) -> dict[str, str]:
     def shuffle_name(raw: str | None) -> str:
         return "shuffle " + (raw or "").replace("rewired", "").rjust(2, "0") if raw else "—"
 
+    ar = bundle.get("real_auc_range")
+    auc_wander = (
+        f"And the accuracy number is the unstable one. Run the identical connectome five "
+        f"times and its AUC wanders from {_fmt(ar[0], 3)} to {_fmt(ar[1], 3)} while its seat "
+        f"moves {_fmt(within)} compass units. The record is the reproducible thing about this "
+        f"fly. Its score is not."
+        if ar
+        else ""
+    )
+
     pn = bundle.get("partisanship") or {}
     partisan = (
         f"There is a reason it scores badly, and it is not modesty. Across the rewirings, the "
@@ -179,6 +189,7 @@ def copy(bundle: dict) -> dict[str, str]:
         "__PER_BILL__": per_bill,
         "__TYPICAL__": typical,
         "__PARTISAN__": partisan,
+        "__AUC_WANDER__": auc_wander,
         "__ACROSS__": _fmt(across),
         "__SPACING__": _fmt(spacing),
         "__ERR_X__": _fmt(ex),

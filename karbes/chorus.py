@@ -246,6 +246,12 @@ def place_all(
     shuffle_rerun = [
         (f["x"], f["y"]) for f in flies if f["kind"] == "rewired_rerun" or f["name"] == _BASE_RERUN
     ]
+    # The same brain's AUC wanders far more than its seat does. Worth stating, because AUC is
+    # the statistic the accuracy framing rests on and it turns out to be the unstable one.
+    real_aucs = [f["auc_advances"] for f in flies if f["kind"] == "real"]
+    auc_range = (
+        [round(min(real_aucs), 3), round(max(real_aucs), 3)] if len(real_aucs) > 1 else None
+    )
     within = spread(real_pts)
     across = spread(rewired_pts)
     p_value = _permutation(real_pts, rewired_pts)
@@ -315,6 +321,7 @@ def place_all(
         # JSON has no NaN, and a page that reads NaN as a number prints one. A spread that
         # could not be measured is absent, not zero.
         "permutation_p": p_value,
+        "real_auc_range": auc_range,
         "within_brain_spread": None if np.isnan(within) else round(within, 3),
         "within_shuffle_spread": (
             None if np.isnan(spread(shuffle_rerun)) else round(spread(shuffle_rerun), 3)
