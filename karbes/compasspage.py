@@ -75,6 +75,25 @@ def copy(bundle: dict) -> dict[str, str]:
     def shuffle_name(raw: str | None) -> str:
         return "shuffle " + (raw or "").replace("rewired", "").rjust(2, "0") if raw else "—"
 
+    ty = bundle.get("typicality") or {}
+    typical = ""
+    if ty:
+        pct = ty["percentile"]
+        where = (
+            "further from the centre of that cloud than most of them"
+            if pct >= 0.6
+            else "nearer the centre of that cloud than most of them"
+            if pct <= 0.4
+            else "at an unremarkable distance from the centre of that cloud"
+        )
+        typical = (
+            f"The measured connectome sits {_fmt(ty['karbes_from_centre'])} compass units "
+            f"from the middle of its own shuffles, which average "
+            f"{_fmt(ty['shuffles_from_centre'])} — {where}. It is one politician among them, "
+            f"not a distinguished one. What a connectome buys is a particular individual, "
+            f"reproducibly. It does not buy a privileged one."
+        )
+
     pb = bundle.get("per_bill") or {}
     per_bill = (
         f"On any one bill it is close to a coin flip: re-run, the fly lands on the same side "
@@ -147,6 +166,7 @@ def copy(bundle: dict) -> dict[str, str]:
         "__KARBES_AUC__": _fmt(karbes["auc_advances"], 3),
         "__WITHIN__": "—" if math.isnan(within) else _fmt(within),
         "__PER_BILL__": per_bill,
+        "__TYPICAL__": typical,
         "__ACROSS__": _fmt(across),
         "__SPACING__": _fmt(spacing),
         "__ERR_X__": _fmt(ex),

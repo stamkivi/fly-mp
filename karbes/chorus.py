@@ -252,6 +252,20 @@ def place_all(
     parties = {SHORT.get(k, k): {"x": v[0], "y": v[1]} for k, v in CHES_2024.items()}
 
     karbes = next((f for f in flies if f["name"] == "karbes"), None)
+
+    # Is the measured connectome distinguished among its own shuffles, or is it one of them?
+    # The page should not imply the former when the data says the latter.
+    typicality = None
+    if karbes and len(rewired_pts) >= 3:
+        pts = np.asarray(rewired_pts, float)
+        centre = pts.mean(axis=0)
+        theirs = np.linalg.norm(pts - centre, axis=1)
+        mine = float(np.linalg.norm(np.array([karbes["x"], karbes["y"]]) - centre))
+        typicality = {
+            "karbes_from_centre": round(mine, 3),
+            "shuffles_from_centre": round(float(theirs.mean()), 3),
+            "percentile": round(float((theirs < mine).mean()), 3),
+        }
     furthest, split = None, []
     if karbes and rewired_pts:
         cand = [f for f in flies if f["kind"] == "rewired"]
@@ -279,6 +293,7 @@ def place_all(
         "party_spacing": cmap.spread,
         "flies": flies,
         "furthest": furthest["name"] if furthest else None,
+        "typicality": typicality,
         "split": split,
         # JSON has no NaN, and a page that reads NaN as a number prints one. A spread that
         # could not be measured is absent, not zero.

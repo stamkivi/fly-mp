@@ -68,7 +68,9 @@ def place(
 ) -> Seat:
     """Score one fly's record against the chamber."""
     inverted = inverted or {}
-    by_voting = {b.voting_uuid if hasattr(b, "voting_uuid") else b["voting_uuid"]: b for b in ballots}
+    by_voting = {
+        b.voting_uuid if hasattr(b, "voting_uuid") else b["voting_uuid"]: b for b in ballots
+    }
     column = {v.uuid: j for j, v in enumerate(vm.votes)}
 
     latest = vm.latest_faction()
@@ -101,7 +103,9 @@ def place(
             turn = b.turn if hasattr(b, "turn") else b["turn"]
             wants = line[j] == votematrix.SUPPORT
             if code in (POOLT, VASTU):
-                agree[f].append((_stance(code, inverted.get(uuid, False)) == votematrix.SUPPORT) == wants)
+                agree[f].append(
+                    (_stance(code, inverted.get(uuid, False)) == votematrix.SUPPORT) == wants
+                )
             auc_scores[f][0].append(turn)
             auc_scores[f][1].append(wants)
 
@@ -112,9 +116,7 @@ def place(
         if len(scores) > 20:
             a = auc(np.array(scores), np.array(wants))
             faction_auc[f] = round(float(a), 4)
-    faction_agreement = {
-        f: round(float(np.mean(v)), 4) for f, v in agree.items() if len(v) > 20
-    }
+    faction_agreement = {f: round(float(np.mean(v)), 4) for f, v in agree.items() if len(v) > 20}
     best = max(faction_agreement, key=faction_agreement.get) if faction_agreement else None
 
     dim1 = None

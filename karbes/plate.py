@@ -176,7 +176,10 @@ def render(
 
     log.info(
         "plate %dx%d from %d somas (%d labelled)",
-        rgb.shape[1], rgb.shape[0], len(xyz), int(driver.sum()),
+        rgb.shape[1],
+        rgb.shape[0],
+        len(xyz),
+        int(driver.sum()),
     )
     return Plate(
         rgb=np.clip(rgb, 0, 1),

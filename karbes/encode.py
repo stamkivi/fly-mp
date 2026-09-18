@@ -60,9 +60,7 @@ def channel_drive(scored: Scored) -> dict[str, float]:
     }
 
 
-def stimulus(
-    scored: Scored, pops: Populations, engine: Engine
-) -> tuple[np.ndarray, np.ndarray]:
+def stimulus(scored: Scored, pops: Populations, engine: Engine) -> tuple[np.ndarray, np.ndarray]:
     """Return `(targets, rates_hz)` for `engine.run`, one entry per driven ORN.
 
     Per-side rates are normalised by that side's cell count, so the 363/525 rootSide
@@ -78,8 +76,10 @@ def stimulus(
     for channel, signed in drive.items():
         name = CHANNEL_ORNS[channel]
         ids = pops.orn[name]
-        side_ids = {"L": [b for b in ids.tolist() if b in left],
-                    "R": [b for b in ids.tolist() if b in right]}
+        side_ids = {
+            "L": [b for b in ids.tolist() if b in left],
+            "R": [b for b in ids.tolist() if b in right],
+        }
         n_l, n_r = len(side_ids["L"]), len(side_ids["R"])
         if not n_l or not n_r:
             raise ValueError(f"ORN type {name!r} has an empty side: L={n_l} R={n_r}")
