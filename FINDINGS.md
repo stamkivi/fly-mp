@@ -74,8 +74,8 @@ itself, which `vision.py` had already found the day before. Speeches moved to sc
 |---|---:|
 | fly rang the bell (giant fibre ≥ 8 spikes) | **22** |
 | of which heckles | 11 of 11 |
-| real chair: rang the bell / called for order / called time | 1 / 0 / 6 |
-| fly bells within two events of a chair action | 2 |
+| real chair: called for order / rang the bell for order / called time | 0 / 0 / 7 |
+| fly bells within two events of a chair *conduct* action | 0 — there were none to coincide with |
 | recoil direction correct, hostile from the left (n=13) / right (n=4) | **100% / 100%** |
 
 **A speech's own scent damps the escape.** Looming alone at 9 Hz one-sided gives ~40
@@ -109,8 +109,10 @@ recoil direction, ritual greetings counted, and the running comparison with the 
 
 That the fly judges anything. The judgement of tone is a classifier's; the connectome
 contributes a lateralised escape threshold with its own dynamics, the damping above, and
-the wave. That the seat map is right — it is reconstructed. That 22 bells against 1 real one
-means anything on its own — the day's chair mostly called time, which the fly cannot do.
+the wave. That the seat map is right — it is reconstructed. That 22 bells against zero real
+conduct interventions means anything on its own — on 20 May 2026 the chair only called
+time, which the fly cannot do. The comparison needs a day with disorder in it; 2023-06-19
+(8 calls for order, 40 recorded heckles, 1,430 speeches) is being recorded for that.
 
 ---
 
