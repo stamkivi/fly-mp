@@ -1086,6 +1086,150 @@ away into false confidence.
 
 ---
 
+## Iteration 3 — two senses, an arena, and the bit the fly was never allowed to see
+
+*Designed 2026-09-18, after the Stage 2b rebuild. Supersedes §2 (encoding) and §4 (readout).
+Everything measured here is recorded inline; nothing in it is aspirational.*
+
+### The problem this fixes
+
+Stage 2b produced a working instrument and a boring one. The fly declined on every bill and
+every input phase, and the reason is arithmetic rather than mysterious: the encoder's net
+drive spans ±8.0 across eight channels, and **the median real bill delivers +0.187 — 2.3% of
+the range**. Scaled onto the measured full-scale effect (turn +0.276) that predicts a
+per-bill effect of ~0.006; the shipped bill measured −0.005. Self-consistent, and useless.
+A fly that always abstains is not a member of parliament.
+
+Three things follow, and they compose.
+
+### 3a. The senses carry different questions
+
+**Olfaction is what the bill does. Vision is who tabled it.**
+
+This is not decoration. It is §T5's finding made into anatomy. Re-measured on the full
+corpus, 565 contested votes:
+
+| | |
+|---|---:|
+| P(bill advances \| **government**-tabled) | **0.993** |
+| P(bill advances \| member or committee) | **0.104** |
+| accuracy of that one bit alone | **0.942** |
+| majority baseline | 0.526 |
+
+Per faction, the share voting *for* the bill, split by who tabled it:
+
+| faction | govt bill | member bill | gap |
+|---|---:|---:|---:|
+| REF | 0.991 | 0.109 | **+0.882** |
+| E200 | 0.991 | 0.115 | +0.875 |
+| SDE | 0.860 | 0.182 | +0.678 |
+| KESK | 0.285 | 0.657 | −0.372 |
+| Isamaa | 0.234 | 0.874 | −0.640 |
+| EKRE | 0.020 | 0.947 | **−0.927** |
+
+EKRE backs 94.7% of member bills and 2.0% of government ones — a near-perfect mirror of
+Reform. **This single bit is the Riigikogu**, and §T5 already established that the fly, being
+initiator-blind, cannot see it: `rubric2.bill_prompt` excludes initiators by construction and
+must continue to.
+
+The two senses are largely independent, which is what makes the design worth watching: the
+Jev channels correlate with the government bit at only **r = 0.10 to 0.44** (burden .44,
+pay .42, nature .33, who_decides .33, power_over .32, security .25, place .24, spend .10).
+So substance and procedure disagree often.
+
+**The deliverable is the disagreement.** The fly turns toward *poolt* on the merits, the
+procedural signal arrives through the visual system, and it turns the other way. "On the
+substance it would have sat with one bloc; once it sees whose bill it is, it sits with
+another." That is the project's own headline finding, made into a behaviour instead of a
+table.
+
+### 3b. Vision is the stronger sense, and the photoreceptors are a trap
+
+Measured on this pack, 2026-09-18:
+
+* **Photoreceptors are unusable.** All 6,098 are histaminergic; the pack keeps only ACh,
+  GABA and glutamate as presynaptic sources, so every one of them has **zero outgoing
+  edges**. Driving them is a no-op. `TheMrRaGe/flybrain` hit the same wall from the other
+  side — *"58% of the connectome is optic lobe and it contributes zero spikes"* — and its fix
+  (a 90 Hz photoreceptor baseline driven downward, plus tonic lamina current) needs mechanisms
+  this engine does not expose. Skip the retina; enter at the motion detectors.
+* **T4/T5 are the entry point**: 13,580 cells, all cholinergic, all live — a **13× larger
+  input surface than the 1,018 ORNs**.
+* **Optomotor steering is far stronger than olfaction.** Driving T4/T5 asymmetrically by eye
+  moves the DNa turn index by **−0.610 ± 0.032, t = −19.3, d′ = −9.67**, against olfaction's
+  full-scale d′ 2.63. Pathway: T4/T5 → lobula plate → HS/VS → DNa, ipsilateral (HS/VS→DNa,
+  101 contacts left and 120 right), reaching 26 of 32 DNa cells in two hops and all 32 in three.
+* **The giant fibre is a clean alarm channel.** LC4 (6,362 contacts) and LPLC2 (4,862) drive
+  DNp01 monosynaptically — the published looming-escape circuit, onto exactly two cells.
+  Measured response, 1 s:
+
+  | LPLC2+LC4 drive | DNp01 spikes |
+  |---:|---:|
+  | 0 Hz | **0.00** |
+  | 5 Hz | 117.0 ± 5.0 |
+  | 60 Hz | 532.1 ± 1.4 |
+  | 150 Hz | 634.5 ± 0.9 |
+
+  Silent at rest, monotonic, error bars under 1%. **High salience looms and the fly bolts**:
+  abstention becomes a behaviour rather than a threshold.
+
+### 3c. The arena: the loop is the amplifier
+
+The 2.3%-of-range problem is not fixed by turning up a gain. It is fixed the way a real fly
+fixes it — by walking.
+
+Eight odour sources, one per rubric channel, at fixed angular positions around the fly. Each
+source emits in proportion to `|score × confidence × salience|`. Which antenna a source
+reaches depends on **the fly's current heading**, so the projection changes as it turns.
+Then close the loop:
+
+1. sources → left/right ORN drive, weighted by angle
+2. the initiator bit → T4/T5 asymmetry, and salience → LPLC2/LC4 looming
+3. brain → DNa turn index → angular velocity
+4. the fly turns and steps; its heading changes the projection → go to 1
+
+**Why this is a principled amplifier rather than a fudge.** Chemotaxis works under appalling
+per-step SNR because a small bias, integrated over hundreds of steps with positive feedback,
+becomes a committed trajectory: as the fly turns toward a source, that source's drive to the
+near antenna grows. We do not need one 500 ms run to beat the noise. We need the bias to have
+a sign, and it does. A whitening transform on the scores remains available as a secondary
+knob and would be outcome-blind (computed from the score distribution, never from votes), but
+it is the second lever, not the first.
+
+**The vote becomes a place.** Where the fly settles, and the sign of the channel it settled
+on. That also makes the readout explain itself: *it went for the spending pot*.
+
+### 3d. Arms, and what must not be lost
+
+Per §"Any control arm gets the identical fitting procedure", all of these run identically:
+
+| arm | sees | pre-registered expectation |
+|---|---|---|
+| **smell only** | substance | AUC ≈ the .74 content ceiling |
+| **smell + vision** | substance + the bit | → ~.90 |
+| **vision only** | the bit | ≈ .94 |
+| rewired | each of the above, degree-preserving shuffle | the actual experiment |
+
+**The coalition-blind arm must survive.** §T1d's natural experiment — that at the 2025-03-11
+SDE boundary a content-only fly's agreement with the *government bloc* holds steady while its
+agreement with *SDE* shifts — is the best internal validation the project has, and it only
+works on a fly that cannot see the coalition. Adding vision does not replace that arm; it
+adds one beside it. The comparison between the two is the finding.
+
+**The rewired control ships with the engine.** `lif.shuffle_pack` produces a
+degree-preserving shuffled connectome, already validated upstream. Stage 4 is closer than the
+stage table suggests.
+
+### 3e. What this does not claim
+
+The channel-to-glomerulus assignment stays arbitrary and pre-registered. Mapping the
+initiator bit onto a looming stimulus is an engineered choice, not a discovery — no fly has
+an opinion about who tabled a bill. A fly that votes with the coalition after seeing the bit
+is demonstrating that the bit is decisive, which the corpus already showed; the fly is the
+exhibit, not the evidence.
+
+---
+
 ## Current task: the one-bill replay slice
 
 Build a single ~20-second loop end to end on real data, before scaling to 30 bills or a season
