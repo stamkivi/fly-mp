@@ -64,8 +64,8 @@ def copy(bundle: dict) -> dict[str, str]:
     ratio = across / within if not math.isnan(within) and within > 0 else math.nan
     pv = bundle.get("permutation_p")
     chance = (
-        f" Relabelling which brains count as the reruns gives a ratio this large in "
-        f"{_fmt(100 * pv, 1)}% of {int(1 / max(pv, 1e-9)):,} draws." if pv else ""
+        f" Relabelling at random which brains count as the reruns gives a ratio at least "
+        f"this large in {_fmt(100 * pv, 1)}% of 20,000 draws." if pv else ""
     )
     if not math.isnan(ratio) and ratio >= 2:
         verdict = (
@@ -93,7 +93,9 @@ def copy(bundle: dict) -> dict[str, str]:
         )
 
     return {
-        "__HEAD_VERDICT__": html.escape(verdict),
+        # Escaped for text, not for an attribute: the verdict lands inside a <p>,
+        # and escaping quotes there turns every apostrophe into mojibake.
+        "__HEAD_VERDICT__": html.escape(verdict, quote=False),
         "__N_REWIRED__": str(len(rewired)),
         "__N_REAL__": str(len(real)),
         "__N_BILLS__": str(karbes["votes"]),
