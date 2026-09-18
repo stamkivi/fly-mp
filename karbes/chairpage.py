@@ -79,6 +79,7 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
                 "turn": r.turn if r else None,
                 "dna_l": r.dna_l if r else None,
                 "dna_r": r.dna_r if r else None,
+                "gf_first_ms": r.gf_first_ms if r else None,
                 "spikes": r.spikes if r else None,
                 "active": r.active if r else None,
             }
