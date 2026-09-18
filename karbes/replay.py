@@ -26,7 +26,7 @@ from pathlib import Path
 
 import numpy as np
 
-from karbes import decode, encode
+from karbes import arena, decode, encode
 from karbes import engine as E
 from karbes.analysis import idealpoint, votematrix
 from karbes.atlas import Atlas
@@ -289,54 +289,56 @@ class Inputs:
     space: idealpoint.Space | None = None
     vm: votematrix.VoteMatrix | None = None
     bias: float = 0.0
-    dead_band: float = decode.DEAD_BAND
-    duration: float = E.DURATION
+    escape_baseline: float = 0.0
     seed: int = 0
-    #: How many input phases to run the same bill under. The replay plays `seed`; the rest
-    #: exist so the page can state how often this bill comes out the other way.
-    seeds: int = 8
 
 
 def build(inputs: Inputs) -> Bundle:
-    """Simulate one bill and freeze the result."""
-    eng, pops, atlas = inputs.engine, inputs.pops, inputs.atlas
-    dna_l, dna_r = eng.positions(pops.dna_left), eng.positions(pops.dna_right)
-    atlas_idx = eng.positions(atlas.bodies)
-    targets, rates = encode.stimulus(inputs.scored, pops, eng)
+    """Walk one bill twice — once blind to who tabled it, once seeing — and freeze both.
 
+    The two walks are the deliverable. The blind fly is the coalition-blind arm §T1d's
+    natural experiment needs; the seeing fly has the one bit that calls 94% of outcomes.
+    Where they diverge is where the Riigikogu stops being about the bill.
+    """
+    eng, pops, atlas = inputs.engine, inputs.pops, inputs.atlas
     started = datetime.now(tz=UTC)
-    run = E.run(eng, targets, rates, seed=inputs.seed, duration=inputs.duration)
+
+    walks = {}
+    for arm, sees in (("blind", False), ("seeing", True)):
+        walks[arm] = arena.walk(
+            inputs.bill,
+            inputs.scored,
+            pops,
+            eng,
+            see_initiator=sees,
+            bias=inputs.bias,
+            escape_baseline=inputs.escape_baseline,
+            seed=inputs.seed,
+            atlas=atlas if sees else None,
+        )
     elapsed = (datetime.now(tz=UTC) - started).total_seconds()
 
-    turn = decode.turn_index(
-        run.counts, dna_l, dna_r, baseline=inputs.bias, dead_band=inputs.dead_band
-    )
-    code = turn.vote(inputs.vote.inverted)
+    seeing, blind = walks["seeing"], walks["blind"]
+    codes = {
+        arm: arena.verdict(w, inputs.scored, inputs.vote.inverted) for arm, w in walks.items()
+    }
     chamber_advances = inputs.vote.in_favor > inputs.vote.against
     if inputs.vote.inverted:
         chamber_advances = not chamber_advances
 
-    frame_s = inputs.duration / FRAMES
-    race = {
-        side: [
-            round(float(c) / (n * frame_s), 4)
-            for c in run.frame_counts(idx, FRAMES)
-        ]
-        for side, idx, n in (
-            ("left_hz", dna_l, len(dna_l)),
-            ("right_hz", dna_r, len(dna_r)),
-        )
-    }
-    # Cumulative spikes per side. Sixteen DNa cells at ~1 Hz put 0 or 1 spikes in most
-    # 10 ms frames, so a per-frame rate series is mostly zeros and reads as a comb. The
-    # running total is both legible and closer to the statistic, which is a ratio of the
-    # totals rather than anything instantaneous.
-    cum = {
-        f"{side}_cum": np.cumsum(run.frame_counts(idx, FRAMES)).tolist()
-        for side, idx in (("left", dna_l), ("right", dna_r))
-    }
-    raster = run.raster(atlas_idx, FRAMES)
-    wavering = _wavering(inputs, targets, rates, dna_l, dna_r)
+    def trajectory(w: arena.Walk) -> dict:
+        return {
+            "path": [[round(s.x, 4), round(s.y, 4)] for s in w.steps],
+            "heading": [round(s.heading, 4) for s in w.steps],
+            "turn": [round(s.turn, 4) for s in w.steps],
+            "left_hz": [round(s.left_hz, 2) for s in w.steps],
+            "right_hz": [round(s.right_hz, 2) for s in w.steps],
+            "nearest": [s.nearest for s in w.steps],
+            "seeing": [s.seeing for s in w.steps],
+            "settled_on": w.settled_on,
+            "escaped": w.escaped,
+            "steps": len(w.steps),
+        }
 
     doc = {
         "schema": SCHEMA,
@@ -364,54 +366,63 @@ def build(inputs: Inputs) -> Bundle:
             "advances_bill": chamber_advances,
         },
         "channels": _channels(inputs.scored),
+        "arena": {
+            "pots": {k: round(v, 4) for k, v in seeing.pots.items()},
+            "bearings": {k: round(v, 5) for k, v in seeing.bearings.items()},
+            "ring": arena.RING,
+            "step_seconds": arena.STEP_SECONDS,
+            "frames_per_step": arena.FRAMES_PER_STEP,
+            "blind": trajectory(blind),
+            "seeing": trajectory(seeing),
+            "reveal_step": arena.REVEAL_STEP,
+            "reveal_steps": arena.REVEAL_STEPS,
+        },
         "drive": {
-            "encoding": "score sign picks the antenna; magnitude sets its rate",
+            "encoding": "eight pots on a ring; bearing decides which antenna each reaches",
             "background_hz": encode.BACKGROUND_HZ,
             "peak_hz": encode.PEAK_HZ,
             "orn_left": len(pops.orn_left),
             "orn_right": len(pops.orn_right),
             "laterality": "rootSide; ORNs carry no somaSide and unknown-side cells are dropped",
         },
+        "vision": {
+            "government_bill": inputs.bill.government_bill,
+            "flow": arena.vision.flow(inputs.bill),
+            "looming_hz": round(arena.vision.looming_hz(inputs.scored.scores.get("salience", 0.0)), 2),
+            "escape_baseline": round(inputs.escape_baseline, 1),
+            "escape_margin": arena.vision.ESCAPE_MARGIN,
+            "note": "which eye leads is arbitrary and fixed; a fly has no opinion about initiators",
+        },
         "sim": {
             "engine": "mlx-lif-engine (Shiu et al. equations, Brian2-validated)",
-            "frames": FRAMES,
-            "duration_s": inputs.duration,
+            "frames": len(seeing.raster),
+            "duration_s": arena.STEP_SECONDS * len(seeing.steps),
             "dt_s": E.DT,
             "seed": inputs.seed,
             "neurons": eng.n,
             "edges": eng.edges,
-            "total_spikes": int(run.counts.sum()),
-            "mean_rate_hz": round(float(run.counts.sum()) / (eng.n * inputs.duration), 4),
+            "total_spikes": sum(s.spikes for s in seeing.steps),
+            "mean_rate_hz": round(
+                sum(s.spikes for s in seeing.steps)
+                / (eng.n * arena.STEP_SECONDS * max(1, len(seeing.steps))),
+                4,
+            ),
             "wall_seconds": round(elapsed, 2),
         },
-        "race": {
-            **race,
-            **cum,
-            "turn": round(turn.turn, 5),
-            "raw_turn": round(turn.raw, 5),
-            "baseline_bias": round(inputs.bias, 5),
-            "dead_band": round(inputs.dead_band, 5),
-            "dna_left": len(dna_l),
-            "dna_right": len(dna_r),
-            "left_spikes": turn.left_spikes,
-            "right_spikes": turn.right_spikes,
-        },
         "verdict": {
-            "supports_bill": turn.supports_bill,
-            "code": code,
+            "blind": codes["blind"],
+            "seeing": codes["seeing"],
+            "flipped": codes["blind"] != codes["seeing"],
+            "code": codes["seeing"],
             "chamber_advances": chamber_advances,
-            "agrees_with_chamber": (
-                None if turn.supports_bill is None else turn.supports_bill == chamber_advances
-            ),
         },
-        "wavering": wavering,
-        "seat": _seat(inputs, turn),
-        "raster": _raster_meta(raster),
+        "seat": {"available": False},
+        "raster": _raster_meta(seeing.raster),
         "atlas": {
             "somas": atlas.k,
             "groups": list(atlas.fractions()),
             "sampled_fraction": {k: round(v, 4) for k, v in atlas.fractions().items()},
-            "group_hz": _group_hz(atlas, atlas_idx, run, inputs.duration),
+            "group_hz": _walk_group_hz(seeing, atlas),
             "dn_left_slots": _slots(atlas, pops.dna_left),
             "dn_right_slots": _slots(atlas, pops.dna_right),
         },
@@ -423,63 +434,21 @@ def build(inputs: Inputs) -> Bundle:
             },
             "dna_left_bodies": [int(b) for b in pops.dna_left],
             "dna_right_bodies": [int(b) for b in pops.dna_right],
+            "t4t5_cells": len(pops.t4t5_left) + len(pops.t4t5_right),
+            "looming_cells": len(pops.looming),
             "jev_input_tokens": inputs.scored.input_tokens,
         },
     }
     name = f"{inputs.bill.uuid[:8]}-{inputs.vote.uuid[:8]}"
-    return Bundle(doc=doc, raster=pack_raster(raster), name=name)
+    return Bundle(doc=doc, raster=pack_raster(seeing.raster), name=name)
 
 
-def _wavering(
-    inputs: Inputs,
-    targets: np.ndarray,
-    rates: np.ndarray,
-    dna_l: np.ndarray,
-    dna_r: np.ndarray,
-) -> dict:
-    """The same bill under other input phases.
-
-    Run-to-run spread on this readout is real and comparable to a weak bill's effect, so a
-    single verdict is not the whole truth and the bundle carries the distribution.
-    """
-    if inputs.seeds <= 1:
-        return {"seeds": 1, "note": "not measured"}
-    runs = []
-    for seed in range(inputs.seeds):
-        if seed == inputs.seed:
-            continue
-        counts = E.run(inputs.engine, targets, rates, seed=seed, duration=inputs.duration).counts
-        t = decode.turn_index(
-            counts, dna_l, dna_r, baseline=inputs.bias, dead_band=inputs.dead_band
-        )
-        runs.append({"seed": seed, "turn": round(t.turn, 5), "code": t.vote(inputs.vote.inverted)})
-    tally: dict[str, int] = {}
-    for r in runs:
-        tally[r["code"]] = tally.get(r["code"], 0) + 1
-    turns = np.array([r["turn"] for r in runs])
-    return {
-        "seeds": inputs.seeds,
-        "note": "the same bill, same scores, different input phase",
-        "runs": runs,
-        "tally": tally,
-        "turn_sd": round(float(turns.std(ddof=1)), 5) if len(turns) > 1 else 0.0,
-        "turn_min": round(float(turns.min()), 5),
-        "turn_max": round(float(turns.max()), 5),
-    }
-
-
-def _group_hz(
-    atlas: Atlas, atlas_idx: np.ndarray, run: E.Run, duration: float
-) -> dict[str, list[float]]:
-    """Per drawn group, the true firing rate in each frame. Never raster-derived."""
-    frame_s = duration / FRAMES
-    out = {}
-    for gid, name in enumerate(atlas.group_names()):
-        members = atlas_idx[atlas.group == gid]
-        if not len(members):
-            continue
-        counts = run.frame_counts(members, FRAMES)
-        out[name] = [round(float(c) / (len(members) * frame_s), 2) for c in counts]
+def _walk_group_hz(w: arena.Walk, atlas: Atlas) -> dict[str, list[float]]:
+    """Per drawn group, the firing rate in every captured frame across the whole walk."""
+    out: dict[str, list[float]] = {name: [] for name in atlas.group_names()}
+    for step in w.steps:
+        for name, series in out.items():
+            series.extend(step.group_hz.get(name, [0.0] * arena.FRAMES_PER_STEP))
     return out
 
 

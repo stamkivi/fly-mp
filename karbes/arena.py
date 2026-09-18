@@ -50,12 +50,28 @@ STEP_SECONDS = 0.15
 #: feedback to commit and short enough to watch.
 STEPS = 16
 
-#: Radians of turn per unit of baseline-subtracted turn index, per step. Sets how hard the
-#: fly commits; pre-registered rather than fitted against any outcome.
-TURN_GAIN = 2.2
+#: **Approach, not avoidance.** Measured: odour on the fly's right makes the turn index
+#: *more positive* by 0.125, and heading is a standard maths angle, so `heading += turn`
+#: rotates counter-clockwise — toward the fly's left, away from the source. The first
+#: version therefore ran anti-chemotaxis and the fly fled the pots in circles. Which sign
+#: means "toward" is a property of the engineered readout, not of the fly, and it is fixed
+#: here on the only defensible criterion: the animal should approach what attracts it.
+TURN_SIGN = -1.0
+
+#: Radians of turn per unit of baseline-subtracted turn index, per step.
+#:
+#: At 2.2 a typical turn index of 0.3 swings the fly 38 degrees in one step, so it spiralled
+#: instead of curving and closed a full circle in under ten steps. 1.2 lets the gradient
+#: steer it rather than spin it.
+TURN_GAIN = 1.2
 
 #: Body lengths travelled per step.
-SPEED = 0.055
+#:
+#: **Chosen so the fly can actually cross the arena**, which is the only defensible
+#: criterion available and is outcome-blind: at 0.055 its whole 16-step budget covered 0.88
+#: against a ring of 1.0, so it never reached a pot and "nearest" was decided by which way
+#: it happened to be drifting near the centre. At 0.12 it can reach the ring and overshoot.
+SPEED = 0.12
 
 #: Ring radius the pots sit on, in the same units.
 RING = 1.0
@@ -65,6 +81,53 @@ ANTENNA_SHARPNESS = 0.85
 
 #: Emission floor, so a channel scored at zero is still a faint presence rather than absent.
 POT_FLOOR = 0.06
+
+#: Raster frames captured per step.
+FRAMES_PER_STEP = 6
+
+#: The step at which the fly learns who tabled the bill.
+#:
+#: **The procedural signal is an event, not a state.** Constant rotational optic flow makes
+#: a fly turn continuously — that is the optomotor response to a rotating drum, and it is
+#: what the first version did: the seeing fly simply orbited. So the bit arrives partway
+#: through, as a transient, and the two arms are bit-identical before it. Their paths then
+#: diverge from exactly one frame, which is the whole thing worth watching.
+REVEAL_STEP = 8
+
+#: How many steps the procedural stimulus lasts once it arrives. A looming object passes.
+REVEAL_STEPS = 4
+
+
+def turn_baseline(pops: Populations, engine: Engine, seeds: int = 8) -> float:
+    """Turn index under a symmetric arena odour field.
+
+    **Not the same baseline `karbes calibrate` measures.** That one is taken under the
+    single-whiff encoder; here both antennae sit at the arena's mid drive, and the constant
+    offset is quite different — -0.39 against -0.08. Subtracting the wrong one leaves a
+    residual that rotates the fly continuously, which is what made it circle.
+    """
+    import numpy as np
+
+    from karbes import engine as E
+
+    orn_l, orn_r = engine.positions(pops.orn_left), engine.positions(pops.orn_right)
+    dna_l, dna_r = engine.positions(pops.dna_left), engine.positions(pops.dna_right)
+    mean_n = (len(orn_l) + len(orn_r)) / 2
+    mid = encode.BACKGROUND_HZ + encode.PEAK_HZ * 0.5
+    targets = np.concatenate([orn_l, orn_r])
+    rates = np.concatenate(
+        [np.full(len(orn_l), mid * mean_n / len(orn_l)), np.full(len(orn_r), mid * mean_n / len(orn_r))]
+    )
+    order = np.argsort(targets)
+    turns = [
+        decode.turn_index(
+            E.run(engine, targets[order].astype(np.int32), rates[order], seed=s, duration=STEP_SECONDS).counts,
+            dna_l,
+            dna_r,
+        ).raw
+        for s in range(seeds)
+    ]
+    return float(np.mean(turns))
 
 
 def bearings() -> dict[str, float]:
@@ -86,6 +149,10 @@ class Step:
     nearest: str
     spikes: int
     escaped: bool
+    #: Whether the procedural stimulus was present on this step.
+    seeing: bool = False
+    #: Per drawn atlas group, the firing rate in each captured frame of this step.
+    group_hz: dict[str, list[float]] = field(default_factory=dict)
 
 
 @dataclass
@@ -97,6 +164,9 @@ class Walk:
     escaped: bool = False
     pots: dict[str, float] = field(default_factory=dict)
     bearings: dict[str, float] = field(default_factory=dict)
+    #: One continuous raster across the whole walk, `FRAMES_PER_STEP` frames per step.
+    raster: list[np.ndarray] = field(default_factory=list)
+    reveal_step: int = REVEAL_STEP
 
     @property
     def path(self) -> list[tuple[float, float]]:
@@ -123,8 +193,10 @@ def walk(
     *,
     see_initiator: bool = True,
     bias: float = 0.0,
+    escape_baseline: float = 0.0,
     seed: int = 0,
     steps: int = STEPS,
+    atlas=None,
 ) -> Walk:
     """Run the closed loop for one bill.
 
@@ -141,12 +213,9 @@ def walk(
 
     orn_l = engine.positions(pops.orn_left)
     orn_r = engine.positions(pops.orn_right)
-    visual = (
-        vision.stimulus(bill, scored.scores.get("salience", 0.0), pops, engine)
-        if see_initiator
-        else None
-    )
+    visual = vision.stimulus(bill, scored.scores.get("salience", 0.0), pops, engine)
 
+    atlas_idx = engine.positions(atlas.bodies) if atlas is not None else np.array([], dtype=np.int32)
     rng = np.random.default_rng(seed)
     heading = float(rng.uniform(0, 2 * math.pi))
     x = y = 0.0
@@ -165,8 +234,14 @@ def walk(
             left_total += reaching * share_l
             right_total += reaching * share_r
 
-        left_hz = encode.BACKGROUND_HZ + encode.PEAK_HZ * min(left_total, 1.0)
-        right_hz = encode.BACKGROUND_HZ + encode.PEAK_HZ * min(right_total, 1.0)
+        # **Ratio, not absolute intensity.** Clamping each side at a ceiling meant that as
+        # soon as the fly got near a pot both antennae saturated and the gradient vanished
+        # exactly where it was needed — the fly would approach, go blind, and drift off.
+        # A bilateral *comparison* is scale-free and is what the antennae actually do.
+        total = left_total + right_total
+        balance = (right_total - left_total) / total if total else 0.0
+        left_hz = encode.BACKGROUND_HZ + encode.PEAK_HZ * (0.5 - 0.5 * balance)
+        right_hz = encode.BACKGROUND_HZ + encode.PEAK_HZ * (0.5 + 0.5 * balance)
         mean_n = (len(orn_l) + len(orn_r)) / 2
         targets = np.concatenate([orn_l, orn_r])
         rates = np.concatenate(
@@ -175,7 +250,8 @@ def walk(
                 np.full(len(orn_r), right_hz * mean_n / len(orn_r)),
             ]
         )
-        if visual is not None:
+        seeing_now = see_initiator and REVEAL_STEP <= step < REVEAL_STEP + REVEAL_STEPS
+        if seeing_now:
             targets = np.concatenate([targets, visual[0]])
             rates = np.concatenate([rates, visual[1]])
         order = np.argsort(targets)
@@ -190,9 +266,22 @@ def walk(
             duration=STEP_SECONDS,
         )
         turn = decode.turn_index(run.counts, dna_l, dna_r, baseline=bias).turn
-        escaped, _ = vision.bolted(run.counts, giant)
+        # The escape baseline is measured over a second; a step is a fraction of one.
+        escaped, _ = vision.bolted(
+            run.counts, giant, baseline=escape_baseline * STEP_SECONDS if seeing_now else 0.0
+        )
 
-        heading += TURN_GAIN * turn
+        group_hz: dict[str, list[float]] = {}
+        if atlas is not None:
+            out.raster.extend(run.raster(atlas_idx, FRAMES_PER_STEP))
+            frame_s = STEP_SECONDS / FRAMES_PER_STEP
+            for gid, name in enumerate(atlas.group_names()):
+                members = atlas_idx[atlas.group == gid]
+                if len(members):
+                    counts = run.frame_counts(members, FRAMES_PER_STEP)
+                    group_hz[name] = [round(float(c) / (len(members) * frame_s), 2) for c in counts]
+
+        heading += TURN_SIGN * TURN_GAIN * turn
         x += SPEED * math.cos(heading)
         y += SPEED * math.sin(heading)
         nearest = min(
@@ -203,6 +292,7 @@ def walk(
                 x=x, y=y, heading=heading, turn=turn,
                 left_hz=left_hz, right_hz=right_hz,
                 nearest=nearest, spikes=int(run.counts.sum()), escaped=escaped,
+                seeing=seeing_now, group_hz=group_hz,
             )
         )
         if escaped:

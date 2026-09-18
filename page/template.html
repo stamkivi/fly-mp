@@ -104,14 +104,15 @@ h2{font-family:var(--display);font-weight:600;font-size:22px;margin:40px 0 12px}
 .race{margin-top:16px}
 .racewrap{position:relative;background:#07080C;border:1px solid var(--line);
           border-radius:6px;padding:0;overflow:hidden}
-#race{width:100%;height:190px;display:block}
+#arena{width:100%;height:430px;display:block}
 .legend{display:flex;gap:18px;font-family:var(--mono);font-size:11px;color:var(--dim);
         padding:8px 12px 10px}
 .legend i{display:inline-block;width:14px;height:2px;margin-right:6px;vertical-align:middle}
 
 /* ---- verdict ---- */
-.verdict{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
-@media(max-width:700px){.verdict{grid-template-columns:1fr}}
+.verdict{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+@media(max-width:900px){.verdict{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.verdict{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
 .card .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
          color:var(--dim)}
@@ -196,13 +197,15 @@ table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
     <div class="panel meters" id="meters"></div>
   </div>
 
+  <h2>The walk</h2>
+  <p class="lede" id="walk-note"></p>
   <div class="race">
     <div class="racewrap">
-      <canvas id="race" role="img" aria-label="Loading the descending-neuron race."></canvas>
+      <canvas id="arena" role="img" aria-label="Loading the arena."></canvas>
       <div class="legend">
-        <span><i style="background:var(--left)"></i>left DNa pool · running total</span>
-        <span><i style="background:var(--right)"></i>right DNa pool · running total</span>
-        <span><i style="background:var(--karbes)"></i>turn = (R−L)/(R+L)</span>
+        <span><i style="background:#5A6070"></i>on the bill alone</span>
+        <span><i style="background:var(--right)"></i>after seeing who tabled it</span>
+        <span><i style="background:var(--karbes)"></i>pot — size is how much that question applies</span>
       </div>
     </div>
   </div>
@@ -210,15 +213,13 @@ table.facts td:first-child{color:var(--dim);width:42%;padding-right:16px}
   <div class="verdict">
     <div class="card pending" id="card-you"><div class="k">You</div>
       <div class="v" id="you-v">—</div><div class="n" id="you-n">not yet cast</div></div>
-    <div class="card pending" id="card-fly"><div class="k">Kärbes</div>
-      <div class="v" id="fly-v">—</div><div class="n" id="fly-n">still deciding</div></div>
+    <div class="card pending" id="card-blind"><div class="k">On the bill alone</div>
+      <div class="v" id="blind-v">—</div><div class="n" id="blind-n">still walking</div></div>
+    <div class="card pending" id="card-fly"><div class="k">Having seen who tabled it</div>
+      <div class="v" id="fly-v">—</div><div class="n" id="fly-n">still walking</div></div>
     <div class="card pending" id="card-cham"><div class="k">The Riigikogu</div>
       <div class="v" id="cham-v">—</div><div class="n" id="cham-n"></div></div>
   </div>
-
-  <h2>Run it again and it may say something else</h2>
-  <p class="lede" id="wave-note"></p>
-  <div class="panel" id="wave"></div>
 
   <h2>Where that puts it</h2>
   <p class="lede" id="seat-note"></p>
@@ -419,50 +420,112 @@ function drawMeters(f){
   }
 }
 
-/* ---------- the race chart ---------- */
-const race = document.getElementById("race");
-const rctx = race.getContext("2d");
-let RW=0, RH=0;
-function sizeRace(){
-  const r = race.getBoundingClientRect();
+/* ---------- the arena: eight pots, one ring, two flies ---------- */
+const A = B.arena;
+const POTS = Object.keys(A.pots);
+const arena = document.getElementById("arena");
+const actx = arena.getContext("2d");
+let AW = 0, AH = 0;
+function sizeArena(){
+  const r = arena.getBoundingClientRect();
   const dpr = Math.min(devicePixelRatio || 1, 2);
-  RW = Math.round(r.width*dpr); RH = Math.round(r.height*dpr);
-  race.width = RW; race.height = RH;
+  AW = Math.round(r.width * dpr); AH = Math.round(r.height * dpr);
+  arena.width = AW; arena.height = AH;
 }
-/* The race is drawn as a running spike total per side, not as an instantaneous rate.
-   Sixteen DNa cells firing at about 1 Hz leave most 10 ms frames empty, so a rate series
-   is a comb of zeros; the cumulative count is what the turn index is a ratio of anyway. */
-const L = B.race.left_cum, R = B.race.right_cum;
-const L_HZ = B.race.left_hz, R_HZ = B.race.right_hz;
-const PEAK = Math.max(1, ...L, ...R);
 
-function drawRace(upto){
-  const pad = 26*Math.min(devicePixelRatio||1,2);
-  rctx.clearRect(0,0,RW,RH);
-  const x = f => pad + (RW-2*pad) * (f/(FRAMES-1));
-  const y = v => RH-pad - (RH-2*pad) * (v/PEAK);
+/* Both walks and the ring share one frame, scaled to whichever wanders furthest so a fly
+   that circles wide is not cropped. */
+function arenaScale(){
+  let far = A.ring * 1.3;
+  for (const arm of ["blind", "seeing"])
+    for (const pt of A[arm].path) far = Math.max(far, Math.hypot(pt[0], pt[1]) * 1.12);
+  return Math.min(AW, AH) / (2 * far);
+}
 
-  // settled window: the part of the run the verdict is actually read from
-  rctx.strokeStyle = "#242835"; rctx.lineWidth = 1;
-  rctx.beginPath(); rctx.moveTo(pad, RH-pad); rctx.lineTo(RW-pad, RH-pad); rctx.stroke();
+function drawArena(step){
+  if (!AW) sizeArena();
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const k = arenaScale(), ox = AW / 2, oy = AH / 2;
+  const X = v => ox + v * k, Y = v => oy - v * k;
+  actx.clearRect(0, 0, AW, AH);
 
-  const line = (series, colour) => {
-    rctx.strokeStyle = colour; rctx.lineWidth = 2*Math.min(devicePixelRatio||1,2);
-    rctx.lineJoin = "round"; rctx.beginPath();
-    for (let f = 0; f <= upto && f < FRAMES; f++){
-      const px = x(f), py = y(series[f]);
-      f ? rctx.lineTo(px, py) : rctx.moveTo(px, py);
+  actx.strokeStyle = "#1A1D27"; actx.lineWidth = 1 * dpr;
+  actx.beginPath(); actx.arc(ox, oy, A.ring * k, 0, 7); actx.stroke();
+
+  const shown = Math.max(0, Math.min(step, A.seeing.steps - 1));
+  const revealed = shown >= A.reveal_step;
+  const done = shown >= A.seeing.steps - 1;
+  const maxPot = Math.max(...POTS.map(n => A.pots[n]));
+
+  for (const name of POTS){
+    const bear = A.bearings[name];
+    const px = X(A.ring * Math.cos(bear)), py = Y(A.ring * Math.sin(bear));
+    const strength = A.pots[name] / maxPot;
+    const r = (4 + 15 * strength) * dpr;
+    const g = actx.createRadialGradient(px, py, 0, px, py, r * 2.6);
+    g.addColorStop(0, "rgba(201,198,190," + (0.10 + 0.32 * strength) + ")");
+    g.addColorStop(1, "rgba(201,198,190,0)");
+    actx.fillStyle = g;
+    actx.beginPath(); actx.arc(px, py, r * 2.6, 0, 7); actx.fill();
+    actx.fillStyle = "rgba(201,198,190," + (0.28 + 0.60 * strength) + ")";
+    actx.beginPath(); actx.arc(px, py, r * 0.42, 0, 7); actx.fill();
+
+    const chosen = done && A.seeing.settled_on === name;
+    actx.fillStyle = chosen ? "#FF8A3D" : "#8A8F9E";
+    actx.font = (chosen ? 12 : 11) * dpr + 'px "IBM Plex Mono",monospace';
+    const label = name + " " + A.pots[name].toFixed(2);
+    const w = actx.measureText(label).width;
+    actx.fillText(label,
+      px + (Math.cos(bear) >= -0.2 ? r + 9 * dpr : -(r + 9 * dpr) - w),
+      py + 4 * dpr);
+  }
+
+  const drawPath = (arm, colour, dash) => {
+    const pts = A[arm].path.slice(0, shown + 1);
+    if (pts.length < 2) return;
+    actx.setLineDash(dash); actx.strokeStyle = colour;
+    actx.lineWidth = 2 * dpr; actx.lineJoin = "round";
+    actx.beginPath();
+    for (let i = 0; i < pts.length; i++){
+      const px = X(pts[i][0]), py = Y(pts[i][1]);
+      i ? actx.lineTo(px, py) : actx.moveTo(px, py);
     }
-    rctx.stroke();
+    actx.stroke(); actx.setLineDash([]);
   };
-  line(L, getComputedStyle(document.body).getPropertyValue("--left").trim());
-  line(R, getComputedStyle(document.body).getPropertyValue("--right").trim());
+  // Before the reveal they are the same fly, so there is only one line to draw.
+  if (revealed) drawPath("blind", "#5A6070", [4 * dpr, 4 * dpr]);
+  drawPath("seeing", revealed ? "#FF8A3D" : "#C9C6BE", []);
 
-  rctx.fillStyle = "#8A8F9E";
-  rctx.font = `${11*Math.min(devicePixelRatio||1,2)}px "IBM Plex Mono",monospace`;
-  rctx.fillText(`${PEAK.toFixed(0)} spikes`, 4, pad);
-  rctx.fillText("0", 4, RH-pad+4);
-  rctx.fillText(`${(B.sim.duration_s*1000).toFixed(0)} ms`, RW-pad-52, RH-pad+16);
+  if (revealed){
+    const rp = A.seeing.path[A.reveal_step];
+    if (rp){
+      actx.strokeStyle = "rgba(255,138,61,.45)"; actx.lineWidth = 1 * dpr;
+      actx.beginPath(); actx.arc(X(rp[0]), Y(rp[1]), 9 * dpr, 0, 7); actx.stroke();
+    }
+  }
+
+  const drawFly = (arm, colour) => {
+    const pt = A[arm].path[Math.min(shown, A[arm].path.length - 1)];
+    if (!pt) return;
+    const h = A[arm].heading[Math.min(shown, A[arm].heading.length - 1)];
+    actx.save(); actx.translate(X(pt[0]), Y(pt[1])); actx.rotate(-h);
+    actx.fillStyle = colour;
+    actx.beginPath();
+    actx.moveTo(8 * dpr, 0); actx.lineTo(-5 * dpr, 3.8 * dpr); actx.lineTo(-5 * dpr, -3.8 * dpr);
+    actx.closePath(); actx.fill();
+    actx.restore();
+  };
+  if (revealed) drawFly("blind", "#5A6070");
+  drawFly("seeing", revealed ? "#FF8A3D" : "#E8E6E1");
+
+  actx.fillStyle = "#8A8F9E";
+  actx.font = 11 * dpr + 'px "IBM Plex Mono",monospace';
+  actx.fillText("step " + (shown + 1) + " of " + A.seeing.steps + " · "
+    + ((shown + 1) * A.step_seconds).toFixed(2) + " s walked", 10 * dpr, 18 * dpr);
+  if (revealed){
+    actx.fillStyle = "#FF8A3D";
+    actx.fillText("it has seen who tabled the bill", 10 * dpr, 36 * dpr);
+  }
 }
 
 /* ---------- the seat line ---------- */
@@ -593,33 +656,16 @@ document.getElementById("cham-n").textContent =
   (cham.inverted ? " — on a motion to reject, so the polarity is flipped" : "");
 document.getElementById("card-cham").classList.remove("pending");
 
-/* ---------- the wavering ---------- */
-const W = B.wavering;
-if (W && W.runs){
-  const all = [{seed: B.sim.seed, turn: B.race.turn, code: B.verdict.code, this: true}]
-    .concat(W.runs).sort((a, b) => a.seed - b.seed);
-  const tally = {};
-  for (const r of all) tally[r.code] = (tally[r.code] || 0) + 1;
-  const parts = Object.entries(tally)
-    .sort((a, b) => b[1] - a[1])
-    .map(([c, n]) => `${n}\u00d7 ${ET[c]}`);
-  document.getElementById("wave-note").textContent =
-    `The bill, the scores and the wiring are identical in all ${all.length} runs below. `
-    + `Only the phase of the input spike trains differs — and that alone moves the readout `
-    + `across a ${(W.turn_max - W.turn_min).toFixed(3)} range of turn index. The fly does `
-    + `respond to a bill swung hard enough — see the finding at the top — but a single bill `
-    + `pushes far less hard than that, so treat one verdict as one draw rather than as an `
-    + `opinion.`;
-  document.getElementById("wave").innerHTML =
-    `<div class="waverow">` + all.map(r =>
-      `<div class="wchip ${r.code}${r.this ? " this" : ""}">` +
-      `<b>${ET[r.code]}</b>phase ${r.seed}${r.this ? " · shown above" : ""}<br>` +
-      `turn ${r.turn >= 0 ? "+" : ""}${r.turn.toFixed(3)}</div>`).join("") + `</div>` +
-    `<div class="wtally">${parts.join("  ·  ")} across ${all.length} input phases ` +
-    `· turn spread ${W.turn_min.toFixed(3)} to ${W.turn_max.toFixed(3)} ` +
-    `· dead band ±${B.race.dead_band.toFixed(3)}</div>`;
-} else {
-  document.getElementById("wave-note").textContent = "Not measured for this bundle.";
+/* ---------- what the walk did ---------- */
+{
+  const strongest = POTS.reduce((x, y) => A.pots[x] >= A.pots[y] ? x : y);
+  document.getElementById("walk-note").textContent =
+    `Eight pots, one per question, each smelling as strongly as that question applies to this `
+    + `bill — ${strongest} pulls hardest here, at ${A.pots[strongest].toFixed(2)}. The fly walks `
+    + `${A.seeing.steps} steps of ${(A.step_seconds * 1000).toFixed(0)} ms. For the first `
+    + `${A.reveal_step} it is one fly: same brain, same seed, same odour. At step `
+    + `${A.reveal_step + 1} it is shown who tabled the bill, and the dashed line is what it `
+    + `would have gone on doing without that.`;
 }
 
 const S = B.seat;
@@ -641,9 +687,10 @@ const facts = [
   ["Simulated", `${(B.sim.duration_s*1000).toFixed(0)} ms of neural time at ${(B.sim.dt_s*1e3).toFixed(1)} ms steps`],
   ["Spikes", `${B.sim.total_spikes.toLocaleString()} · mean ${B.sim.mean_rate_hz.toFixed(1)} Hz across the network`],
   ["Engine", B.sim.engine],
-  ["Drive", `${B.drive.orn_left} left and ${B.drive.orn_right} right receptor neurons, ${B.drive.laterality}`],
-  ["Readout", `the DNa family — ${B.race.dna_left} cells left, ${B.race.dna_right} right`],
-  ["Turn index", `${B.race.turn >= 0 ? "+" : ""}${B.race.turn.toFixed(3)} against a ${B.race.dead_band.toFixed(3)} dead band (bias ${B.race.baseline_bias.toFixed(3)} removed)`],
+  ["Smell", `${B.drive.orn_left} left and ${B.drive.orn_right} right receptor neurons, ${B.drive.laterality}`],
+  ["Readout", "the DNa steering family — 16 cells a side"],
+  ["Second sense", `${B.audit.t4t5_cells.toLocaleString()} motion detectors carry who tabled it; ${B.audit.looming_cells} looming cells can make the fly bolt`],
+  ["Walk", `${B.arena.seeing.steps} steps of ${(B.arena.step_seconds*1000).toFixed(0)} ms, the bit revealed at step ${B.arena.reveal_step + 1}`],
   ["Scoring", `TypeSafe Jev · nine questions · ${B.audit.jev_input_tokens.toLocaleString()} input tokens`],
   ["Wall clock", `${B.sim.wall_seconds.toFixed(1)} s to simulate, precomputed — nothing runs in your browser`]
 ];
@@ -702,14 +749,18 @@ function start(){
 
 function reveal(){
   const v = B.verdict;
-  document.getElementById("fly-v").textContent = ET[v.code];
-  const agree = v.agrees_with_chamber;
+  const where = arm => A[arm].escaped ? "bolted off the tabulaator" : `walked to ${A[arm].settled_on}`;
+  document.getElementById("blind-v").textContent = ET[v.blind];
+  document.getElementById("blind-n").textContent = `${where("blind")} · never told who tabled it`;
+  document.getElementById("card-blind").classList.remove("pending");
+
+  document.getElementById("fly-v").textContent = ET[v.seeing];
+  const agrees = (v.seeing === "POOLT") === B.chamber.advances_bill;
   document.getElementById("fly-n").textContent =
-    (v.supports_bill === null
-      ? "the race stayed inside the brain's own noise floor"
-      : `turn ${B.race.turn >= 0 ? "+" : ""}${B.race.turn.toFixed(3)} — `
-        + (agree ? "the same way as the chamber" : "the opposite way to the chamber"))
-    + (yourVote ? (yourVote === v.code ? " · you agreed" : " · you did not") : "");
+    `${where("seeing")} · `
+    + (v.flipped ? "the bit changed its mind" : "the bit left its mind unchanged")
+    + (agrees ? " · with the chamber" : " · against the chamber")
+    + (yourVote ? (yourVote === v.seeing ? " · you agreed" : " · you did not") : "");
   document.getElementById("card-fly").classList.remove("pending");
   drawSeat(true);
 }
@@ -739,8 +790,8 @@ function tick(now){
       document.getElementById("clock").textContent =
         `${(f * B.sim.duration_s * 1000 / FRAMES).toFixed(0)} ms`
         + (f < SLOW_FRAMES ? "  ·  slowed" : "");
-      drawRace(f);
       drawMeters(f);
+      drawArena(Math.floor(f / A.frames_per_step));
       describe(f);
     }
     // ~3 playback frames of afterglow, expressed per animation frame so the glow lasts the
@@ -776,13 +827,15 @@ function describe(f){
     + `measured three-dimensional positions, seen from above and behind: two optic lobes, the `
     + `central brain between them, and the nerve cord extending away. At ${ms} milliseconds of `
     + `simulated time the firing rates are ${rates}.`);
-  const upto = Math.max(0, Math.min(f, FRAMES - 1));
-  race.setAttribute("aria-label",
-    `Firing rate of the two descending-neuron pools over 500 milliseconds. At ${ms} `
-    + `milliseconds the left pool is at ${L_HZ[upto].toFixed(1)} hertz and the right at `
-    + `${R_HZ[upto].toFixed(1)}. Turn index ${B.race.turn >= 0 ? "plus" : "minus"} `
-    + `${Math.abs(B.race.turn).toFixed(3)}, against a dead band of `
-    + `${B.race.dead_band.toFixed(3)}.`);
+  const stp = Math.min(Math.max(0, Math.floor(f / A.frames_per_step)), A.seeing.steps - 1);
+  arena.setAttribute("aria-label",
+    `A fly walking among eight scent sources in a ring, one for each question the bill was `
+    + `scored on. At step ${stp + 1} of ${A.seeing.steps} it is nearest the `
+    + `${A.seeing.nearest[stp]} source. `
+    + (stp >= A.reveal_step
+        ? `It has been shown who tabled the bill; the fly that was not shown is nearest `
+          + `${A.blind.nearest[stp]}.`
+        : "It has not yet been shown who tabled the bill."));
   seat.setAttribute("aria-label", !S.available
     ? "The chamber's first dimension is not available for this bundle."
     : `The ${S.chamber.length} people who held a seat in this Riigikogu, placed on the `
@@ -795,7 +848,7 @@ function describe(f){
           + `${S.n_like_fly} members who voted the same way on this one bill.`));
 }
 
-function layout(){ sizeBrain(); sizeRace(); sizeSeat(); drawBrain(); drawRace(0);
+function layout(){ sizeBrain(); sizeArena(); sizeSeat(); drawBrain(); drawArena(0);
   drawSeat(false); drawMeters(-1); describe(-1); }
 addEventListener("resize", layout);
 layout();

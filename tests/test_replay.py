@@ -77,129 +77,58 @@ def test_body_ids_are_real_integers(bundle):
 
 def test_the_readout_is_the_dna_family(bundle):
     """Not all 1,304 descending neurons. flybrain scores that readout at d' -1.70 on this
-    connectome — significant with the wrong sign, because a whole-population average
-    tracks residual anatomical asymmetry rather than steering. The DNa family scores
-    4.21."""
-    assert bundle["race"]["dna_left"] == 16
-    assert bundle["race"]["dna_right"] == 16
+    connectome — significant with the wrong sign, because a whole-population average tracks
+    residual anatomical asymmetry rather than steering."""
     assert len(bundle["audit"]["dna_left_bodies"]) == 16
+    assert len(bundle["audit"]["dna_right_bodies"]) == 16
 
 
-def test_every_rubric_channel_is_present_with_a_confidence(bundle):
-    keys = [c["key"] for c in bundle["channels"]]
-    assert keys == [*rubric2.KEYS, "salience"]
-    for channel in bundle["channels"]:
-        assert -1.0 <= channel["score"] <= 1.0
-        assert 0.0 <= channel["confidence"] <= 1.0
+def test_both_senses_are_wired_in(bundle):
+    """Smell carries what the bill does; vision carries who tabled it. The scoring model
+    never sees the initiator, so the second sense adds information rather than laundering
+    the first."""
+    assert bundle["drive"]["orn_left"] > 0 and bundle["drive"]["orn_right"] > 0
+    assert "rootSide" in bundle["drive"]["laterality"]
+    assert bundle["audit"]["t4t5_cells"] > 10_000
+    assert bundle["audit"]["looming_cells"] > 0
+    assert bundle["vision"]["flow"] in (-1.0, 1.0)
 
 
-def test_drive_is_the_confidence_weighted_score(bundle):
-    """What the page draws as bar length has to be what went into the neurons."""
-    gain = next(c for c in bundle["channels"] if c["key"] == "salience")["drive"]
-    for channel in bundle["channels"]:
-        if channel["key"] == "salience":
-            continue
-        expected = channel["score"] * channel["confidence"] * gain
-        assert channel["drive"] == pytest.approx(expected, abs=1e-3)
+def test_the_two_flies_are_one_fly_until_the_reveal(bundle):
+    """The only difference between the arms is the procedural bit, and it arrives partway
+    through. If the paths differ before that, something else is leaking between them."""
+    a = bundle["arena"]
+    reveal = a["reveal_step"]
+    assert 0 < reveal < a["seeing"]["steps"]
+    for i in range(reveal):
+        assert a["blind"]["path"][i] == a["seeing"]["path"][i], f"diverged at step {i}"
+        assert a["blind"]["turn"][i] == a["seeing"]["turn"][i]
+    assert not any(a["blind"]["seeing"])
+    assert any(a["seeing"]["seeing"])
 
 
-def test_no_channel_was_defaulted_to_zero(bundle):
-    """A rubric failure that silently scores zeros produces a confident, plausible,
-    meaningless vote. An unscored bill is excluded, never bundled.
+def test_the_walk_actually_goes_somewhere(bundle):
+    """A fly that never leaves the middle has not chosen a pot; "nearest" would then be
+    decided by which way it happened to be drifting."""
+    import math
 
-    Note what this does *not* assert: a confidence of exactly 0.0 is a real answer, not a
-    missing one. Jev returns it when it genuinely cannot read a channel from the text, and
-    the confidence weighting then turns that channel's drive off, which is the intended
-    behaviour. `jev.py` raises on an *absent* confidence rather than defaulting it, so the
-    two cases cannot be confused upstream of here.
-    """
-    assert len(bundle["channels"]) == len(rubric2.KEYS) + 1
-    assert any(c["score"] != 0.0 for c in bundle["channels"])
-    assert any(c["confidence"] > 0.5 for c in bundle["channels"])
-    assert all(c["confidence"] is not None for c in bundle["channels"])
+    a = bundle["arena"]
+    for arm in ("blind", "seeing"):
+        reach = max(math.hypot(x, y) for x, y in a[arm]["path"])
+        assert reach > 0.3 * a["ring"], f"{arm} never left the centre ({reach:.2f})"
+        assert a[arm]["settled_on"] in bundle["arena"]["pots"] or a[arm]["escaped"]
 
 
-def test_an_unreadable_channel_drives_nothing(bundle):
-    """The whole reason Jev replaced the LLM rubric: a channel it cannot read must drive
-    the fly weakly rather than driving it with noise dressed as signal."""
-    for channel in bundle["channels"]:
-        if channel["key"] != "salience" and channel["confidence"] == 0.0:
-            assert channel["drive"] == 0.0
+def test_every_pot_is_a_rubric_channel(bundle):
+    assert set(bundle["arena"]["pots"]) == set(rubric2.KEYS)
+    assert set(bundle["arena"]["bearings"]) == set(rubric2.KEYS)
+    assert all(v > 0 for v in bundle["arena"]["pots"].values())
 
 
-def test_the_wavering_was_measured(bundle):
-    """SNR is below 1, so a single verdict is not the whole truth about this bill and the
-    bundle has to carry the distribution rather than just the point estimate."""
-    w = bundle["wavering"]
-    assert w["seeds"] > 1
-    assert len(w["runs"]) == w["seeds"] - 1
-    assert sum(w["tally"].values()) == w["seeds"] - 1
-    assert all(r["code"] in FLY_STATES for r in w["runs"])
-    assert w["turn_max"] >= w["turn_min"]
-
-
-def test_the_verdict_is_one_of_the_three_states_the_fly_can_emit(bundle):
-    assert bundle["verdict"]["code"] in FLY_STATES
-
-
-def test_the_dead_band_came_from_the_brain_not_the_chamber(bundle):
-    assert bundle["race"]["dead_band"] > 0
-    supports = bundle["verdict"]["supports_bill"]
-    turn, band = bundle["race"]["turn"], bundle["race"]["dead_band"]
-    if supports is None:
-        assert abs(turn) <= band
-    else:
-        assert abs(turn) > band
-        assert supports == (turn > 0)
-
-
-def test_the_baseline_bias_was_measured_and_subtracted(bundle):
-    """A blank bill turns this fly on its own; leaving that in would bias every verdict."""
-    race = bundle["race"]
-    assert race["baseline_bias"] != 0.0
-    assert race["turn"] == pytest.approx(race["raw_turn"] - race["baseline_bias"], abs=1e-4)
-
-
-def test_the_race_is_a_full_length_series(bundle):
-    race = bundle["race"]
-    frames = bundle["sim"]["frames"]
-    assert len(race["left_hz"]) == len(race["right_hz"]) == frames
-
-
-def test_the_published_engine_was_used(bundle):
-    """Karbes no longer carries its own kernel. The one it had implemented the synapse as
-    an instantaneous voltage step, a documented failure mode of this model, and every
-    dynamical conclusion drawn from it described that bug."""
-    assert "mlx-lif-engine" in bundle["sim"]["engine"]
-
-
-def test_the_network_is_sparse_not_saturated(bundle):
-    """The published model rests at 0 Hz and responds sparsely. Our own kernel self-ignited
-    to 22 Hz on background drive alone; if this climbs back there, the engine changed."""
-    assert 0.5 < bundle["sim"]["mean_rate_hz"] < 12.0
-
-
-def test_the_drive_is_lateralised(bundle):
-    """A bilaterally symmetric stimulus cannot move a left-minus-right readout."""
-    drive = bundle["drive"]
-    assert drive["orn_left"] > 0 and drive["orn_right"] > 0
-    assert "rootSide" in drive["laterality"]
-
-
-def test_the_raster_is_frame_aligned_and_in_range(bundle, raster):
-    assert len(raster) == bundle["sim"]["frames"]
-    somas = bundle["atlas"]["somas"]
-    for frame in raster:
-        assert frame.max(initial=0) < somas
-        # Deduplicated per frame: the page asks whether a cell fired, not how often.
-        assert len(np.unique(frame)) == len(frame)
-
-
-def test_the_brain_actually_fires(bundle, raster):
-    """A bundle of near-silence is not a replay of anything. Guards against a
-    weight scale or a drive that quietly stopped reaching the network."""
-    assert sum(len(f) for f in raster) > 100
-    assert bundle["sim"]["total_spikes"] > 0
+def test_both_arms_emit_a_real_vote(bundle):
+    v = bundle["verdict"]
+    assert v["blind"] in FLY_STATES and v["seeing"] in FLY_STATES
+    assert v["flipped"] == (v["blind"] != v["seeing"])
 
 
 def test_group_rates_are_probed_not_derived_from_the_raster(bundle):
@@ -220,12 +149,13 @@ def test_group_rates_are_probed_not_derived_from_the_raster(bundle):
         assert 0.1 < peak < 30.0, f"{group} peaks at {peak} Hz"
 
 
-def test_both_descending_pools_actually_fire(bundle):
-    """A silent readout still produces a verdict — "inside the dead band" — and a plausible
-    number beside it, so nothing downstream looks wrong."""
-    race = bundle["race"]
-    assert race["left_spikes"] > 0, "left DNa pool never fired"
-    assert race["right_spikes"] > 0, "right DNa pool never fired"
+def test_the_fly_actually_turns(bundle):
+    """A walk whose turn index never moves is a fly being carried, not steering. That is
+    what a silently broken readout looks like from here: the path still exists and the
+    verdict still prints."""
+    turns = bundle["arena"]["seeing"]["turn"]
+    assert any(t != 0.0 for t in turns), "the readout never moved"
+    assert max(turns) != min(turns), "the turn index is constant"
 
 
 def test_the_bundle_fits_the_page_budget(bundle):

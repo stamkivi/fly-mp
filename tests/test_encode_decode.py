@@ -46,6 +46,10 @@ def pops() -> Populations:
         dna_right=np.array([1], dtype=np.int64),
         orn_left=np.array(sorted(left), dtype=np.int64),
         orn_right=np.array(sorted(right), dtype=np.int64),
+        t4t5_left=np.array([], dtype=np.int64),
+        t4t5_right=np.array([], dtype=np.int64),
+        looming=np.array([], dtype=np.int64),
+        giant_fibre=np.array([], dtype=np.int64),
         types={},
     )
 

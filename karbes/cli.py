@@ -138,6 +138,22 @@ def _replay(args: argparse.Namespace) -> int:
     if not calibration.exists():
         raise SystemExit(f"no {calibration}; run `karbes calibrate` first")
     cal = json.loads(calibration.read_text(encoding="utf-8"))
+    escape = cal.get("escape_baseline", {}).get("mean")
+    if escape is None:
+        from karbes import vision
+
+        escape = vision.escape_baseline(pops, engine)["mean"]
+        cal["escape_baseline"] = {"mean": escape}
+        calibration.write_text(json.dumps(cal, indent=1), encoding="utf-8")
+
+    from karbes import arena as _arena
+
+    arena_bias = cal.get("arena_turn_baseline")
+    if arena_bias is None:
+        arena_bias = _arena.turn_baseline(pops, engine)
+        cal["arena_turn_baseline"] = arena_bias
+        calibration.write_text(json.dumps(cal, indent=1), encoding="utf-8")
+        log.info("arena turn baseline %.4f", arena_bias)
 
     bundle = replay.build(
         replay.Inputs(
@@ -149,10 +165,9 @@ def _replay(args: argparse.Namespace) -> int:
             atlas=soma,
             space=space,
             vm=vm,
-            bias=cal["baseline_bias"],
-            dead_band=cal["dead_band"],
+            bias=arena_bias,
+            escape_baseline=escape,
             seed=args.seed,
-            seeds=args.seeds,
         )
     )
     doc, blob = bundle.write(RUNS / "replay")
@@ -167,11 +182,11 @@ def _replay(args: argparse.Namespace) -> int:
     v = bundle.doc["verdict"]
     print(f"\nbill      {bill.title[:72]}")
     print(f"chamber   {'advances' if v['chamber_advances'] else 'rejects'} the bill")
-    print(
-        f"Karbes    {v['code']}  (turn {bundle.doc['race']['turn']:+.4f}, "
-        f"dead band {cal['dead_band']:.4f})"
-    )
-    print(f"agrees    {v['agrees_with_chamber']}")
+    a = bundle.doc["arena"]
+    print(f"blind     walks to {a['blind']['settled_on']}  -> {v['blind']}")
+    print(f"seeing    walks to {a['seeing']['settled_on']}  -> {v['seeing']}"
+          + ("   *** FLIPPED ***" if v["flipped"] else ""))
+    print(f"chamber   {'advances' if v['chamber_advances'] else 'rejects'} the bill")
     print(f"\n{doc} ({doc.stat().st_size:,} B)")
     print(f"{blob} ({blob.stat().st_size:,} B)")
     print(f"{html} ({html.stat().st_size:,} B)")
@@ -218,9 +233,6 @@ def main() -> int:
     p = sub.add_parser("replay", help="Stage 2b — build one bill's replay bundle")
     p.add_argument("--bill", help="draft UUID; defaults to the pre-registered pick")
     p.add_argument("--seed", type=int, default=0, help="input phase; the fly wavers with it")
-    p.add_argument(
-        "--seeds", type=int, default=8, help="input phases to re-run, to measure the wavering"
-    )
     p.set_defaults(func=_replay)
 
     for name, help_text in [

@@ -26,54 +26,50 @@ TEMPLATE = Path("page/template.html")
 
 def caveats(bundle: dict, calibration: dict) -> str:
     """The paragraph that keeps the page honest, with live numbers in it."""
-    fs = calibration["full_scale"]
-    band = bundle["race"]["dead_band"]
-    bias = bundle["race"]["baseline_bias"]
-    n = calibration["seeds"]
-    resolved = calibration.get("channels_resolved_above_noise", [])
+    a = bundle["arena"]
     frac = bundle["atlas"]["sampled_fraction"]
     parts = [
         (
-            "<b>The input/output mapping is engineered, not discovered.</b> There are no "
-            "&ldquo;aye&rdquo; neurons in a fly. Nine questions about the bill were assigned "
-            "to sixteen olfactory receptor populations by an arbitrary, fixed pairing, and "
-            "the sign of each score decides which antenna is driven harder. The vote is "
-            "read off the DNa descending neurons because those are the cells whose "
-            "left-right firing difference sets how a walking fly turns. Nothing here is a "
-            "claim about what the fly experiences &mdash; it steers, it does not vote."
+            "<b>The mapping is engineered, not discovered.</b> There are no &ldquo;aye&rdquo; "
+            "neurons in a fly, and no fly has an opinion about who tabled a bill. Nine "
+            "questions about the text were assigned to sixteen olfactory receptor "
+            "populations by an arbitrary, fixed pairing; which eye the procedural signal "
+            "arrives on was fixed the same way. The vote is read from the DNa descending "
+            "neurons because those are the cells whose left-right firing difference sets "
+            "how a walking fly turns. It steers; it does not vote."
         ),
         (
-            "<b>The fly does respond to a lateralised bill.</b> Driving every channel to one "
-            f"extreme against the other moves the turn index by {fs['difference']:+.3f} "
-            f"&plusmn;&nbsp;{fs['se']:.3f} (t&nbsp;=&nbsp;{fs['t']:+.1f}, "
-            f"d&prime;&nbsp;=&nbsp;{fs['d_prime']:+.2f}) over {n} input phases. That is the "
-            "instrument working. <b>A single channel is a different matter:</b> it drives two "
-            "glomeruli of sixteen, so its effect is about an eighth of that, and at "
-            f"{n} phases {len(resolved)} of the nine channels separate from the run-to-run "
-            "spread. That is a statement about how many runs were done, not a null result, "
-            "and it is why a single bill's verdict should not be read as an opinion."
+            "<b>The two senses carry different questions, and that is the finding.</b> Smell "
+            "is what the bill does &mdash; the scoring model never sees the initiator. Vision "
+            "is who tabled it, which on 565 contested votes calls <b>94.2%</b> of outcomes by "
+            "itself: government bills advance 99.3% of the time, members' bills 10.4%. The "
+            "two are largely independent (the topic channels correlate with that bit at only "
+            "r&nbsp;=&nbsp;0.10&ndash;0.44), so substance and procedure disagree often."
         ),
         (
-            f"<b>The left/right bias is subtracted, not ignored.</b> A bill that says nothing "
-            f"still produces a turn index of {bias:+.3f}, because the wiring is not "
-            "perfectly symmetric and the two antennae do not carry equal numbers of receptor "
-            "neurons. That baseline is measured on a blank bill and removed. A turn closer "
-            f"than {band:.3f} &mdash; one standard deviation of what this network does on a "
-            "blank bill &mdash; counts as declining to vote, and was never tuned to make the "
-            "voting record agree with anybody."
+            "<b>Both flies are the same fly until the reveal.</b> They share a seed, a brain "
+            f"and an odour field, and run bit-identically for {a['reveal_step']} steps. Then "
+            "one of them is shown who tabled the bill and the paths separate. Nothing else "
+            "differs between them."
+        ),
+        (
+            "<b>The loop is the amplifier, not a gain knob.</b> A single whiff of a typical "
+            "bill uses about 2% of the encoder's range and cannot beat the network's own "
+            "run-to-run spread. Walking fixes that the way a real fly does: a small bias, fed "
+            "back through a gradient that changes as the animal turns, commits over many "
+            "steps."
         ),
         (
             "<b>The brain on screen is real; its density is not.</b> Every soma sits at its "
             "measured MaleCNS coordinate, but the sample is deliberately uneven: "
-            + ", ".join(f"{k} {v * 100:.0f}%" for k, v in frac.items())
-            + ". Optic-lobe cells are two thirds of the brain, and sampling them evenly "
-            "would draw two enormous eyes and hide the cells the vote is read from."
+            + ", ".join(f"{k} {x * 100:.0f}%" for k, x in frac.items())
+            + ". Photoreceptors are not driven at all &mdash; all 6,098 are histaminergic and "
+            "carry no outgoing edges in this connectome, so vision enters at the motion "
+            "detectors instead."
         ),
         (
-            "<b>One bill is not a voting record.</b> This is a single bill, simulated once, "
-            "with the fly's position marked where the MPs who voted the same way happen to "
-            "sit. Whether a rewired fly would land somewhere else &mdash; the actual "
-            "experiment &mdash; is not answered here."
+            "<b>One bill is not a voting record.</b> Whether a rewired fly would land "
+            "somewhere else &mdash; the actual experiment &mdash; is not answered here."
         ),
     ]
     return json.dumps("<br><br>".join(parts))
@@ -81,23 +77,18 @@ def caveats(bundle: dict, calibration: dict) -> str:
 
 def finding(calibration: dict) -> str:
     """The one-paragraph result, at the top, where a reader cannot miss it."""
-    fs = calibration["full_scale"]
-    n = calibration["seeds"]
-    resolved = calibration.get("channels_resolved_above_noise", [])
     return json.dumps(
-        "<b>What this is, stated before you watch it:</b> a spiking simulation of a real fly "
-        "brain, with a real bill turned into a smell that arrives more strongly on one "
-        "antenna than the other, and the vote read from the descending neurons that steer a "
-        "walking fly. The brain is silent until the bill arrives and then fires sparsely, "
-        "which is what this model is supposed to do."
+        "<b>What you are about to watch.</b> Eight pots stand in a ring, one for each "
+        "question the bill was scored on, each smelling as strongly as that question "
+        "applies. A simulated fly brain &mdash; 166,700 neurons, 24.5 million connections, "
+        "real cell positions &mdash; walks the fly toward whichever question pulls hardest. "
+        "Where it ends up is its vote."
         "<br><br>"
-        "<b>The instrument works, and its limits are worth knowing.</b> Swung from one "
-        f"extreme to the other the bill moves the fly's turn by {fs['difference']:+.3f} "
-        f"&plusmn;&nbsp;{fs['se']:.3f} (d&prime;&nbsp;=&nbsp;{fs['d_prime']:+.2f}). But any "
-        "single bill pushes far less hard than that, and at "
-        f"{n} input phases {len(resolved)} of the nine topic channels can be told apart from "
-        "the network's own run-to-run spread. So watch the fly decide, and treat the verdict "
-        "as one noisy draw rather than as an opinion about the bill."
+        "<b>Then it is told who tabled the bill,</b> through a second sense: one-sided "
+        "visual motion, the way a fly sees the world sweep past. That one bit predicts "
+        "<b>94%</b> of real Riigikogu outcomes on its own, where the bill's actual content "
+        "predicts far less. So the page runs two flies that are identical in every respect "
+        "until the moment one of them sees it. Watch where they come apart."
     )
 
 

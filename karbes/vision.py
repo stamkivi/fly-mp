@@ -49,10 +49,19 @@ FLOW_PEAK_HZ = 46.0
 #: rare, and the giant fibre goes from 0 to 117 spikes between 0 and 5 Hz of drive — there
 #: is no gentle part of this curve to sit on.
 LOOM_THRESHOLD = 0.85
-LOOM_PEAK_HZ = 40.0
+LOOM_PEAK_HZ = 120.0
 
-#: Spikes from the two DNp01 cells above which the fly is taken to have bolted.
-ESCAPE_SPIKES = 60
+#: Spikes the two DNp01 cells must exceed *above the optic-flow baseline* before the fly is
+#: taken to have bolted.
+#:
+#: **The threshold has to be flow-relative, and this was got wrong once.** Measured over 1 s:
+#: symmetric flow with no looming gives 3.2 spikes, but full one-sided flow with no looming
+#: gives **376** — strong one-sided visual motion is itself a threat cue, and it reaches the
+#: giant fibre through the same pathway looming does. Adding 40 Hz of looming on top takes it
+#: to 498. An absolute threshold of 60 therefore fired on 100% of bills, because every bill
+#: has a definite initiator and so produces full one-sided flow. What counts as alarm is the
+#: excess over what the procedural signal alone already causes.
+ESCAPE_MARGIN = 80
 
 
 def looming_hz(salience: float) -> float:
@@ -96,7 +105,38 @@ def stimulus(
     return targets[order].astype(np.int32), rates[order]
 
 
-def bolted(counts: np.ndarray, giant_fibre: np.ndarray) -> tuple[bool, int]:
-    """Did the giant fibre fire hard enough that the fly left the tabulaator?"""
+def bolted(
+    counts: np.ndarray, giant_fibre: np.ndarray, baseline: float = 0.0
+) -> tuple[bool, int]:
+    """Did the giant fibre fire hard enough, over baseline, that the fly left?
+
+    `baseline` is the DNp01 count the optic flow alone produces, measured by
+    `karbes calibrate`. Without it this reduces to an absolute threshold, which the flow
+    clears on every bill.
+    """
     spikes = int(counts[giant_fibre].sum())
-    return spikes >= ESCAPE_SPIKES, spikes
+    return spikes >= baseline + ESCAPE_MARGIN, spikes
+
+
+def escape_baseline(pops, engine, seeds: int = 6, duration: float = 1.0) -> dict:
+    """DNp01 output under full one-sided flow and no looming: the alarm's zero point."""
+    from karbes import engine as E
+
+    class _Government:
+        government_bill = True
+
+    targets, rates = stimulus(_Government(), 0.0, pops, engine)
+    giant = engine.positions(pops.giant_fibre)
+    spikes = [
+        int(E.run(engine, targets, rates, seed=s, duration=duration).counts[giant].sum())
+        for s in range(seeds)
+    ]
+    arr = np.array(spikes, dtype=float)
+    return {
+        "seeds": seeds,
+        "duration_s": duration,
+        "mean": round(float(arr.mean()), 2),
+        "sd": round(float(arr.std(ddof=1)), 2) if seeds > 1 else 0.0,
+        "margin": ESCAPE_MARGIN,
+        "note": "full one-sided optic flow, no looming; alarm is the excess over this",
+    }
