@@ -31,6 +31,11 @@ canvas{display:block;width:100%;height:100%}
 .line .txt{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .line.heckle .txt{color:#FFB38A;font-style:italic}.line.chair .txt{color:var(--mute)}
 .line.bell .txt{color:#FFD36E;font-weight:600}
+.coach{position:absolute;z-index:6;max-width:300px;background:rgba(233,238,246,.96);color:#1B1A18;border-radius:8px;
+  padding:10px 12px;font-size:12.5px;line-height:1.45;box-shadow:0 10px 30px -10px rgba(0,0,0,.7);opacity:0;transform:translateY(6px);
+  transition:opacity .35s,transform .35s;pointer-events:none}
+.coach.on{opacity:1;transform:none}.coach b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#6E6A63;margin-bottom:3px}
+.coach:after{content:"";position:absolute;left:18px;bottom:-7px;border:7px solid transparent;border-top-color:rgba(233,238,246,.96);border-bottom:0}
 .bellmark{position:absolute;right:16px;top:14px;z-index:3;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
   color:#FFD36E;opacity:0;transition:opacity .15s;text-transform:uppercase}
 .bellmark.on{opacity:1}
@@ -92,6 +97,8 @@ canvas{display:block;width:100%;height:100%}
     <div class="panel" id="brainpanel">
       <div class="tag">Its brain — 166,700 neurons, live</div>
       <canvas id="brain"></canvas>
+      <div class="coach" id="coach-wave" style="left:24px;top:40%"><b>the wave</b>Every speech starts the brain from silence. Antennal lobe at 5 ms, mushroom body at 15 ms — shown here fourteen times slower than life.</div>
+      <div class="coach" id="coach-bell" style="right:24px;top:40%"><b>the bell</b>Something came at the chair: the giant fibre fired — the fly's escape reflex — and it threw itself away from that side of the hall. That is the fly ringing the bell.</div>
       <div class="memo" id="memo"><div class="tag" style="position:static;margin-bottom:6px">What the page remembers, and the brain cannot</div><div id="memobody"></div></div>
       <div class="regions" id="regions"></div>
     </div>
@@ -310,7 +317,7 @@ function onEvent(i){
   line(ev, ev.kind);
   if (ev.seat) lit[ev.seat] = {t: performance.now(), kind: ev.kind};
   if (ev.kind==="vote" || ev.kind==="presence") for (const s of D.seats) lit[s.place] = {t: performance.now(), kind: "vote"};
-  if (ev.gf >= D.bell_gf){ ding(); flash = 1; jolt = {x: ev.side==="L" ? 16 : ev.side==="R" ? -16 : 0, y: -8, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
+  if (ev.gf >= D.bell_gf){ ding(); coach("bell"); flash = 1; jolt = {x: ev.side==="L" ? 16 : ev.side==="R" ? -16 : 0, y: -8, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
     const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">FLY</span><span class="txt">rings the bell — giant fibre ×${ev.gf}, ${ev.side==="L"?"throws itself right":ev.side==="R"?"throws itself left":"flinches"}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
   remember(i);
   lastEv = i;
@@ -342,6 +349,11 @@ function renderMemo(){
   document.getElementById("memobody").innerHTML = h;
 }
 
+/* ---------- one-time captions ---------- */
+const coached = {};
+function coach(what){ if (coached[what]) return; coached[what] = true; const el = document.getElementById("coach-"+what); if (!el) return;
+  setTimeout(() => { el.classList.add("on"); setTimeout(() => el.classList.remove("on"), what==="wave" ? 5200 : 6500); }, what==="wave" ? 900 : 150); }
+
 /* ---------- sound ---------- */
 let AC = null, muted = false;
 function ding(){ if (muted) return; try { AC = AC || new (window.AudioContext||window.webkitAudioContext)(); const t = AC.currentTime;
@@ -355,7 +367,7 @@ function step(ts){
   if (playing){ acc += (ts - lastT)/1000 * FPS * speed; while (acc >= 1){ frame++; acc -= 1; } if (frame >= N){ frame = N-1; playing = false; finish(); } }
   lastT = ts;
   const evi = D.frame_event[frame];
-  if (evi >= 0 && evi !== curEv){ curEv = evi; onEvent(evi); if (onsetOf[evi] !== undefined) wave = {t: performance.now(), k: onsetOf[evi]}; }
+  if (evi >= 0 && evi !== curEv){ curEv = evi; onEvent(evi); if (onsetOf[evi] !== undefined){ wave = {t: performance.now(), k: onsetOf[evi]}; coach("wave"); } }
   drawBrain(frame, acc);
   drawHall();
   for (const g of D.atlas.groups){ const el = document.getElementById("hz-"+g); if (el) el.textContent = (D.group_hz[g][frame]||0).toFixed(1); }
