@@ -104,7 +104,9 @@ def build(bundle: dict, raster: bytes, atlas: Atlas, calibration: dict) -> str:
     # The bundle rides in a `application/json` script tag, so only `</script>` and a lone
     # `<` can break out of it.
     doc = json.dumps(bundle, ensure_ascii=False).replace("</", "<\\/")
+    fly = Path("page/assets/fly.png")
     for token, value in (
+        ("__FLY_B64__", base64.b64encode(fly.read_bytes()).decode()),
         ("__BUNDLE_JSON__", doc),
         ("__ATLAS_B64__", base64.b64encode(atlas.web_bytes()).decode()),
         ("__RASTER_B64__", base64.b64encode(raster).decode()),
