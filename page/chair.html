@@ -223,7 +223,7 @@ function sizeHall(){
   const r = hall.getBoundingClientRect(); HW = Math.round(r.width*dpr); HH = Math.round(r.height*dpr); hall.width = HW; hall.height = HH;
   seatPos = {};
   // two blocks in perspective from the Speaker's desk: the near row wide and large, the far row narrow and small
-  const narrow = HW < 620*dpr; const top = HH*(narrow?0.40:0.30), bot = HH*(narrow?0.74:0.76), aisle = HW*0.05;
+  const narrow = HW < 620*dpr; const top = HH*(narrow?0.44:0.38), bot = HH*(narrow?0.74:0.77), aisle = HW*0.05;
   for (const s of D.seats){
     const depth = s.row/(rows-1);
     const y = bot - Math.pow(depth, 0.85)*(bot-top);
@@ -241,19 +241,19 @@ function drawHall(){
   hctx.fillStyle = wall; hctx.fillRect(0,0,HW,HH);
   // the far wall from the photograph: three arches, the door, and the clock above it
   hctx.fillStyle = "rgba(255,255,255,.04)";
-  for (const cx of [0.16, 0.84]){ hctx.beginPath(); hctx.ellipse(HW*cx, HH*0.20, HW*0.075, HH*0.10, 0, Math.PI, 0); hctx.fill(); hctx.fillRect(HW*cx-HW*0.075, HH*0.20, HW*0.15, HH*0.07); }
-  hctx.fillStyle = "#0B1230"; hctx.fillRect(HW*0.463, HH*0.15, HW*0.074, HH*0.12);           // the door
-  hctx.fillStyle = "rgba(255,255,255,.06)"; hctx.fillRect(HW*0.455, HH*0.145, HW*0.09, 3*dpr);
-  const cr = HW*0.022, ccx = HW*0.5, ccy = HH*0.105;                                             // the clock
+  for (const cx of [0.16, 0.84]){ hctx.beginPath(); hctx.ellipse(HW*cx, HH*0.27, HW*0.075, HH*0.09, 0, Math.PI, 0); hctx.fill(); hctx.fillRect(HW*cx-HW*0.075, HH*0.27, HW*0.15, HH*0.07); }
+  hctx.fillStyle = "#0B1230"; hctx.fillRect(HW*0.463, HH*0.265, HW*0.074, HH*0.09);           // the door
+  hctx.fillStyle = "rgba(255,255,255,.06)"; hctx.fillRect(HW*0.455, HH*0.26, HW*0.09, 3*dpr);
+  const cr = HW*0.021, ccx = HW*0.5, ccy = HH*0.228;                                             // the clock
   hctx.fillStyle = "#F2EFE6"; hctx.beginPath(); hctx.arc(ccx, ccy, cr, 0, 6.2832); hctx.fill();
   hctx.strokeStyle = "#5B4A2E"; hctx.lineWidth = 1.5*dpr; hctx.stroke();
   const ev = D.events[Math.max(0,curEv)]; if (ev){ const d = new Date(t0 + ev.t*1000 + 3*3600*1000); const h = d.getUTCHours()%12 + d.getUTCMinutes()/60, m = d.getUTCMinutes();
     hctx.strokeStyle = "#1B1A18"; hctx.lineCap = "round"; hctx.lineWidth = 2*dpr; hctx.beginPath(); hctx.moveTo(ccx, ccy); hctx.lineTo(ccx + Math.sin(h/12*6.2832)*cr*0.55, ccy - Math.cos(h/12*6.2832)*cr*0.55); hctx.stroke();
     hctx.lineWidth = 1.3*dpr; hctx.beginPath(); hctx.moveTo(ccx, ccy); hctx.lineTo(ccx + Math.sin(m/60*6.2832)*cr*0.82, ccy - Math.cos(m/60*6.2832)*cr*0.82); hctx.stroke(); }
   // the floor and the aisle carpet
-  const floor = hctx.createLinearGradient(0,HH*0.28,0,HH*0.84); floor.addColorStop(0,"rgba(120,90,60,.10)"); floor.addColorStop(1,"rgba(120,90,60,.28)");
-  hctx.fillStyle = floor; hctx.fillRect(0, HH*0.28, HW, HH*0.56);
-  hctx.fillStyle = "rgba(170,60,50,.22)"; hctx.beginPath(); hctx.moveTo(HW*0.478, HH*0.28); hctx.lineTo(HW*0.522, HH*0.28); hctx.lineTo(HW*0.56, HH*0.84); hctx.lineTo(HW*0.44, HH*0.84); hctx.closePath(); hctx.fill();
+  const floor = hctx.createLinearGradient(0,HH*0.35,0,HH*0.84); floor.addColorStop(0,"rgba(120,90,60,.10)"); floor.addColorStop(1,"rgba(120,90,60,.28)");
+  hctx.fillStyle = floor; hctx.fillRect(0, HH*0.35, HW, HH*0.49);
+  hctx.fillStyle = "rgba(170,60,50,.22)"; hctx.beginPath(); hctx.moveTo(HW*0.478, HH*0.35); hctx.lineTo(HW*0.522, HH*0.35); hctx.lineTo(HW*0.56, HH*0.84); hctx.lineTo(HW*0.44, HH*0.84); hctx.closePath(); hctx.fill();
   const order = D.seats.slice().sort((a,b)=>b.row-a.row), now = performance.now();
   for (const s of order){
     const p = seatPos[s.place]; if (!p) continue;
