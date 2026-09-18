@@ -343,69 +343,98 @@ function arenaScale(){
   return Math.min(AW, AH) / (2 * far * 1.16);
 }
 
-/* A fly seen from above, drawn to roughly real proportions: head about a fifth of the
-   body, thorax a third, abdomen the rest, wings overhanging past the tip. The earlier
-   version was a dart with two blobs and read as a cursor, not an animal. */
-function drawFly(cx, cy, heading, tint, scale, alpha){
-  const S = scale, dark = "#2A2724";
+/* Drosophila from above.
+   The proportions that make it read as this animal rather than a beetle: the wings are
+   longer than the whole body and overhang well past the abdomen, held in a shallow V; the
+   body is compact and dark, with the abdomen tapering to a point; the head is small and
+   the eyes are a dark red rim, not headlights. An earlier version had a fat orange body,
+   stubby wings and two big eyes, and read as a ladybird. */
+function drawFly(cx, cy, heading, accent, scale, alpha){
+  const S = scale;
   actx.save();
   actx.globalAlpha = alpha === undefined ? 1 : alpha;
   actx.translate(cx, cy); actx.rotate(-heading);
 
-  // wings: translucent, swept back, with a hint of vein
+  // wings first, behind the body: long, translucent, swept back past the abdomen
   for (const sign of [-1, 1]){
-    actx.save(); actx.rotate(sign * 0.42); actx.translate(-1.1*S, 0);
-    const wg = actx.createLinearGradient(0, 0, -4.6*S, 0);
-    wg.addColorStop(0, "rgba(206,214,222,.62)");
-    wg.addColorStop(1, "rgba(206,214,222,.16)");
+    actx.save();
+    actx.translate(-0.2*S, sign * 0.55*S);
+    actx.rotate(sign * 0.46);
+    const wg = actx.createLinearGradient(0, 0, -7.4*S, 0);
+    wg.addColorStop(0,   "rgba(196,208,219,.80)");
+    wg.addColorStop(.55, "rgba(202,213,223,.52)");
+    wg.addColorStop(1,   "rgba(210,220,229,.16)");
     actx.fillStyle = wg;
-    actx.beginPath(); actx.ellipse(-2.3*S, sign*1.5*S, 3.5*S, 1.25*S, sign*0.12, 0, 7); actx.fill();
-    actx.strokeStyle = "rgba(150,162,172,.45)"; actx.lineWidth = Math.max(.5, .12*S);
-    actx.beginPath(); actx.moveTo(-.4*S, sign*.9*S); actx.lineTo(-4.6*S, sign*1.9*S); actx.stroke();
+    actx.beginPath();
+    actx.ellipse(-3.8*S, sign*1.35*S, 4.1*S, 1.28*S, sign*0.05, 0, 7);
+    actx.fill();
+    actx.strokeStyle = "rgba(150,164,178,.42)";
+    actx.lineWidth = Math.max(.35, .07*S);
+    for (const v of [0.55, 1.35, 2.1]){
+      actx.beginPath();
+      actx.moveTo(-0.4*S, sign*0.7*S); actx.lineTo(-7.2*S, sign*v*S); actx.stroke();
+    }
     actx.restore();
   }
 
-  // legs
-  actx.strokeStyle = dark; actx.lineWidth = Math.max(.8, .26*S); actx.lineCap = "round";
+  // legs: thin, splayed forward and back
+  actx.strokeStyle = "rgba(34,30,27,.78)";
+  actx.lineWidth = Math.max(.4, .085*S); actx.lineCap = "round";
   for (const sign of [-1, 1]){
-    for (const [hx, kx, ky, tx, ty] of [[1.0, .2, 2.0, -1.0, 3.1],
-                                        [0.2, -.9, 2.1, -2.2, 2.9],
-                                        [-0.5, -1.9, 1.9, -3.4, 2.4]]){
+    for (const [hx, kx, ky, tx, ty] of [[0.9, 1.45, 1.15, 2.0, 1.75],
+                                        [0.25, 0.25, 1.35, -0.25, 1.95],
+                                        [-0.35, -1.25, 1.3, -2.15, 1.7]]){
       actx.beginPath();
-      actx.moveTo(hx*S, sign*.7*S);
+      actx.moveTo(hx*S, sign*0.55*S);
       actx.lineTo(kx*S, sign*ky*S);
       actx.lineTo(tx*S, sign*ty*S);
       actx.stroke();
     }
   }
 
-  // abdomen, tapered, with segment bands
-  const ab = actx.createLinearGradient(-5.4*S, 0, -1*S, 0);
-  ab.addColorStop(0, tint); ab.addColorStop(1, dark);
+  // abdomen: tapered, banded, dark with a warm cast
+  const ab = actx.createLinearGradient(-4.6*S, 0, -0.8*S, 0);
+  ab.addColorStop(0, "#241F1C"); ab.addColorStop(1, "#4A3A2E");
   actx.fillStyle = ab;
-  actx.beginPath(); actx.ellipse(-3.0*S, 0, 2.5*S, 1.45*S, 0, 0, 7); actx.fill();
-  actx.strokeStyle = "rgba(255,255,255,.18)"; actx.lineWidth = Math.max(.5, .2*S);
-  for (const bx of [-2.1, -3.0, -3.9]){
-    actx.beginPath(); actx.ellipse(bx*S, 0, .2*S, 1.28*S, 0, 0, 7); actx.stroke();
+  actx.beginPath();
+  actx.moveTo(-0.9*S, -1.15*S);
+  actx.quadraticCurveTo(-4.9*S, -0.95*S, -5.0*S, 0);
+  actx.quadraticCurveTo(-4.9*S, 0.95*S, -0.9*S, 1.15*S);
+  actx.closePath(); actx.fill();
+  actx.strokeStyle = "rgba(0,0,0,.35)"; actx.lineWidth = Math.max(.4, .12*S);
+  for (const bx of [-1.9, -2.8, -3.7]){
+    actx.beginPath();
+    actx.moveTo(bx*S, -0.95*S); actx.lineTo(bx*S, 0.95*S); actx.stroke();
   }
 
   // thorax
-  actx.fillStyle = dark;
-  actx.beginPath(); actx.ellipse(-0.2*S, 0, 1.75*S, 1.5*S, 0, 0, 7); actx.fill();
-  actx.fillStyle = "rgba(255,255,255,.10)";
-  actx.beginPath(); actx.ellipse(-0.4*S, -.4*S, 1.1*S, .6*S, -.3, 0, 7); actx.fill();
+  actx.fillStyle = "#2B2623";
+  actx.beginPath(); actx.ellipse(0.25*S, 0, 1.5*S, 1.2*S, 0, 0, 7); actx.fill();
+  actx.fillStyle = "rgba(255,255,255,.07)";
+  actx.beginPath(); actx.ellipse(0.1*S, -0.35*S, 0.95*S, 0.4*S, -0.22, 0, 7); actx.fill();
 
-  // head and the two compound eyes
-  actx.fillStyle = dark;
-  actx.beginPath(); actx.arc(1.9*S, 0, 1.25*S, 0, 7); actx.fill();
-  actx.fillStyle = "#B4442A";
+  // head, with the eyes as a dark red rim rather than two lamps
+  actx.fillStyle = "#231E1B";
+  actx.beginPath(); actx.arc(1.75*S, 0, 0.95*S, 0, 7); actx.fill();
+  actx.fillStyle = "#7E2B1C";
   for (const sign of [-1, 1]){
-    actx.beginPath(); actx.ellipse(2.1*S, sign*.62*S, .95*S, .72*S, sign*.35, 0, 7); actx.fill();
+    actx.beginPath();
+    actx.ellipse(1.8*S, sign*0.52*S, 0.62*S, 0.44*S, sign*0.4, 0, 7);
+    actx.fill();
   }
-  actx.fillStyle = "rgba(255,255,255,.35)";
-  for (const sign of [-1, 1]){
-    actx.beginPath(); actx.ellipse(2.45*S, sign*.75*S, .26*S, .2*S, 0, 0, 7); actx.fill();
-  }
+
+  actx.restore();
+
+  // a soft tinted shadow under the body tells the two flies apart without painting either
+  actx.save();
+  actx.globalCompositeOperation = "destination-over";
+  actx.globalAlpha = (alpha === undefined ? 1 : alpha) * 0.42;
+  const sh = actx.createRadialGradient(cx, cy, 0, cx, cy, 4.2*S);
+  sh.addColorStop(0, accent);
+  sh.addColorStop(1, accent.replace(")", ", 0)").replace("#", "rgba(") === accent
+                     ? "rgba(255,255,255,0)" : "rgba(255,255,255,0)");
+  actx.fillStyle = sh;
+  actx.beginPath(); actx.ellipse(cx, cy, 4.2*S, 3.0*S, 0, 0, 7); actx.fill();
   actx.restore();
 }
 
@@ -519,14 +548,14 @@ function drawArena(step, sub){
       actx.fillStyle = "rgba(226,98,44,.7)";
       actx.font = `500 ${10.5*dpr}px "IBM Plex Mono",monospace`;
       actx.textAlign = "center";
-      actx.fillText("knocked off course", X(rp[0]), Y(rp[1]) + 26*dpr);
+      actx.fillText("knocked off course", X(rp[0]), Y(rp[1]) + 40*dpr);
       actx.textAlign = "left";
     }
     const bp = at("blind", Math.min(shown, nBlind - 1), sub);
-    drawFly(X(bp[0]), Y(bp[1]), bp[2], "#B6B0A6", 3.4*dpr, .62);
+    drawFly(X(bp[0]), Y(bp[1]), bp[2], "#9A958C", 3.2*dpr, .55);
   }
   const sp = at("seeing", shown, sub);
-  drawFly(X(sp[0]), Y(sp[1]), sp[2], revealed ? "#E2622C" : "#2E6E8E", 4.2*dpr);
+  drawFly(X(sp[0]), Y(sp[1]), sp[2], revealed ? "#E2622C" : "#2E6E8E", 3.9*dpr);
 
   // once both have stopped, name them where they stand rather than in a legend elsewhere
   if (shown >= nSeen - 1){
