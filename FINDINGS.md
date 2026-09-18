@@ -59,7 +59,7 @@ Holding out a whole party and refitting:
 
 | axis | held-out error | range of party positions |
 |---|---:|---:|
-| GAL-TAN (liberal–conservative) | **0.79** | 7.4 |
+| GAL-TAN (liberal–conservative) | **0.80** | 7.4 |
 | economic left–right | **1.74** | 4.1 |
 
 The chamber's dominant voting dimension carries 61% of the variance and correlates r = +0.92

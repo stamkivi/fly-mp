@@ -24,7 +24,7 @@ answer.
 **The two axes are not equally well measured, and the asymmetry is the finding.** The
 chamber's dominant voting dimension — 61% of the variance, and in this parliament the
 government/opposition split — correlates r = +0.92 with GAL-TAN and only -0.41 with the
-economic axis. Held out, GAL-TAN comes back to 0.79 on a 7.5-wide range of party positions;
+economic axis. Held out, GAL-TAN comes back to 0.80 on a 7.4-wide range of party positions;
 economic left-right to 1.74 on a range of 4.1. Roll-call votes in the XV Riigikogu carry
 cultural position sharply and economic position barely, so any picture drawn from them has
 a sharp vertical and a soft horizontal. Saying so is part of the result.

@@ -171,6 +171,8 @@ def copy(bundle: dict) -> dict[str, str]:
         "__SPACING__": _fmt(spacing),
         "__ERR_X__": _fmt(ex),
         "__ERR_Y__": _fmt(ey),
+        "__RANGE_X__": _fmt(bundle["axis_range"][0]),
+        "__RANGE_Y__": _fmt(bundle["axis_range"][1]),
         "__N_MEMBERS__": str(len(bundle["members"])),
         "__PARTIES_HIT__": html.escape(", ".join(sorted({f["nearest_party"] for f in rewired}))),
         "__AUC_REG__": _fmt(base.get("content + who tabled it", float("nan")), 3),
