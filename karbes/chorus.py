@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import shutil
 import time
 from dataclasses import asdict
@@ -120,6 +121,19 @@ def stance(ballots: list[dict], vm, inverted: dict[str, bool]):
 
 BASELINE = Path("runs/baseline.json")
 
+#: The one shuffled pack that is itself re-run under new input noise, so its reruns can be
+#: grouped with it.
+_BASE_RERUN = "rewired0"
+_RERUN = re.compile(r"^rewired\d+-phase\d+$")
+
+
+def _kind(name: str) -> str:
+    if name.startswith("karbes"):
+        return "real"
+    if _RERUN.match(name):
+        return "rewired_rerun"
+    return "rewired"
+
 
 def _split(
     records: dict[str, list[dict]], a: str, b: str, bills, scores, limit: int = 3
@@ -202,8 +216,11 @@ def place_all(
         flies.append(
             {
                 "name": name,
-                "kind": "real" if name.startswith("karbes") else "rewired",
-                "phase": name.startswith("karbes-phase"),
+                # Three kinds, and conflating any two of them corrupts a spread. A rerun of a
+                # *shuffle* is the same wiring twice, so counting it as another rewiring would
+                # drag the across-wiring spread down by exactly the quantity being tested.
+                "kind": _kind(name),
+                "phase": "-phase" in name,
                 "x": round(x, 3),
                 "y": round(y, 3),
                 "votes": len(ballots),
@@ -224,6 +241,12 @@ def place_all(
 
     real_pts = [(f["x"], f["y"]) for f in flies if f["kind"] == "real"]
     rewired_pts = [(f["x"], f["y"]) for f in flies if f["kind"] == "rewired"]
+    # One shuffled brain, re-run: is a rewiring an individual, or a fresh draw each time?
+    shuffle_rerun = [
+        (f["x"], f["y"])
+        for f in flies
+        if f["kind"] == "rewired_rerun" or f["name"] == _BASE_RERUN
+    ]
     within = spread(real_pts)
     across = spread(rewired_pts)
     p_value = _permutation(real_pts, rewired_pts)
@@ -262,6 +285,9 @@ def place_all(
         # could not be measured is absent, not zero.
         "permutation_p": p_value,
         "within_brain_spread": None if np.isnan(within) else round(within, 3),
+        "within_shuffle_spread": (
+            None if np.isnan(spread(shuffle_rerun)) else round(spread(shuffle_rerun), 3)
+        ),
         "across_wiring_spread": None if np.isnan(across) else round(across, 3),
         # What a regression gets from the same inputs. The fly is never fitted to the
         # outcome and these are, so the comparison flatters them — which is the point.

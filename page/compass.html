@@ -170,7 +170,7 @@ a{color:inherit}
       <p>__HEAD_VERDICT__</p>
       <p class="fine">They end up nearest <span class="num">__PARTIES_HIT__</span>. For scale,
          the average distance between two Estonian parties on this compass is
-         <span class="num">__SPACING__</span>.</p>
+         <span class="num">__SPACING__</span>. __SHUFFLE_RERUN__</p>
     </div></section>
 
     <section class="step" data-stage="5"><div class="card">
@@ -404,7 +404,7 @@ function draw(){
   const karbes = D.flies.find(f => f.name === "karbes");
   const title2 = f => "SHUFFLE " + String(f.name.replace("rewired","")).padStart(2,"0");
   const phases = D.flies.filter(f => f.kind === "real" && f.name !== "karbes");
-  const rewired = D.flies.filter(f => f.kind === "rewired");
+  const rewired = D.flies.filter(f => f.kind === "rewired" || f.kind === "rewired_rerun");
 
   hits = [];
   /* Stage 5 names one pair, so the figure names it too — otherwise the panel and the plot
