@@ -76,6 +76,15 @@ def copy(bundle: dict) -> dict[str, str]:
         return "shuffle " + (raw or "").replace("rewired", "").rjust(2, "0") if raw else "—"
 
     st = sorted(bundle.get("stability") or [], key=lambda r: -r["turn_sd"])
+    rw = [r for r in st if r["kind"] == "rewired"]
+    shuffle_rerun = (
+        f"{len(rw)} of them were re-run under fresh input noise as well. They hold their "
+        f"seats to between {_fmt(min(r['spread'] for r in rw))} and "
+        f"{_fmt(max(r['spread'] for r in rw))} compass units — a shuffle is an individual, "
+        f"more or less reliably so depending on how loudly its readout responds."
+        if len(rw) >= 2
+        else ""
+    )
     stability = ""
     if len(st) >= 3:
         loud, quiet = st[0], st[-1]
@@ -220,13 +229,7 @@ def copy(bundle: dict) -> dict[str, str]:
         "__AUC_BEST_FLY__": _fmt(max(f["auc_advances"] for f in flies), 3),
         "__RATIO__": "—" if math.isnan(ratio) else _fmt(ratio, 1),
         "__FURTHEST__": html.escape(shuffle_name(bundle.get("furthest"))),
-        "__SHUFFLE_RERUN__": (
-            f"One of the shuffles was itself re-run under new input noise; those runs sit "
-            f"{_fmt(bundle['within_shuffle_spread'])} apart, so a rewiring is an individual "
-            f"rather than a fresh draw each time it is asked."
-            if bundle.get("within_shuffle_spread")
-            else ""
-        ),
+        "__SHUFFLE_RERUN__": shuffle_rerun,
         "__SPLIT_ROWS__": "\n".join(rows) or "<li>no clean disagreement yet</li>",
     }
 

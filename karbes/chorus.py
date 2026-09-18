@@ -122,9 +122,6 @@ def stance(ballots: list[dict], vm, inverted: dict[str, bool]):
 BASELINE = Path("runs/baseline.json")
 RELIABILITY = Path("runs/reliability_informed.json")
 
-#: The one shuffled pack that is itself re-run under new input noise, so its reruns can be
-#: grouped with it.
-_BASE_RERUN = "rewired0"
 _RERUN = re.compile(r"^rewired\d+-phase\d+$")
 
 
@@ -249,10 +246,6 @@ def place_all(
 
     real_pts = [(f["x"], f["y"]) for f in flies if f["kind"] == "real"]
     rewired_pts = [(f["x"], f["y"]) for f in flies if f["kind"] == "rewired"]
-    # One shuffled brain, re-run: is a rewiring an individual, or a fresh draw each time?
-    shuffle_rerun = [
-        (f["x"], f["y"]) for f in flies if f["kind"] == "rewired_rerun" or f["name"] == _BASE_RERUN
-    ]
     # The same brain's AUC wanders far more than its seat does. Worth stating, because AUC is
     # the statistic the accuracy framing rests on and it turns out to be the unstable one.
     real_aucs = [f["auc_advances"] for f in flies if f["kind"] == "real"]
@@ -351,9 +344,9 @@ def place_all(
         "permutation_p": p_value,
         "real_auc_range": auc_range,
         "within_brain_spread": None if np.isnan(within) else round(within, 3),
-        "within_shuffle_spread": (
-            None if np.isnan(spread(shuffle_rerun)) else round(spread(shuffle_rerun), 3)
-        ),
+        # Deliberately no single "within-shuffle spread". Four different shuffles were re-run
+        # and pooling their points measures the distance between four brains, not the
+        # reproducibility of any one. The per-brain table in `stability` is the honest form.
         "across_wiring_spread": None if np.isnan(across) else round(across, 3),
         # What a regression gets from the same inputs. The fly is never fitted to the
         # outcome and these are, so the comparison flatters them — which is the point.
