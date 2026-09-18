@@ -57,7 +57,16 @@ canvas{display:block;width:100%;height:100%}
 .fig{background:#111722;border:1px solid var(--rule);border-radius:8px;padding:10px}
 .fig b{display:block;font-family:var(--mono);font-size:22px;font-weight:500}.fig span{font-size:11px;color:var(--mute)}
 .credit{font-family:var(--mono);font-size:9.5px;color:#55627A;margin-top:14px;line-height:1.5}
-@media(max-width:900px){.board{grid-template-columns:1fr;grid-template-rows:5fr 7fr}.figs{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){
+  .stage{padding:10px 10px 8px}
+  .board{grid-template-columns:1fr;grid-template-rows:6fr 7fr}
+  .figs{grid-template-columns:1fr 1fr}
+  .bottom{grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:8px 12px}
+  #timeline{grid-column:1 / -1;height:34px}
+  .legend{text-align:left}
+  .ticker{top:44px;gap:2px}.line{font-size:11.5px}.line:nth-child(-n+2){display:none}
+  .item{display:none}.tag{font-size:9px}
+}
 </style>
 </head>
 <body>
@@ -183,7 +192,7 @@ function sizeHall(){
   const r = hall.getBoundingClientRect(); HW = Math.round(r.width*dpr); HH = Math.round(r.height*dpr); hall.width = HW; hall.height = HH;
   seatPos = {};
   // two blocks in perspective from the Speaker's desk: the near row wide and large, the far row narrow and small
-  const top = HH*0.30, bot = HH*0.76, aisle = HW*0.05;
+  const narrow = HW < 620*dpr; const top = HH*(narrow?0.40:0.30), bot = HH*(narrow?0.74:0.76), aisle = HW*0.05;
   for (const s of D.seats){
     const depth = s.row/(rows-1);
     const y = bot - Math.pow(depth, 0.85)*(bot-top);
