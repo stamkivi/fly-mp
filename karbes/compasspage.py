@@ -45,16 +45,21 @@ def copy(bundle: dict) -> dict[str, str]:
     base = bundle.get("baseline") or {}
 
     ratio = across / within if not math.isnan(within) and within > 0 else math.nan
+    pv = bundle.get("permutation_p")
+    chance = (
+        f" Relabelling which brains count as the reruns gives a ratio this large in "
+        f"{_fmt(100 * pv, 1)}% of {int(1 / max(pv, 1e-9)):,} draws." if pv else ""
+    )
     if not math.isnan(ratio) and ratio >= 2:
         verdict = (
             f"Rewiring moves a fly {_fmt(ratio, 1)} times further than re-running the same "
-            f"brain does. The scatter is the wiring, not the noise."
+            f"brain does. The scatter is the wiring, not the noise.{chance}"
         )
     elif not math.isnan(ratio) and ratio >= 1.2:
         verdict = (
             f"Rewiring moves a fly {_fmt(ratio, 1)} times further than re-running the same "
             f"brain does. That is a real difference and a modest one: the wiring shifts the "
-            f"seat, but a rerun of one brain is not a fixed point either."
+            f"seat, but a rerun of one brain is not a fixed point either.{chance}"
         )
     elif math.isnan(within):
         # The within-brain control has not finished. Say that, rather than print a ratio.
@@ -90,6 +95,7 @@ def copy(bundle: dict) -> dict[str, str]:
         "__AUC_BIT__": _fmt(base.get("who tabled it alone", float("nan")), 3),
         "__AUC_CONTENT__": _fmt(base.get("content only", float("nan")), 3),
         "__AUC_BEST_FLY__": _fmt(max(f["auc_advances"] for f in flies), 3),
+        "__RATIO__": "—" if math.isnan(ratio) else _fmt(ratio, 1),
     }
 
 

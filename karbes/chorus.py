@@ -143,6 +143,7 @@ def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> d
         turns = np.array([b["turn"] for b in ballots])
         adv = np.array([b["advances"] for b in ballots])
         a = float(auc(turns, adv))
+        codes = [b["code"] for b in ballots]
         near = min(cmap.members, key=lambda m: (m["party_x"] - x) ** 2 + (m["party_y"] - y) ** 2)
         flies.append(
             {
@@ -153,6 +154,7 @@ def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> d
                 "y": round(y, 3),
                 "votes": len(ballots),
                 "auc_advances": round(max(a, 1 - a), 4),
+                "poolt": round(float(np.mean([c == "POOLT" for c in codes])), 3),
                 "nearest_party": SHORT.get(near["faction"], near["faction"]),
             }
         )
@@ -166,14 +168,19 @@ def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> d
         ]
         return float(np.mean(d))
 
-    within = spread([(f["x"], f["y"]) for f in flies if f["kind"] == "real"])
-    across = spread([(f["x"], f["y"]) for f in flies if f["kind"] == "rewired"])
+    real_pts = [(f["x"], f["y"]) for f in flies if f["kind"] == "real"]
+    rewired_pts = [(f["x"], f["y"]) for f in flies if f["kind"] == "rewired"]
+    within = spread(real_pts)
+    across = spread(rewired_pts)
+    p_value = _permutation(real_pts, rewired_pts)
     parties = {SHORT.get(k, k): {"x": v[0], "y": v[1]} for k, v in CHES_2024.items()}
     log.info(
-        "chorus: %d flies, within-brain spread %.2f, across-wiring spread %.2f, party spacing %.2f",
+        "chorus: %d flies, within-brain spread %.2f, across-wiring spread %.2f "
+        "(permutation p = %s), party spacing %.2f",
         len(flies),
         within,
         across,
+        p_value,
         cmap.spread,
     )
     return {
@@ -188,11 +195,51 @@ def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> d
         "flies": flies,
         # JSON has no NaN, and a page that reads NaN as a number prints one. A spread that
         # could not be measured is absent, not zero.
+        "permutation_p": p_value,
         "within_brain_spread": None if np.isnan(within) else round(within, 3),
         "across_wiring_spread": None if np.isnan(across) else round(across, 3),
         # What a regression gets from the same inputs. The fly is never fitted to the
         # outcome and these are, so the comparison flatters them — which is the point.
-        "baseline": json.loads(BASELINE.read_text(encoding="utf-8"))
-        if BASELINE.exists()
-        else None,
+        "baseline": json.loads(BASELINE.read_text(encoding="utf-8")) if BASELINE.exists() else None,
     }
+
+
+def _permutation(real, rewired, draws: int = 20000, seed: int = 0):
+    """Could the same-brain reruns be this tight by chance, if wiring made no difference?
+
+    Under the null every fly is drawn from one scatter, so which few of them are labelled
+    "the same brain, re-run" is arbitrary. Relabel at random and recompute the ratio of mean
+    pairwise distances. Comparing two means alone leaves that question open, and with three
+    points in the denominator it is a real question.
+    """
+    import numpy as np
+
+    a, b = np.asarray(real, float), np.asarray(rewired, float)
+    if len(a) < 2 or len(b) < 2:
+        return None
+
+    def mean_pair(pts):
+        return float(
+            np.mean(
+                [
+                    np.linalg.norm(pts[i] - pts[j])
+                    for i in range(len(pts))
+                    for j in range(i + 1, len(pts))
+                ]
+            )
+        )
+
+    def ratio(pts, idx):
+        inside = pts[idx]
+        outside = pts[np.setdiff1d(np.arange(len(pts)), idx)]
+        tight = mean_pair(inside)
+        return mean_pair(outside) / tight if tight > 0 else np.inf
+
+    allpts = np.vstack([a, b])
+    observed = ratio(allpts, np.arange(len(a)))
+    rng = np.random.default_rng(seed)
+    hits = sum(
+        ratio(allpts, rng.choice(len(allpts), size=len(a), replace=False)) >= observed
+        for _ in range(draws)
+    )
+    return round((hits + 1) / (draws + 1), 4)
