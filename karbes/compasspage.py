@@ -44,6 +44,23 @@ def copy(bundle: dict) -> dict[str, str]:
     ex, ey = bundle["axis_error"]
     base = bundle.get("baseline") or {}
 
+    def shuffle_name(raw: str | None) -> str:
+        return "shuffle " + (raw or "").replace("rewired", "").rjust(2, "0") if raw else "—"
+
+    rows = []
+    for r in bundle.get("split") or []:
+        who = "government" if r["government"] else "a member or committee"
+        rows.append(
+            '<li><span class="vs"><b>{a}</b> / <b>{b}</b></span>'
+            '<span class="what">{ch}<i>{title}</i>'
+            '<u>{when} · tabled by {who}</u></span></li>'.format(
+                a=html.escape(r["a"]), b=html.escape(r["b"]),
+                ch=html.escape(r["channel"] or "unscored"),
+                title=html.escape(r["title"] or "untitled"),
+                when=html.escape(r["when"]), who=who,
+            )
+        )
+
     ratio = across / within if not math.isnan(within) and within > 0 else math.nan
     pv = bundle.get("permutation_p")
     chance = (
@@ -96,6 +113,8 @@ def copy(bundle: dict) -> dict[str, str]:
         "__AUC_CONTENT__": _fmt(base.get("content only", float("nan")), 3),
         "__AUC_BEST_FLY__": _fmt(max(f["auc_advances"] for f in flies), 3),
         "__RATIO__": "—" if math.isnan(ratio) else _fmt(ratio, 1),
+        "__FURTHEST__": html.escape(shuffle_name(bundle.get("furthest"))),
+        "__SPLIT_ROWS__": "\n".join(rows) or "<li>no clean disagreement yet</li>",
     }
 
 

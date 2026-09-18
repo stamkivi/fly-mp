@@ -57,6 +57,15 @@ h1{font-family:var(--display);font-weight:600;font-size:clamp(34px,6.4vw,74px);l
 .step p:last-child{margin-bottom:0}
 .step .fine{font-size:12.5px;color:var(--mute)}
 .num{font-family:var(--mono);font-weight:500;color:var(--ink)}
+ul.split{list-style:none;margin:12px 0 12px;padding:0}
+ul.split li{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:9px 0;
+            border-top:1px solid var(--rule);align-items:start}
+ul.split .vs{font-family:var(--mono);font-size:10.5px;color:var(--mute);padding-top:2px}
+ul.split .vs b{color:var(--ink);font-weight:500}
+ul.split .what{font-size:12.5px;color:var(--ink)}
+ul.split .what i{display:block;font-style:normal;color:var(--mute);font-size:12px;margin-top:2px}
+ul.split .what u{display:block;text-decoration:none;font-family:var(--mono);font-size:10px;
+                 color:var(--mute);margin-top:3px}
 .hero .num{color:#E9EFF7}
 @media(max-width:940px){
   .story{grid-template-columns:1fr;gap:0}
@@ -165,6 +174,15 @@ a{color:inherit}
     </div></section>
 
     <section class="step" data-stage="5"><div class="card">
+      <h2>Where they part company</h2>
+      <p>The real connectome and <span class="num">__FURTHEST__</span> — the rewiring that
+         ended up furthest from it — on the bills where one said yes and the other said no.</p>
+      <ul class="split">__SPLIT_ROWS__</ul>
+      <p class="fine">Titles are the bills' official names, in Estonian. The line above each is
+         the channel the scorer read most strongly: what the fly actually smelled.</p>
+    </div></section>
+
+    <section class="step" data-stage="6"><div class="card">
       <h2>What this is and is not</h2>
       <p>It is not a prediction. The real connectome scores
          <span class="num">__KARBES_AUC__</span> at telling which bills advanced, and some of
@@ -384,10 +402,26 @@ function draw(){
   errorBar(alphaFor(1));
 
   const karbes = D.flies.find(f => f.name === "karbes");
+  const title2 = f => "SHUFFLE " + String(f.name.replace("rewired","")).padStart(2,"0");
   const phases = D.flies.filter(f => f.kind === "real" && f.name !== "karbes");
   const rewired = D.flies.filter(f => f.kind === "rewired");
 
   hits = [];
+  /* Stage 5 names one pair, so the figure names it too — otherwise the panel and the plot
+     are two separate things on one screen. */
+  const pair = alphaFor(5);
+  if (pair > 0 && karbes && D.furthest){
+    const other = D.flies.find(f => f.name === D.furthest);
+    if (other){
+      ctx.save(); ctx.globalAlpha = pair * .8;
+      ctx.strokeStyle = "#E2622C"; ctx.lineWidth = 1.4*dpr; ctx.setLineDash([5*dpr, 5*dpr]);
+      ctx.beginPath(); ctx.moveTo(sx(karbes.x), sy(karbes.y));
+      ctx.lineTo(sx(other.x), sy(other.y)); ctx.stroke();
+      ctx.restore();
+      label(title2(other), sx(other.x), sy(other.y) + 26*dpr, "#E2622C");
+    }
+  }
+
   const aRe = alphaFor(4);
   if (aRe > 0){
     for (const f of rewired){

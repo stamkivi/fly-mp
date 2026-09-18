@@ -121,7 +121,59 @@ def stance(ballots: list[dict], vm, inverted: dict[str, bool]):
 BASELINE = Path("runs/baseline.json")
 
 
-def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> dict:
+def _split(
+    records: dict[str, list[dict]], a: str, b: str, bills, scores, limit: int = 3
+) -> list[dict]:
+    """Bills where two brains voted opposite ways, most confidently first.
+
+    The scatter plot is an abstraction and reads as one. A named bill on which the real
+    connectome said yes and a shuffle of it said no is the same fact at human scale, and it
+    costs nothing but a join.
+
+    Titles stay in Estonian because that is the bill's actual name and the cache keeps source
+    text verbatim; the English line beside each is the channel the scorer read most strongly,
+    which is what the fly actually smelled.
+    """
+    from karbes.score.rubric3 import LABELS
+
+    left = {r["bill_uuid"]: r for r in records.get(a, [])}
+    right = {r["bill_uuid"]: r for r in records.get(b, [])}
+    rows = []
+    for uuid, l in left.items():
+        r = right.get(uuid)
+        if r is None or l["code"] == r["code"]:
+            continue
+        if {l["code"], r["code"]} - {"POOLT", "VASTU"}:
+            continue  # a decline is not a disagreement, it is a shrug
+        bill = bills.get(uuid) if bills else None
+        sc = (scores or {}).get(uuid)
+        channel = ""
+        if sc is not None:
+            k, v = max(
+                ((k, v) for k, v in sc.scores.items() if k != "salience"),
+                key=lambda kv: abs(kv[1]),
+                default=("", 0.0),
+            )
+            if k:
+                channel = f"{'raises' if v > 0 else 'lowers'} {LABELS.get(k, k)}"
+        rows.append(
+            {
+                "title": (getattr(bill, "title", "") or "")[:110],
+                "channel": channel,
+                "when": l["when"][:10],
+                "government": l["government"],
+                "a": l["code"],
+                "b": r["code"],
+                "confidence": round(float(abs(l["turn"]) + abs(r["turn"])), 5),
+            }
+        )
+    rows.sort(key=lambda x: -x["confidence"])
+    return [r for r in rows if r["title"]][:limit] or rows[:limit]
+
+
+def place_all(
+    vm, space, cmap, inverted: dict[str, bool], bills=None, scores=None, root: Path = OUT
+) -> dict:
     """Read every record in `root`, recode it, and put it on the compass.
 
     The real fly's extra phases are the within-brain yardstick: whatever distance separates
@@ -135,10 +187,12 @@ def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> d
     from karbes.seasonpage import SHORT, recode
 
     flies = []
+    records: dict[str, list[dict]] = {}
     for path in sorted(root.glob("*.json")):
         name = path.stem
         ballots = json.loads(path.read_text(encoding="utf-8"))
         recode(ballots, inverted)  # rewrites turn and code in place; see seasonpage.recode
+        records[name] = ballots
         x, y = cmap.project(stance(ballots, vm, inverted))
         turns = np.array([b["turn"] for b in ballots])
         adv = np.array([b["advances"] for b in ballots])
@@ -174,6 +228,15 @@ def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> d
     across = spread(rewired_pts)
     p_value = _permutation(real_pts, rewired_pts)
     parties = {SHORT.get(k, k): {"x": v[0], "y": v[1]} for k, v in CHES_2024.items()}
+
+    karbes = next((f for f in flies if f["name"] == "karbes"), None)
+    furthest, split = None, []
+    if karbes and rewired_pts:
+        cand = [f for f in flies if f["kind"] == "rewired"]
+        furthest = max(
+            cand, key=lambda f: (f["x"] - karbes["x"]) ** 2 + (f["y"] - karbes["y"]) ** 2
+        )
+        split = _split(records, "karbes", furthest["name"], bills, scores)
     log.info(
         "chorus: %d flies, within-brain spread %.2f, across-wiring spread %.2f "
         "(permutation p = %s), party spacing %.2f",
@@ -193,6 +256,8 @@ def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> d
         "axis_range": list(cmap.axis_range),
         "party_spacing": cmap.spread,
         "flies": flies,
+        "furthest": furthest["name"] if furthest else None,
+        "split": split,
         # JSON has no NaN, and a page that reads NaN as a number prints one. A spread that
         # could not be measured is absent, not zero.
         "permutation_p": p_value,
