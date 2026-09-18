@@ -1,11 +1,12 @@
 """Topic scores to lateralised olfactory drive.
 
 **The side carries the sign.** Scores are signed and firing rates are not, so the earlier
-encoder gave each channel a pole pair — one glomerulus for negative, one for positive —
-and drove both antennae identically. One glomerulus per channel is now enough. That was incompatible with a left-minus-right readout
-by construction: a bilaterally symmetric stimulus has no reason to move an antisymmetric
+encoder gave each channel a pole pair — one glomerulus for negative, one for positive — and
+drove both antennae identically. That was incompatible with a left-minus-right readout by
+construction: a bilaterally symmetric stimulus has no reason to move an antisymmetric
 statistic, and flybrain measured exactly that on this connectome, a turn response to a
-left-vs-right stimulus of "0.0000, identical to four decimals".
+left-vs-right stimulus of "0.0000, identical to four decimals". One glomerulus per channel
+is enough once the side carries the sign.
 
 So a positive score now drives the **right** antenna harder and a negative score the left,
 which is a stimulus the steering circuit is actually built to resolve. Two consequences:
