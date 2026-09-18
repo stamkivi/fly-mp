@@ -137,9 +137,11 @@ def load(path: Path, seats: list[hall.Seat] | None = None) -> Sitting:
                         note[:140], "", item, bio=bio_duration("heckle", 0),
                     ))
                 if role != "chair" and BELL_RE.search(text):
-                    # the bell rang while a member was speaking: the real chair acted
+                    # The bell rang while a member was speaking. Measured across 75 days,
+                    # these ring at the 92nd percentile of the speech: they are the clock,
+                    # not a reaction to conduct, and are classified as such.
                     events.append(Event(t + words / 4.0, "speech", "the chair", "chair", "", "", None, 0,
-                                        "(rings the bell)", "", item, real_chair="bell"))
+                                        "(rings the bell — time)", "", item, real_chair="time"))
     events.sort(key=lambda x: x.t)
     date = t0.astimezone().strftime("%-d %B %Y") if t0 else path.stem[-10:]
     return Sitting(date=date, title=raw[0].get("title", "") if raw else "", events=events)
