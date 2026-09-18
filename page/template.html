@@ -493,11 +493,34 @@ function drawArena(step, sub){
   if (revealed) trail("blind", "#C4BFB5", [5*dpr, 5*dpr], Math.min(shown, nBlind - 1));
   trail("seeing", revealed ? "#E2622C" : "#1B6B8C", [], shown);
 
+  /* The procedural signal is not a place. It is one-sided optic flow — a force on the
+     turn, not a thing to walk toward — so it is drawn as a shadow sweeping the arena from
+     the side the flow comes from. Marking it as a point on the ring made readers assume
+     the fly was heading for it. */
+  const sinceReveal = (step + sub) - A.reveal_step;
+  if (sinceReveal >= 0 && sinceReveal < A.reveal_steps + 1.2){
+    const t = Math.min(1, sinceReveal / (A.reveal_steps + 1.2));
+    const fromRight = (B.vision.flow || 1) > 0;
+    const edge = fromRight ? AW * (1 - t * 1.9) : AW * (t * 1.9 - 0.9);
+    const sg = actx.createLinearGradient(edge, 0, edge + (fromRight ? AW*0.55 : -AW*0.55), 0);
+    sg.addColorStop(0, `rgba(226,98,44,${0.16 * (1 - t)})`);
+    sg.addColorStop(1, "rgba(226,98,44,0)");
+    actx.fillStyle = sg;
+    actx.fillRect(0, 0, AW, AH);
+  }
   if (revealed){
     const rp = A.seeing.path[A.reveal_step];
     if (rp){
-      actx.strokeStyle = "rgba(226,98,44,.35)"; actx.lineWidth = 1.2*dpr;
-      actx.beginPath(); actx.arc(X(rp[0]), Y(rp[1]), 11*dpr, 0, 7); actx.stroke();
+      actx.strokeStyle = "rgba(226,98,44,.30)"; actx.lineWidth = 1.2*dpr;
+      actx.setLineDash([3*dpr, 3*dpr]);
+      actx.beginPath(); actx.arc(X(rp[0]), Y(rp[1]), 10*dpr, 0, 7); actx.stroke();
+      actx.setLineDash([]);
+      // below the mark, so it cannot collide with the endpoint labels drawn later
+      actx.fillStyle = "rgba(226,98,44,.7)";
+      actx.font = `500 ${10.5*dpr}px "IBM Plex Mono",monospace`;
+      actx.textAlign = "center";
+      actx.fillText("knocked off course", X(rp[0]), Y(rp[1]) + 26*dpr);
+      actx.textAlign = "left";
     }
     const bp = at("blind", Math.min(shown, nBlind - 1), sub);
     drawFly(X(bp[0]), Y(bp[1]), bp[2], "#B6B0A6", 3.4*dpr, .62);
@@ -508,15 +531,18 @@ function drawArena(step, sub){
   // once both have stopped, name them where they stand rather than in a legend elsewhere
   if (shown >= nSeen - 1){
     actx.font = `500 ${11.5*dpr}px "IBM Plex Mono",monospace`;
-    const mark = (pt, text, colour) => {
+    const mark = (pt, text, colour, nudge) => {
       actx.fillStyle = colour;
       const px = X(pt[0]), py = Y(pt[1]);
       actx.textAlign = px > AW*0.62 ? "right" : "left";
-      actx.fillText(text, px + (actx.textAlign === "right" ? -14*dpr : 14*dpr), py - 13*dpr);
+      actx.fillText(text, px + (actx.textAlign === "right" ? -14*dpr : 14*dpr),
+                    py - 13*dpr + (nudge || 0) * 15*dpr);
       actx.textAlign = "left";
     };
-    mark(A.blind.path[nBlind-1], "on the bill alone", "#9A958C");
-    mark(A.seeing.path[nSeen-1], "knowing who tabled it", "#E2622C");
+    const bEnd = A.blind.path[nBlind-1], sEnd = A.seeing.path[nSeen-1];
+    const close = Math.hypot(bEnd[0]-sEnd[0], bEnd[1]-sEnd[1]) * k < 46*dpr;
+    mark(bEnd, "on the bill alone", "#9A958C", close ? -1 : 0);
+    mark(sEnd, "knowing who tabled it", "#E2622C", close ? 1 : 0);
   }
 }
 
@@ -627,8 +653,9 @@ function tick(now){
   document.getElementById("clock").textContent =
     `${Math.min(step + 1, total)} / ${total} · ${(Math.min(step+1,total) * A.step_seconds).toFixed(1)} s`;
 
-  if (step === A.reveal_step) say("it has just been shown who tabled the bill", true);
-  else if (step > A.reveal_step) say("it is changing course", true);
+  if (step === A.reveal_step) say("the government tabled this bill — and that lands as a force, not a fact", true);
+  else if (step > A.reveal_step && step <= A.reveal_step + A.reveal_steps) say("it is being pushed off course", true);
+  else if (step > A.reveal_step) say("it is settling somewhere else", true);
 
   describe(step);
 
@@ -648,9 +675,12 @@ function finish(){
   document.getElementById("outcome-title").textContent = v.flipped
     ? "Knowing who tabled it changed its vote"
     : `The fly voted ${ET[v.seeing]}`;
+  const same = A.blind.settled_on === A.seeing.settled_on;
   document.getElementById("outcome-sub").textContent = v.flipped
     ? "Same brain, same bill, same seed. The only difference is one bit of procedure."
-    : "It reached a different question once it saw the initiator, but landed the same way.";
+    : same
+      ? "The procedural signal pushed it off course and it came back to the same question."
+      : "It ended on a different question, but that did not change which way it voted.";
   say(v.flipped ? "the initiator changed its mind" : "it has decided", false);
   resultEl.hidden = false;
 }
