@@ -90,13 +90,13 @@ canvas{display:block;width:100%;height:100%}
     <div class="panel" id="hallpanel">
       <div class="tag">The hall, from the Speaker's desk</div>
       <div class="item" id="item"></div>
-      <canvas id="hall"></canvas>
+      <canvas id="hall" role="img" aria-label="The Riigikogu hall from the Speaker's desk: two blocks of seats in party colours, the seat of whoever is speaking lit, the fly at the Speaker's desk."></canvas>
       <div class="bellmark" id="bellmark">▲ the fly rings the bell</div>
       <div class="ticker" id="ticker"></div>
     </div>
     <div class="panel" id="brainpanel">
       <div class="tag">Its brain — 166,700 neurons, live</div>
-      <canvas id="brain"></canvas>
+      <canvas id="brain" role="img" aria-label="The fly brain, rendered from real cell-body positions, with the neurons firing at this moment of the sitting drawn over it."></canvas>
       <div class="coach" id="coach-wave" style="left:24px;top:40%"><b>the wave</b>Every speech starts the brain from silence. Antennal lobe at 5 ms, mushroom body at 15 ms — shown here fourteen times slower than life.</div>
       <div class="coach" id="coach-bell" style="right:24px;top:40%"><b>the bell</b>Something came at the chair: the giant fibre fired — the fly's escape reflex — and it threw itself away from that side of the hall. That is the fly ringing the bell.</div>
       <div class="memo" id="memo"><div class="tag" style="position:static;margin-bottom:6px">What the page remembers, and the brain cannot</div><div id="memobody"></div></div>
@@ -105,7 +105,7 @@ canvas{display:block;width:100%;height:100%}
   </div>
   <div class="bottom">
     <div class="ctl"><button id="play">▶ play</button><button id="sp1">1×</button><button id="sp4" class="on">4×</button><button id="sp12">12×</button><button id="mute">🔔 sound</button></div>
-    <canvas id="timeline"></canvas>
+    <canvas id="timeline" role="slider" aria-label="Position in the sitting. Yellow ticks: the fly rang the bell. Blue: the real chair called for order. Grey: the real chair called time."></canvas>
     <div class="legend"><i style="background:#FFD36E"></i>fly rings the bell &nbsp;<i style="background:#7FB2FF"></i>real chair: order / bell &nbsp;<i style="background:#3A4658"></i>real chair: time</div>
   </div>
   <div class="veil" id="veil"><div class="open">
@@ -116,6 +116,7 @@ canvas{display:block;width:100%;height:100%}
     <p>When the giant fibre fires, it rings the bell. Below, what the real chair did.</p>
     <p class="fine">Its memory is 20 milliseconds. It greets the hundredth <i>Aitäh!</i> as the first, and every heckler as a stranger.</p>
     <button class="go" id="start">Open the sitting</button>
+    <p class="fine" style="margin-top:12px">About a minute at 4×; four at 1×. Sound on — there is a bell.</p>
     <div class="credit">Hall: Foto: Paul Kuimet, Riigikogu. Shown unaltered.</div>
   </div></div>
   <div class="end" id="end"><div class="open">
