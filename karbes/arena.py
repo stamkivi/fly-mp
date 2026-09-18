@@ -123,17 +123,12 @@ def turn_baseline(pops: Populations, engine: Engine, seeds: int = 8) -> float:
     mid = encode.BACKGROUND_HZ + encode.PEAK_HZ * 0.5
     targets = np.concatenate([orn_l, orn_r])
     rates = np.concatenate(
-        [
-            np.full(len(orn_l), mid * mean_n / len(orn_l)),
-            np.full(len(orn_r), mid * mean_n / len(orn_r)),
-        ]
+        [np.full(len(orn_l), mid * mean_n / len(orn_l)), np.full(len(orn_r), mid * mean_n / len(orn_r))]
     )
     order = np.argsort(targets)
     turns = [
         decode.turn_index(
-            E.run(
-                engine, targets[order].astype(np.int32), rates[order], seed=s, duration=STEP_SECONDS
-            ).counts,
+            E.run(engine, targets[order].astype(np.int32), rates[order], seed=s, duration=STEP_SECONDS).counts,
             dna_l,
             dna_r,
         ).raw
@@ -243,9 +238,7 @@ def walk(
     else:
         visual = vision.stimulus(bill, salience, pops, engine)
 
-    atlas_idx = (
-        engine.positions(atlas.bodies) if atlas is not None else np.array([], dtype=np.int32)
-    )
+    atlas_idx = engine.positions(atlas.bodies) if atlas is not None else np.array([], dtype=np.int32)
     rng = np.random.default_rng(seed)
     heading = float(rng.uniform(0, 2 * math.pi))
     x = y = 0.0
@@ -281,7 +274,9 @@ def walk(
             ]
         )
         seeing_now = (
-            see_initiator and mode != "veto" and REVEAL_STEP <= step < REVEAL_STEP + REVEAL_STEPS
+            see_initiator
+            and mode != "veto"
+            and REVEAL_STEP <= step < REVEAL_STEP + REVEAL_STEPS
         )
         if seeing_now:
             targets = np.concatenate([targets, visual[0]])
@@ -317,31 +312,21 @@ def walk(
         x += SPEED * math.cos(heading)
         y += SPEED * math.sin(heading)
         nearest = min(
-            pots,
-            key=lambda n: math.hypot(RING * math.cos(where[n]) - x, RING * math.sin(where[n]) - y),
+            pots, key=lambda n: math.hypot(RING * math.cos(where[n]) - x, RING * math.sin(where[n]) - y)
         )
         out.steps.append(
             Step(
-                x=x,
-                y=y,
-                heading=heading,
-                turn=turn,
-                left_hz=left_hz,
-                right_hz=right_hz,
-                nearest=nearest,
-                spikes=int(run.counts.sum()),
-                escaped=escaped,
-                seeing=seeing_now,
-                group_hz=group_hz,
+                x=x, y=y, heading=heading, turn=turn,
+                left_hz=left_hz, right_hz=right_hz,
+                nearest=nearest, spikes=int(run.counts.sum()), escaped=escaped,
+                seeing=seeing_now, group_hz=group_hz,
             )
         )
         if escaped:
             out.escaped = True
             log.info("bill %s: the fly bolted at step %d", bill.uuid[:8], step)
             break
-        reached = math.hypot(
-            RING * math.cos(where[nearest]) - x, RING * math.sin(where[nearest]) - y
-        )
+        reached = math.hypot(RING * math.cos(where[nearest]) - x, RING * math.sin(where[nearest]) - y)
         if reached <= ARRIVE_RADIUS:
             out.arrived = True
             out.settled_on = nearest
@@ -368,9 +353,7 @@ def verdict(w: Walk, scored: Scored, inverted: bool) -> str:
     if signed == 0.0:
         return EI_HAALETANUD
     turn = decode.Turn(
-        left_spikes=0 if signed > 0 else 1,
-        right_spikes=1 if signed > 0 else 0,
-        baseline=0.0,
-        dead_band=0.0,
+        left_spikes=0 if signed > 0 else 1, right_spikes=1 if signed > 0 else 0,
+        baseline=0.0, dead_band=0.0,
     )
     return turn.vote(inverted)

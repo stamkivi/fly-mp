@@ -104,14 +104,8 @@ def stimulus(
     targets = np.concatenate([left, right, loom])
     rates = np.concatenate(
         [
-            np.full(
-                len(left),
-                (FLOW_BACKGROUND_HZ + FLOW_PEAK_HZ * max(-signed, 0.0)) * mean_n / len(left),
-            ),
-            np.full(
-                len(right),
-                (FLOW_BACKGROUND_HZ + FLOW_PEAK_HZ * max(signed, 0.0)) * mean_n / len(right),
-            ),
+            np.full(len(left), (FLOW_BACKGROUND_HZ + FLOW_PEAK_HZ * max(-signed, 0.0)) * mean_n / len(left)),
+            np.full(len(right), (FLOW_BACKGROUND_HZ + FLOW_PEAK_HZ * max(signed, 0.0)) * mean_n / len(right)),
             np.full(len(loom), hz_loom),
         ]
     )
@@ -119,7 +113,9 @@ def stimulus(
     return targets[order].astype(np.int32), rates[order]
 
 
-def bolted(counts: np.ndarray, giant_fibre: np.ndarray, baseline: float = 0.0) -> tuple[bool, int]:
+def bolted(
+    counts: np.ndarray, giant_fibre: np.ndarray, baseline: float = 0.0
+) -> tuple[bool, int]:
     """Did the giant fibre fire hard enough, over baseline, that the fly left?
 
     `baseline` is the DNp01 count the optic flow alone produces, measured by

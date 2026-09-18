@@ -27,15 +27,8 @@ SHORT = {
     "Eesti Keskerakonna fraktsioon": "KESK",
     "Fraktsiooni mittekuuluvad Riigikogu liikmed": "none",
 }
-COLOUR = {
-    "REF": "#E0A200",
-    "E200": "#D4267E",
-    "SDE": "#D14B4E",
-    "Isamaa": "#5F9BC4",
-    "EKRE": "#2A3DA0",
-    "KESK": "#2F9B6B",
-    "none": "#A9A49B",
-}
+COLOUR = {"REF": "#E0A200", "E200": "#D4267E", "SDE": "#D14B4E", "Isamaa": "#5F9BC4",
+          "EKRE": "#2A3DA0", "KESK": "#2F9B6B", "none": "#A9A49B"}
 
 #: Real members decline rarely, so the dead band is set to make the fly decline about as
 #: often. AUC is threshold-free and does not move with it; only the POOLT/VASTU marginal
@@ -71,11 +64,8 @@ def recode(ballots: list[dict], inverted: dict[str, bool]) -> tuple[float, float
 
 
 def convergence(
-    ballots: list[dict],
-    vm: votematrix.VoteMatrix,
-    space: idealpoint.Space,
-    inverted: dict[str, bool],
-    checkpoints: int = CHECKPOINTS,
+    ballots: list[dict], vm: votematrix.VoteMatrix, space: idealpoint.Space,
+    inverted: dict[str, bool], checkpoints: int = CHECKPOINTS,
 ) -> list[dict]:
     """The fly's position on dimension 1 after each slice of its record.
 
@@ -94,13 +84,11 @@ def convergence(
             continue
         if s.dim1 is None:
             continue
-        out.append(
-            {
-                "votes": len(chunk),
-                "dim1": s.dim1,
-                "agreement": {SHORT.get(k, k): v for k, v in s.faction_agreement.items()},
-            }
-        )
+        out.append({
+            "votes": len(chunk),
+            "dim1": s.dim1,
+            "agreement": {SHORT.get(k, k): v for k, v in s.faction_agreement.items()},
+        })
     return out
 
 
@@ -142,7 +130,8 @@ def bundle(
             "agreement": {SHORT.get(k, k): v for k, v in s.faction_agreement.items()},
             "auc": {SHORT.get(k, k): v for k, v in s.faction_auc.items()},
             "nearest": [
-                {"name": m["name"], "faction": SHORT.get(m["faction"], "none"), "dim1": m["dim1"]}
+                {"name": m["name"], "faction": SHORT.get(m["faction"], "none"),
+                 "dim1": m["dim1"]}
                 for m in s.nearest_members
             ],
         }
@@ -165,16 +154,14 @@ def bundle(
     lead = arms.get("informed") or next(iter(arms.values()))
     for b in sorted(lead, key=lambda x: x["when"]):
         bill = bills.get(b["bill_uuid"])
-        out["timeline"].append(
-            {
-                "title": (bill.title if bill else "")[:90],
-                "when": b["when"][:10],
-                "government": b["government"],
-                "code": b["code"],
-                "turn": b["turn"],
-                "advances": b["advances"],
-            }
-        )
+        out["timeline"].append({
+            "title": (bill.title if bill else "")[:90],
+            "when": b["when"][:10],
+            "government": b["government"],
+            "code": b["code"],
+            "turn": b["turn"],
+            "advances": b["advances"],
+        })
 
     if rewired:
         out["rewired"] = {}

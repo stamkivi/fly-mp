@@ -74,7 +74,8 @@ def api_key() -> str:
                     break
     if not key:
         raise MissingKey(
-            "TYPESAFE_API_KEY is not set. Put it in .env (gitignored) as\n  TYPESAFE_API_KEY=..."
+            "TYPESAFE_API_KEY is not set. Put it in .env (gitignored) as\n"
+            "  TYPESAFE_API_KEY=..."
         )
     return key
 

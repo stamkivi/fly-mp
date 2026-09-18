@@ -165,8 +165,7 @@ def season_copy(bundle: dict) -> dict[str, str]:
         else:
             twist_rewired = (
                 f"<b>The wiring is doing the work.</b> {len(rew)} degree-preserving rewirings "
-                "score AUC "
-                + ", ".join(f"{a:.2f}" for a in aucs)
+                "score AUC " + ", ".join(f"{a:.2f}" for a in aucs)
                 + f" against this fly's {informed['auc_advances']:.2f}, and land at "
                 + ", ".join(f"{x:+.1f}" for x in spread)
                 + f" against its {informed['dim1']:+.1f}."
@@ -211,15 +210,15 @@ def season_copy(bundle: dict) -> dict[str, str]:
     )
     credits = (
         "The fly is <i>Drosophila melanogaster</i> photographed by André Karwath, "
-        '<a href="https://commons.wikimedia.org/wiki/File:Drosophila_melanogaster_-_top_(aka).jpg">'
+        "<a href=\"https://commons.wikimedia.org/wiki/File:Drosophila_melanogaster_-_top_(aka).jpg\">"
         "Wikimedia Commons</a>, "
-        '<a href="https://creativecommons.org/licenses/by-sa/2.5/">CC BY-SA 2.5</a>; it is '
+        "<a href=\"https://creativecommons.org/licenses/by-sa/2.5/\">CC BY-SA 2.5</a>; it is "
         "reproduced here cut out from its background, and that adaptation is shared under the "
         "same licence. "
         "The brain is the <b>MaleCNS v1.0</b> connectome from FlyEM at HHMI Janelia, the "
         "University of Cambridge, the MRC LMB, Google Research and the MaleCNS collaboration, "
         "CC BY 4.0. The simulation follows Shiu et al., <i>Nature</i> 634:210 (2024), run on "
-        '<a href="https://github.com/Kisame76/drosophila-brain-mlx">mlx-lif-engine</a> (MIT). '
+        "<a href=\"https://github.com/Kisame76/drosophila-brain-mlx\">mlx-lif-engine</a> (MIT). "
         "Votes and bills are from the Riigikogu open API, CC BY-SA 3.0. Topic salience is from "
         "SALK polling. Members are named only where the public voting record supports it."
     )

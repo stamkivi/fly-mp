@@ -224,9 +224,7 @@ def sweep(
             "se": round(se, 5),
             "t": round(span / se, 3) if se else None,
         }
-        log.info(
-            "sweep %-12s span %+.4f  se %.4f  t %+.2f", channel, span, se, span / se if se else 0
-        )
+        log.info("sweep %-12s span %+.4f  se %.4f  t %+.2f", channel, span, se, span / se if se else 0)
     return {"baseline": base, "channels": out}
 
 
@@ -341,7 +339,9 @@ def build(inputs: Inputs) -> Bundle:
     elapsed = (datetime.now(tz=UTC) - started).total_seconds()
 
     seeing, blind = walks["seeing"], walks["blind"]
-    codes = {arm: arena.verdict(w, inputs.scored, inputs.vote.inverted) for arm, w in walks.items()}
+    codes = {
+        arm: arena.verdict(w, inputs.scored, inputs.vote.inverted) for arm, w in walks.items()
+    }
     chamber_advances = inputs.vote.in_favor > inputs.vote.against
     if inputs.vote.inverted:
         chamber_advances = not chamber_advances
@@ -411,9 +411,7 @@ def build(inputs: Inputs) -> Bundle:
         "vision": {
             "government_bill": inputs.bill.government_bill,
             "flow": arena.vision.flow(inputs.bill),
-            "looming_hz": round(
-                arena.vision.looming_hz(inputs.scored.scores.get("salience", 0.0)), 2
-            ),
+            "looming_hz": round(arena.vision.looming_hz(inputs.scored.scores.get("salience", 0.0)), 2),
             "escape_baseline": round(inputs.escape_baseline, 1),
             "escape_margin": arena.vision.ESCAPE_MARGIN,
             "note": "which eye leads is arbitrary and fixed; a fly has no opinion about initiators",

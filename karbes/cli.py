@@ -184,10 +184,8 @@ def _replay(args: argparse.Namespace) -> int:
     print(f"chamber   {'advances' if v['chamber_advances'] else 'rejects'} the bill")
     a = bundle.doc["arena"]
     print(f"blind     walks to {a['blind']['settled_on']}  -> {v['blind']}")
-    print(
-        f"seeing    walks to {a['seeing']['settled_on']}  -> {v['seeing']}"
-        + ("   *** FLIPPED ***" if v["flipped"] else "")
-    )
+    print(f"seeing    walks to {a['seeing']['settled_on']}  -> {v['seeing']}"
+          + ("   *** FLIPPED ***" if v["flipped"] else ""))
     print(f"chamber   {'advances' if v['chamber_advances'] else 'rejects'} the bill")
     print(f"\n{doc} ({doc.stat().st_size:,} B)")
     print(f"{blob} ({blob.stat().st_size:,} B)")

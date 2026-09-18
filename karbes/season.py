@@ -127,15 +127,8 @@ def run(
     for n, uuid in enumerate(order, 1):
         out.append(
             cast(
-                engine,
-                pops,
-                bills[uuid],
-                seen[uuid],
-                scores[uuid],
-                sees_initiator=sees_initiator,
-                bias=bias,
-                dead_band=dead_band,
-                seed=seed,
+                engine, pops, bills[uuid], seen[uuid], scores[uuid],
+                sees_initiator=sees_initiator, bias=bias, dead_band=dead_band, seed=seed,
             )
         )
         if n % 50 == 0:
