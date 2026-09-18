@@ -140,7 +140,7 @@ const ONS = new Uint16Array(b64(D.onset_b64).buffer), OOFF = D.onset_off;
 const onsetOf = {}; D.onset_event.forEach((e, k) => { onsetOf[e] = k; });
 const rasterAt = f => RAST.subarray(ROFF[f], ROFF[f+1]);
 const onsetAt = (k, b) => { const j = k*D.onset_bins + b; return ONS.subarray(OOFF[j], OOFF[j+1]); };
-const WAVE_MS = 70; // each 5 ms bin of the onset is shown for this long: the wave, slowed 14x
+let WAVE_MS = 70; // each 5 ms bin of the onset is shown for this long: the wave, slowed 14x
 let wave = {t: -1e9, k: -1};
 
 /* ---------- brain ---------- */
@@ -182,17 +182,23 @@ function drawBrain(f, alphaNext){
   for (const i of ids){ if (!inside(i)) continue; const [r_,g_,b_] = REGION[D.atlas.groups[GRP[i]]] || [255,255,255];
     bctx.fillStyle = `rgba(${Math.min(255,r_+90)},${Math.min(255,g_+90)},${Math.min(255,b_+90)},.95)`;
     bctx.fillRect(plateBox.x + XY[i*2]*plateBox.w - dpr, plateBox.y + XY[i*2+1]*plateBox.w - dpr, 2.2*dpr, 2.2*dpr); }
-  // the onset wave: the first 40 ms of this event, one 5 ms bin at a time, drawn hot and large
+  // the onset wave: the first 40 ms of this event, one 5 ms bin at a time, drawn as a bloom
   const we = (performance.now() - wave.t) / WAVE_MS;
   if (wave.k >= 0 && we < D.onset_bins){
-    const b = Math.floor(we), fade = 1 - (we - b)*0.5;
+    const b = Math.floor(we), fade = 1 - (we - b)*0.4, tally = {};
     for (let bb = Math.max(0, b-2); bb <= b; bb++){
-      const age = b - bb, a = (age===0 ? 1 : age===1 ? 0.55 : 0.25) * fade, R = (age===0 ? 3.4 : 2.4)*dpr;
+      const age = b - bb, a = (age===0 ? 1 : age===1 ? 0.5 : 0.22) * fade, R = (age===0 ? 9 : 6)*dpr;
       for (const i of onsetAt(wave.k, bb)){ if (!inside(i)) continue;
-        bctx.fillStyle = `rgba(255,${age===0?250:200},${age===0?230:150},${a})`;
-        bctx.beginPath(); bctx.arc(plateBox.x + XY[i*2]*plateBox.w, plateBox.y + XY[i*2+1]*plateBox.w, R, 0, 6.2832); bctx.fill(); } }
-    bctx.fillStyle = "#8B97AA"; bctx.font = `${10*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "left";
-    bctx.fillText(`onset  +${(Math.min(we, D.onset_bins)*5).toFixed(0).padStart(2)} ms  (slowed ${Math.round(WAVE_MS/5)}×)`, plateBox.x, plateBox.y - 8*dpr); }
+        if (age===0) tally[D.atlas.groups[GRP[i]]] = (tally[D.atlas.groups[GRP[i]]]||0)+1;
+        const px = plateBox.x + XY[i*2]*plateBox.w, py = plateBox.y + XY[i*2+1]*plateBox.w;
+        const gr = bctx.createRadialGradient(px,py,0,px,py,R); gr.addColorStop(0,`rgba(255,250,225,${a})`); gr.addColorStop(0.35,`rgba(255,215,140,${a*0.6})`); gr.addColorStop(1,"rgba(255,200,120,0)");
+        bctx.fillStyle = gr; bctx.fillRect(px-R,py-R,R*2,R*2);
+        bctx.fillStyle = `rgba(255,255,255,${a})`; bctx.fillRect(px-1.2*dpr, py-1.2*dpr, 2.4*dpr, 2.4*dpr); } }
+    const lead = Object.entries(tally).sort((x,y)=>y[1]-x[1])[0];
+    const where = lead ? ({optic:"optic lobes", central: lead[1] > 40 ? "central brain — mushroom body" : "central brain", cord:"nerve cord", ascending:"ascending neurons", descending:"descending neurons"}[lead[0]] || lead[0]) : "";
+    bctx.fillStyle = "#E9EEF6"; bctx.font = `500 ${11*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "left";
+    bctx.fillText(`onset  +${(Math.min(we, D.onset_bins)*5).toFixed(0).padStart(2)} ms   ${where}`, plateBox.x, plateBox.y - 9*dpr);
+    bctx.fillStyle = "#8B97AA"; bctx.font = `${9.5*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "right"; bctx.fillText(`slowed ${Math.round(WAVE_MS/5)}×`, plateBox.x + plateBox.w, plateBox.y - 9*dpr); bctx.textAlign = "left"; }
   bctx.globalCompositeOperation = "source-over";
   // the motor readout for the current event: what the fly's steering and escape neurons did
   const ev = D.events[curEv]; if (ev && ev.gf !== null){
