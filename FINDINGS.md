@@ -123,6 +123,27 @@ the chair; the chair's own bell is the floor as judged from the chair; the fly's
 speaker as scored by a classifier. Three different instruments. The page shows all three on
 one timeline and does not pretend they measure the same thing.
 
+### Reaction time
+
+Recorded on the second pass: the tick of the first giant-fibre spike after each event's
+onset.
+
+| | 20 May 2026 | 19 June 2023 |
+|---|---:|---:|
+| bells | 22 | 73 |
+| reaction time, median | **4.5 ms** | **4.2 ms** |
+| range | 3.3 – 7.6 ms | 3.3 – 8.3 ms |
+| heckle (giant fibre ≥ 120) | 4.3 ms | 4.2 ms |
+| hostile speech | 5.2 ms | 5.2 ms |
+| burst length, median | 445 ms | 445 ms |
+
+Four milliseconds from the first looming spike to the first giant-fibre spike. LC4 and
+LPLC2 sit one synapse from DNp01 (11,224 contacts onto two cells), the model's axonal delay
+is 1.8 ms, and the rest is membrane integration. A heckle is faster than a hostile speech
+because it is driven harder. The burst lasts as long as the looming does — the model has no
+adaptation — and stops within 100 ms of the input, which is the "forgotten" the page's
+caption promises.
+
 ### The transcript's own rhythm, which is what the page plays
 
 A speaker change every 80 s; the chair's utterances median 7 s (38 of them literally
