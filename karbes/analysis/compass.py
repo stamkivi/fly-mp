@@ -21,6 +21,14 @@ refit on the rest, and measure how far the held-out members land from where CHES
 Holding out single members would be self-flattering, because their party-mates carry the
 answer.
 
+**The two axes are not equally well measured, and the asymmetry is the finding.** The
+chamber's dominant voting dimension — 61% of the variance, and in this parliament the
+government/opposition split — correlates r = +0.92 with GAL-TAN and only -0.41 with the
+economic axis. Held out, GAL-TAN comes back to 0.79 on a 7.5-wide range of party positions;
+economic left-right to 1.74 on a range of 4.1. Roll-call votes in the XV Riigikogu carry
+cultural position sharply and economic position barely, so any picture drawn from them has
+a sharp vertical and a soft horizontal. Saying so is part of the result.
+
 Rovny et al. (2025), *25 Years of Political Party Positions in Europe: The Chapel Hill
 Expert Survey, 1999-2024*. Values below are `country == 22`, wave 2024.
 """
@@ -67,6 +75,8 @@ class Map:
     members: list[dict]  # every anchored human, with their fitted and published position
     loo_error: float  # mean distance, compass units, leave-one-party-out
     spread: float  # mean distance between anchored parties, for scale
+    axis_error: tuple[float, float]  # held-out error per axis
+    axis_range: tuple[float, float]  # spread of the anchors on each axis, for scale
 
     def project(self, stance: np.ndarray) -> tuple[float, float]:
         """Place a voting record. `stance` is the +1/-1/0/nan vector over the same votes."""
@@ -112,7 +122,7 @@ def fit(vm: votematrix.VoteMatrix, space: idealpoint.Space | None = None) -> Map
     coef = _solve(x, y)
 
     # Leave one *party* out: the held-out members get no help from their own bloc.
-    errors = []
+    errors, per_axis = [], []
     parties = sorted({f for _, _, f in keep})
     for party in parties:
         out = np.array([f == party for _, _, f in keep])
@@ -121,7 +131,9 @@ def fit(vm: votematrix.VoteMatrix, space: idealpoint.Space | None = None) -> Map
         held = _solve(x[~out], y[~out])
         pred = x[out] @ held
         errors.append(np.linalg.norm(pred - y[out], axis=1))
+        per_axis.append(np.abs(pred - y[out]))
     loo = float(np.concatenate(errors).mean()) if errors else float("nan")
+    axis = np.concatenate(per_axis).mean(axis=0) if per_axis else np.array([np.nan, np.nan])
 
     anchors = np.array(sorted(CHES_2024.values()))
     pair = [
@@ -144,11 +156,23 @@ def fit(vm: votematrix.VoteMatrix, space: idealpoint.Space | None = None) -> Map
         for i, (mid, name, faction) in enumerate(keep)
     ]
 
+    axis_range = (float(np.ptp(y[:, 0])), float(np.ptp(y[:, 1])))
     log.info(
-        "compass: %d anchored members, leave-one-party-out error %.2f against %.2f mean party spacing",
+        "compass: %d anchored members; held out a whole party, error %.2f overall, "
+        "%.2f on economic (range %.1f) and %.2f on GAL-TAN (range %.1f)",
         len(members),
         loo,
-        float(np.mean(pair)),
+        axis[0],
+        axis_range[0],
+        axis[1],
+        axis_range[1],
     )
-    return Map(space=space, coef=coef, members=members, loo_error=round(loo, 3),
-               spread=round(float(np.mean(pair)), 3))
+    return Map(
+        space=space,
+        coef=coef,
+        members=members,
+        loo_error=round(loo, 3),
+        spread=round(float(np.mean(pair)), 3),
+        axis_error=(round(float(axis[0]), 3), round(float(axis[1]), 3)),
+        axis_range=(round(axis_range[0], 3), round(axis_range[1], 3)),
+    )

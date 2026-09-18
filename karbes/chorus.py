@@ -74,9 +74,16 @@ def run_one(name: str, pack: Path | None, pops, bills, votes, scores, cal, *, se
 
     engine = E.load(pack)
     ballots = season.run(
-        engine, pops, bills, votes, scores,
-        bias=cal["baseline_bias"], dead_band=cal["dead_band"],
-        sees_initiator=True, seed=seed, label=name,
+        engine,
+        pops,
+        bills,
+        votes,
+        scores,
+        bias=cal["baseline_bias"],
+        dead_band=cal["dead_band"],
+        sees_initiator=True,
+        seed=seed,
+        label=name,
     )
     rows = [asdict(b) if hasattr(b, "__dataclass_fields__") else b.__dict__ for b in ballots]
     OUT.mkdir(parents=True, exist_ok=True)
@@ -91,3 +98,91 @@ def drop_pack(seed: int) -> None:
     path = pack_path(seed)
     if path.exists() and (path / "manifest.json").exists():
         shutil.rmtree(path)
+
+
+# ---------------------------------------------------------------- placing the chorus
+
+
+def stance(ballots: list[dict], vm, inverted: dict[str, bool]):
+    """A record as the same +1/-1/0/nan stance vector the 101 humans are encoded in."""
+    import numpy as np
+
+    from karbes.analysis.seat import _stance
+
+    column = {v.uuid: j for j, v in enumerate(vm.votes)}
+    out = np.full(len(vm.votes), np.nan)
+    for b in ballots:
+        j = column.get(b["voting_uuid"])
+        if j is not None:
+            out[j] = _stance(b["code"], inverted.get(b["voting_uuid"], False))
+    return out
+
+
+def place_all(vm, space, cmap, inverted: dict[str, bool], root: Path = OUT) -> dict:
+    """Read every record in `root`, recode it, and put it on the compass.
+
+    The real fly's extra phases are the within-brain yardstick: whatever distance separates
+    two runs of the *same* wiring is the distance below which a difference between two
+    wirings means nothing.
+    """
+    import numpy as np
+
+    from karbes.analysis.compass import AXES, CHES_2024
+    from karbes.season import auc
+    from karbes.seasonpage import SHORT, recode
+
+    flies = []
+    for path in sorted(root.glob("*.json")):
+        name = path.stem
+        ballots = json.loads(path.read_text(encoding="utf-8"))
+        recode(ballots, inverted)  # rewrites turn and code in place; see seasonpage.recode
+        x, y = cmap.project(stance(ballots, vm, inverted))
+        turns = np.array([b["turn"] for b in ballots])
+        adv = np.array([b["advances"] for b in ballots])
+        a = float(auc(turns, adv))
+        near = min(cmap.members, key=lambda m: (m["party_x"] - x) ** 2 + (m["party_y"] - y) ** 2)
+        flies.append(
+            {
+                "name": name,
+                "kind": "real" if name.startswith("karbes") else "rewired",
+                "phase": name.startswith("karbes-phase"),
+                "x": round(x, 3),
+                "y": round(y, 3),
+                "votes": len(ballots),
+                "auc_advances": round(max(a, 1 - a), 4),
+                "nearest_party": SHORT.get(near["faction"], near["faction"]),
+            }
+        )
+
+    def spread(points: list[tuple[float, float]]) -> float:
+        if len(points) < 2:
+            return float("nan")
+        p = np.array(points)
+        d = [
+            float(np.linalg.norm(p[i] - p[j])) for i in range(len(p)) for j in range(i + 1, len(p))
+        ]
+        return float(np.mean(d))
+
+    within = spread([(f["x"], f["y"]) for f in flies if f["kind"] == "real"])
+    across = spread([(f["x"], f["y"]) for f in flies if f["kind"] == "rewired"])
+    parties = {SHORT.get(k, k): {"x": v[0], "y": v[1]} for k, v in CHES_2024.items()}
+    log.info(
+        "chorus: %d flies, within-brain spread %.2f, across-wiring spread %.2f, party spacing %.2f",
+        len(flies),
+        within,
+        across,
+        cmap.spread,
+    )
+    return {
+        "schema": "karbes-chorus/1",
+        "axes": list(AXES),
+        "parties": parties,
+        "members": cmap.members,
+        "loo_error": cmap.loo_error,
+        "axis_error": list(cmap.axis_error),
+        "axis_range": list(cmap.axis_range),
+        "party_spacing": cmap.spread,
+        "flies": flies,
+        "within_brain_spread": round(within, 3),
+        "across_wiring_spread": round(across, 3),
+    }
