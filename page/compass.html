@@ -363,7 +363,10 @@ function parties(a){
     ctx.beginPath(); ctx.arc(x, y, 13*dpr, 0, 6.2832); ctx.stroke();
     ctx.fillStyle = c;
     ctx.beginPath(); ctx.arc(x, y, 4.2*dpr, 0, 6.2832); ctx.fill();
-    ctx.fillStyle = "#1B1A18"; ctx.textAlign = "center";
+    ctx.textAlign = "center";
+    ctx.lineWidth = 3.5*dpr; ctx.lineJoin = "round"; ctx.strokeStyle = "#FFFFFF";
+    ctx.strokeText(name, x, y - 19*dpr);
+    ctx.fillStyle = "#1B1A18";
     ctx.fillText(name, x, y - 19*dpr);
   }
   ctx.restore();
@@ -382,9 +385,14 @@ function flyAt(x, y, px, alpha, halo){
 }
 
 function label(text, x, y, colour){
+  // Stroked in the paper colour first: these labels land on top of flies, and unoutlined
+  // text over a photograph of an insect is unreadable.
   ctx.save();
   ctx.font = `500 ${11*dpr}px "IBM Plex Mono",monospace`;
-  ctx.textAlign = "center"; ctx.fillStyle = colour;
+  ctx.textAlign = "center";
+  ctx.lineWidth = 3.5*dpr; ctx.lineJoin = "round"; ctx.strokeStyle = "#FFFFFF";
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = colour;
   ctx.fillText(text, x, y);
   ctx.restore();
 }
@@ -420,7 +428,10 @@ function draw(){
   const karbes = D.flies.find(f => f.name === "karbes");
   const title2 = f => "SHUFFLE " + String(f.name.replace("rewired","")).padStart(2,"0");
   const phases = D.flies.filter(f => f.kind === "real" && f.name !== "karbes");
-  const rewired = D.flies.filter(f => f.kind === "rewired" || f.kind === "rewired_rerun");
+  /* Only the twenty distinct wirings. The reruns of four of them are a control on
+     reproducibility, not more politicians, and drawing them here piles three flies on one
+     spot and tells the reader there are twenty-eight. */
+  const rewired = D.flies.filter(f => f.kind === "rewired");
 
   hits = [];
   /* Stage 5 names one pair, so the figure names it too — otherwise the panel and the plot
@@ -448,14 +459,14 @@ function draw(){
   const aPh = alphaFor(3);
   if (aPh > 0){
     for (const f of phases){
-      flyAt(sx(f.x), sy(f.y), 32*dpr, aPh*0.9, true);
-      hits.push({f, x:sx(f.x), y:sy(f.y), r:19*dpr});
+      flyAt(sx(f.x), sy(f.y), 26*dpr, aPh*0.75, false);
+      hits.push({f, x:sx(f.x), y:sy(f.y), r:15*dpr});
     }
   }
   const aK = alphaFor(2);
   if (aK > 0 && karbes){
     flyAt(sx(karbes.x), sy(karbes.y), 44*dpr, aK, true);
-    label("KÄRBES", sx(karbes.x), sy(karbes.y) + 36*dpr, "#E2622C");
+    label("KÄRBES", sx(karbes.x), sy(karbes.y) + 38*dpr, "#C24B18");
     hits.push({f: karbes, x:sx(karbes.x), y:sy(karbes.y), r:24*dpr});
   }
   requestAnimationFrame(draw);
