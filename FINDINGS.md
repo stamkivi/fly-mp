@@ -5,8 +5,9 @@ as the record of what was believed when, not deleted when superseded.*
 
 ## Iteration 4 — the connectome is not a better predictor, it is a different person (2026-09-18)
 
-*Design pre-registered in SPEC §"Iteration 4" before these runs finished. The chorus verdict
-at the end is the one number that was still being measured when the rest of this was written.*
+*Design pre-registered in SPEC §"Iteration 4" before the runs that test it finished. Complete:
+20 degree-preserving shuffles, the real connectome run 5 times, and 4 of the shuffles run 3
+times each — 33 full-corpus records, 461 bills apiece.*
 
 ### The accuracy question is settled, and the fly loses
 
@@ -32,20 +33,14 @@ no reading of that under which the connectome is contributing accuracy.
 
 ### What the shuffles did that the accuracy number cannot show
 
-They landed in different places. Identical in-degrees, out-degrees, transmitter signs and
-total output per neuron; identical bills, encoder, calibration and decoder; three different
-voting records with three different nearest factions:
+They landed in different places. Identical in-degrees, out-degrees, transmitter signs and total
+output per neuron; identical bills, encoder, calibration and decoder — and twenty different
+voting records nearest five different parties. A regression fitted twice on the same data gives
+the same answer twice. A brain rewired twice does not.
 
-| brain | compass | nearest party | AUC |
-|---|---|---|---:|
-| the real connectome | (6.03, 4.47) | REF | 0.688 |
-| shuffle 0 | (6.19, 3.66) | REF | 0.742 |
-| shuffle 1 | (5.54, 9.07) | EKRE | 0.946 |
-| shuffle 2 | (4.94, 8.23) | EKRE | 0.927 |
-
-Mean distance between shuffles: **3.74** compass units, against **4.80** between two Estonian
-parties. A regression fitted twice on the same data gives the same answer twice. A brain
-rewired twice does not, and nothing but a connectome produces that.
+The numbers are in §"The test, run and passed" below; what matters here is that this is
+invisible in an accuracy score, and it is the one thing a connectome can demonstrate that a
+16-parameter readout cannot.
 
 ### The compass, and why only half of it is real
 
@@ -93,12 +88,74 @@ but consistent per-bill component compounds across a record the way it does for 
 repeated measure. What it does settle is that the within-brain control must be run at full
 corpus length in compass space rather than inferred from these correlations.
 
-### The pending test
+### The test, run and passed
 
-Twenty shuffles at full corpus length against the same connectome run three times, all placed
-through the same frozen map. Passes only if rewiring moves a fly at least twice as far as
-re-running it does. Running at the time of writing; the page's verdict sentence is generated
-from the measured ratio in three branches and cannot be written into a result it did not get.
+Twenty degree-preserving shuffles at full corpus length, against the same connectome run five
+times, all projected through the same frozen map.
+
+| | compass units |
+|---|---:|
+| two runs of the **same** wiring (5 runs, 10 pairs) | **0.82** |
+| two **different** wirings (20 shuffles, 190 pairs) | **3.12** |
+| ratio | **3.8×** |
+| permutation p (20,000 relabellings) | **0.008** |
+| two Estonian parties, for scale | 4.80 |
+
+Pre-registered threshold was 2×. It passes.
+
+**The ratio fell as reruns arrived and that is not the result eroding.** It read 16.5 at two
+real runs, 7.4 at three, 4.3 at four, 3.8 at five — mean pairwise distance underestimates
+spread at small n, in both the numerator and the denominator, and the denominator had the
+fewest points. 3.8 is the settled figure. Any number quoted from fewer than five runs was
+premature.
+
+The twenty shuffles land nearest EKRE ×11, REF ×5, KESK ×2, Isamaa ×1 and E200 ×1 — five of
+the six parties in the chamber — spanning y = 2.00 to 9.11 against the chamber's own range of
+1.84 to 9.26. One connectome, rewired, covers almost the whole liberal–conservative axis of the
+Riigikogu.
+
+### What almost became a false headline
+
+The first shuffle re-run under fresh input noise scattered 2.47 compass units against the real
+connectome's 0.82. Read straight, that says the measured wiring has a reproducible political
+disposition and a degree-matched random one does not — *structure buys stability*, which would
+have been the best claim in this project.
+
+It was a confound. That shuffle was chosen arbitrarily and is the third-quietest of the twenty:
+turn SD 0.057 against the connectome's 0.074. A quiet readout is noise-dominated whatever
+produced it. Re-running three more shuffles chosen to span the readout-strength range:
+
+| brain | kind | turn SD | within-brain spread | runs |
+|---|---|---:|---:|---:|
+| rewired11 | shuffle | 0.292 | 0.18 | 3 |
+| rewired16 | shuffle | 0.080 | 0.65 | 3 |
+| karbes | real connectome | 0.074 | 0.82 | 5 |
+| rewired0 | shuffle | 0.057 | 2.47 | 3 |
+| rewired5 | shuffle | 0.046 | 2.28 | 3 |
+
+Monotone in readout strength, and **the real connectome sits mid-pack on both columns**. A
+shuffle matched to it for readout strength (seed 16, SD 0.080) reproduces to 0.65 against its
+0.82. Reproducibility is bought by loudness, not by being the wiring that was measured.
+
+Recorded here because it is the kind of result that gets published: a striking effect from one
+arbitrarily-chosen control arm, with the covariate that explains it one query away.
+
+### Three more things the twenty shuffles showed
+
+**Why the connectome predicts badly, rather than an apology for it.** AUC as reported is
+direction-free by construction, so it rewards tracking the government/opposition axis either
+way. Across the rewirings, distance from the chamber's midline predicts AUC at **r = 0.60** —
+being a good predictor of this parliament means having picked a side in it. Kärbes lands 0.43
+from the midline. It has not picked one.
+
+**The accuracy number is the unstable one.** Five runs of the identical connectome give AUCs of
+0.633, 0.712, 0.584, 0.801 and 0.688 — a range of 0.22 — while their seats move 0.82 compass
+units in total. The statistic the whole accuracy framing rests on wanders more under input
+noise than the position does.
+
+**The connectome is unremarkable among its own shuffles.** It sits 1.97 compass units from the
+centre of their cloud, which averages 2.49 — the 30th percentile. What a connectome buys is a
+particular individual, reproducibly. It does not buy a privileged one.
 
 ### The brain on screen
 
