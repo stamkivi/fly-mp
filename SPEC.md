@@ -1230,6 +1230,96 @@ exhibit, not the evidence.
 
 ---
 
+## Iteration 4 — the question is not accuracy, it is identity (pre-registered 2026-09-18)
+
+*Written before the runs it describes had finished. The numbers it predicts are predictions.*
+
+### Why the previous framing is retired
+
+Iteration 3 made the fly vote well and then measured what that was worth. The answer was
+nothing. The initiator bit alone classifies 94.2% of the 565 contested votes; a sixteen-
+parameter logistic regression on the same Jev scores reaches AUC 0.94; the real connectome
+reaches 0.69. Worse for the framing, the three degree-preserving shuffles scored **0.742,
+0.946 and 0.927** — every one of them at least as good as the real wiring. On accuracy the
+connectome is not merely unnecessary, it is a handicap.
+
+That is a valid pre-committed outcome and it is reported as one. It also kills "could a fly
+be the 102nd member?" as the headline question, because the honest answer is "yes, and so
+could a spreadsheet, and the spreadsheet is better at it."
+
+### What the shuffles actually showed
+
+The three shuffles did not merely score differently. They landed in **different places**.
+Same neurons, same in-degrees, same out-degrees, same transmitter signs, same total output
+per cell, same bills, same encoder, same calibration, same decoder — and three different
+voting records with three different nearest factions. Nothing about that is visible in an
+accuracy number, and nothing but a connectome can produce it. A regression fitted twice on
+the same data gives the same answer twice; a brain rewired twice does not.
+
+So the claim becomes: **wiring does not decide whether the fly is right. It decides who the
+fly is.**
+
+### The pre-registered test
+
+Twenty degree-preserving shuffles, each voting the full corpus, each placed on a compass
+fitted only on the humans. Against them, the same connectome run three times with different
+input noise — the within-brain control, run identically.
+
+* **Passes** if the mean distance between two rewirings is at least twice the mean distance
+  between two runs of one wiring. Then the scatter is structural.
+* **Fails** if those two numbers are comparable. Then the scatter is the readout's noise, the
+  page says so in those words, and the piece reports a null.
+
+Nothing between 1× and 2× gets called a win. The page's verdict sentence is generated from
+the measured ratio in three branches, so it cannot be written into a result it did not get.
+
+### Why a compass, and why this one
+
+Dimension 1 of the ideal-point space is signed and scaled by an SVD: "+3.6" is unreadable and
+incomparable across runs. The Chapel Hill Expert Survey publishes Estonian party positions on
+economic left-right and GAL-TAN for election year 2023 — this chamber — coded by political
+scientists with no knowledge of this project. Anchoring the latent space to those coordinates
+gives axes with names.
+
+The map is fitted on the 101 humans and **frozen before any fly is projected**. That is
+stricter than SPEC §4's identical-procedure rule: every arm receives not merely the same
+procedure but the same fitted map, so no fly can move its own axes.
+
+Measured while fitting, and reported on the page rather than in a footnote: the chamber's
+dominant voting dimension (61% of variance, the government/opposition split) correlates
+r = +0.92 with GAL-TAN and only -0.41 with the economic axis. Held out a whole party, GAL-TAN
+returns to 0.79 on a 7.4-wide range of party positions; economic left-right to 1.74 on a range
+of 4.1. **Roll-call votes in the XV Riigikogu carry cultural position sharply and economic
+position barely.** Any figure drawn from them has a sharp vertical and a soft horizontal.
+
+### Reliability, measured first
+
+150 bills, three input phases, the initiator bit on, readout centred on each run's own median
+as the vote is:
+
+| | |
+|---|---:|
+| phase 0 vs 1 | r = +0.135 |
+| phase 0 vs 2 | r = +0.271 |
+| phase 1 vs 2 | r = +0.278 |
+| all three on the same side | 34.7% |
+| signal-to-noise of the disposition | 1.11 |
+
+**A single vote is barely reproducible.** This does not by itself decide the question: the
+compass placement aggregates 461 votes, and a weak but consistent per-bill component compounds
+across a record the way it does for any noisy repeated measure. It does mean the within-brain
+control has to be run at full corpus length in compass space rather than inferred from these
+correlations, which is why it is in the chorus run rather than assumed from this table.
+
+### What the page must not do
+
+* Not claim the fly predicts the chamber. It does not, and the shuffles beat it.
+* Not call the rewired arm a control. It is the experiment.
+* Not draw two confident axes when only one is measured.
+* Not print a ratio when the control that makes it meaningful has not finished.
+
+---
+
 ## Current task: the one-bill replay slice
 
 Build a single ~20-second loop end to end on real data, before scaling to 30 bills or a season
