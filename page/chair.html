@@ -183,7 +183,7 @@ function drawBrain(f, alphaNext){
     bctx.fillStyle = `rgba(${Math.min(255,r_+70)},${Math.min(255,g_+70)},${Math.min(255,b_+70)},.75)`;
     bctx.fillRect(plateBox.x + XY[i*2]*plateBox.w - 0.8*dpr, plateBox.y + XY[i*2+1]*plateBox.w - 0.8*dpr, 1.7*dpr, 1.7*dpr); }
   // the onset wave: the first 40 ms of this event, one 5 ms bin at a time, drawn as a bloom
-  const we = (performance.now() - wave.t) / WAVE_MS;
+  const we = (performance.now() - wave.t) / (WAVE_MS / speed);
   if (wave.k >= 0 && we < D.onset_bins){
     const b = Math.floor(we), fade = 1 - (we - b)*0.4, tally = {};
     for (let bb = Math.max(0, b-2); bb <= b; bb++){
@@ -198,7 +198,7 @@ function drawBrain(f, alphaNext){
     const where = lead ? ({optic:"optic lobes", central: lead[1] > 40 ? "central brain — mushroom body" : "central brain", cord:"nerve cord", ascending:"ascending neurons", descending:"descending neurons"}[lead[0]] || lead[0]) : "";
     bctx.fillStyle = "#E9EEF6"; bctx.font = `500 ${11*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "left";
     bctx.fillText(`onset  +${(Math.min(we, D.onset_bins)*5).toFixed(0).padStart(2)} ms   ${where}`, plateBox.x, plateBox.y - 9*dpr);
-    bctx.fillStyle = "#8B97AA"; bctx.font = `${9.5*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "right"; bctx.fillText(`slowed ${Math.round(WAVE_MS/5)}×`, plateBox.x + plateBox.w, plateBox.y - 9*dpr); bctx.textAlign = "left"; }
+    bctx.fillStyle = "#8B97AA"; bctx.font = `${9.5*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "right"; bctx.fillText(`slowed ${Math.round(WAVE_MS/5/speed)}×`, plateBox.x + plateBox.w, plateBox.y - 9*dpr); bctx.textAlign = "left"; }
   bctx.globalCompositeOperation = "source-over";
   // the motor readout for the current event: what the fly's steering and escape neurons did
   const ev = D.events[curEv]; if (ev && ev.gf !== null){
