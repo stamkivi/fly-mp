@@ -120,6 +120,7 @@ def stance(ballots: list[dict], vm, inverted: dict[str, bool]):
 
 
 BASELINE = Path("runs/baseline.json")
+RELIABILITY = Path("runs/reliability_informed.json")
 
 #: The one shuffled pack that is itself re-run under new input noise, so its reruns can be
 #: grouped with it.
@@ -243,9 +244,7 @@ def place_all(
     rewired_pts = [(f["x"], f["y"]) for f in flies if f["kind"] == "rewired"]
     # One shuffled brain, re-run: is a rewiring an individual, or a fresh draw each time?
     shuffle_rerun = [
-        (f["x"], f["y"])
-        for f in flies
-        if f["kind"] == "rewired_rerun" or f["name"] == _BASE_RERUN
+        (f["x"], f["y"]) for f in flies if f["kind"] == "rewired_rerun" or f["name"] == _BASE_RERUN
     ]
     within = spread(real_pts)
     across = spread(rewired_pts)
@@ -292,6 +291,7 @@ def place_all(
         # What a regression gets from the same inputs. The fly is never fitted to the
         # outcome and these are, so the comparison flatters them — which is the point.
         "baseline": json.loads(BASELINE.read_text(encoding="utf-8")) if BASELINE.exists() else None,
+        "per_bill": _per_bill(),
     }
 
 
@@ -334,3 +334,29 @@ def _permutation(real, rewired, draws: int = 20000, seed: int = 0):
         for _ in range(draws)
     )
     return round((hits + 1) / (draws + 1), 4)
+
+
+def _per_bill() -> dict | None:
+    """How reproducible one *vote* is, against how reproducible the whole record is.
+
+    The two numbers only mean something together. A record that reproduces to a quarter of a
+    compass unit while its individual votes land on the same side barely more often than a
+    coin is the interesting shape, and quoting either one alone hides it.
+    """
+    import numpy as np
+
+    if not RELIABILITY.exists():
+        return None
+    m = np.array(json.loads(RELIABILITY.read_text(encoding="utf-8"))["turns"])
+    centred = m - np.median(m, axis=1, keepdims=True)  # the vote is the centred sign
+    rs, agree = [], []
+    for i in range(len(centred)):
+        for j in range(i + 1, len(centred)):
+            rs.append(float(np.corrcoef(centred[i], centred[j])[0, 1]))
+            agree.append(float(np.mean(np.sign(centred[i]) == np.sign(centred[j]))))
+    return {
+        "bills": int(m.shape[1]),
+        "runs": int(m.shape[0]),
+        "r": round(float(np.mean(rs)), 3),
+        "same_side": round(float(np.mean(agree)), 3),
+    }

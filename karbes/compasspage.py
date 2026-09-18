@@ -35,10 +35,28 @@ def _fmt(x: float, n: int = 2) -> str:
 #: The headline counts the brains that finished, so a run that loses one does not ship a
 #: title claiming otherwise.
 _WORDS = {
-    3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten",
-    11: "Eleven", 12: "Twelve", 13: "Thirteen", 14: "Fourteen", 15: "Fifteen", 16: "Sixteen",
-    17: "Seventeen", 18: "Eighteen", 19: "Nineteen", 20: "Twenty", 21: "Twenty-one",
-    22: "Twenty-two", 23: "Twenty-three", 24: "Twenty-four",
+    3: "Three",
+    4: "Four",
+    5: "Five",
+    6: "Six",
+    7: "Seven",
+    8: "Eight",
+    9: "Nine",
+    10: "Ten",
+    11: "Eleven",
+    12: "Twelve",
+    13: "Thirteen",
+    14: "Fourteen",
+    15: "Fifteen",
+    16: "Sixteen",
+    17: "Seventeen",
+    18: "Eighteen",
+    19: "Nineteen",
+    20: "Twenty",
+    21: "Twenty-one",
+    22: "Twenty-two",
+    23: "Twenty-three",
+    24: "Twenty-four",
 }
 
 
@@ -57,17 +75,29 @@ def copy(bundle: dict) -> dict[str, str]:
     def shuffle_name(raw: str | None) -> str:
         return "shuffle " + (raw or "").replace("rewired", "").rjust(2, "0") if raw else "—"
 
+    pb = bundle.get("per_bill") or {}
+    per_bill = (
+        f"On any one bill it is close to a coin flip: re-run, the fly lands on the same side "
+        f"of {int(pb['bills'])} bills only {_fmt(100 * pb['same_side'], 0)}% of the time "
+        f"(correlation r = {_fmt(pb['r'])}). The individual votes are noise. The record of "
+        f"{html.escape(str(karbes['votes']))} of them is not."
+        if pb
+        else ""
+    )
+
     rows = []
     for r in bundle.get("split") or []:
         who = "government" if r["government"] else "a member or committee"
         rows.append(
             '<li><span class="vs"><b>{a}</b> / <b>{b}</b></span>'
             '<span class="what">{ch}<i>{title}</i>'
-            '<u>{when} · tabled by {who}</u></span></li>'.format(
-                a=html.escape(r["a"]), b=html.escape(r["b"]),
+            "<u>{when} · tabled by {who}</u></span></li>".format(
+                a=html.escape(r["a"]),
+                b=html.escape(r["b"]),
                 ch=html.escape(r["channel"] or "unscored"),
                 title=html.escape(r["title"] or "untitled"),
-                when=html.escape(r["when"]), who=who,
+                when=html.escape(r["when"]),
+                who=who,
             )
         )
 
@@ -75,7 +105,9 @@ def copy(bundle: dict) -> dict[str, str]:
     pv = bundle.get("permutation_p")
     chance = (
         f" Relabelling at random which brains count as the reruns gives a ratio at least "
-        f"this large in {_fmt(100 * pv, 1)}% of 20,000 draws." if pv else ""
+        f"this large in {_fmt(100 * pv, 1)}% of 20,000 draws."
+        if pv
+        else ""
     )
     if not math.isnan(ratio) and ratio >= 2:
         verdict = (
@@ -114,14 +146,13 @@ def copy(bundle: dict) -> dict[str, str]:
         "__KARBES_PARTY__": html.escape(karbes["nearest_party"]),
         "__KARBES_AUC__": _fmt(karbes["auc_advances"], 3),
         "__WITHIN__": "—" if math.isnan(within) else _fmt(within),
+        "__PER_BILL__": per_bill,
         "__ACROSS__": _fmt(across),
         "__SPACING__": _fmt(spacing),
         "__ERR_X__": _fmt(ex),
         "__ERR_Y__": _fmt(ey),
         "__N_MEMBERS__": str(len(bundle["members"])),
-        "__PARTIES_HIT__": html.escape(
-            ", ".join(sorted({f["nearest_party"] for f in rewired}))
-        ),
+        "__PARTIES_HIT__": html.escape(", ".join(sorted({f["nearest_party"] for f in rewired}))),
         "__AUC_REG__": _fmt(base.get("content + who tabled it", float("nan")), 3),
         "__AUC_BIT__": _fmt(base.get("who tabled it alone", float("nan")), 3),
         "__AUC_CONTENT__": _fmt(base.get("content only", float("nan")), 3),
