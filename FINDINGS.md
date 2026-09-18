@@ -1,6 +1,116 @@
-# Fly brain, or particle soup?
+# Kärbes — findings
 
-*Stage 2b, the one-bill replay slice. uv-mac-mini, 2026-09-17/18, MaleCNS v1.0.*
+*uv-mac-mini, 2026-09-17/18, MaleCNS v1.0. Newest iteration first; earlier sections are kept
+as the record of what was believed when, not deleted when superseded.*
+
+## Iteration 4 — the connectome is not a better predictor, it is a different person (2026-09-18)
+
+*Design pre-registered in SPEC §"Iteration 4" before these runs finished. The chorus verdict
+at the end is the one number that was still being measured when the rest of this was written.*
+
+### The accuracy question is settled, and the fly loses
+
+Cross-validated on the same 461 contested bills, from the same Jev channel scores the fly
+receives:
+
+| model | AUC on "did the bill advance" |
+|---|---:|
+| content only, 22 features | 0.829 |
+| who tabled it, 1 feature | 0.943 |
+| content + who tabled it, 23 features | **0.970** |
+| **the real connectome, 166,700 neurons** | **0.688** |
+| best degree-preserving shuffle of it | 0.946 |
+
+The regressions are fitted to the outcome and the fly never sees it, so the comparison
+flatters them. It is still the right comparison: if prediction were the goal nobody would
+simulate a brain to do it. **This is the negative result SPEC pre-committed to** — "the
+connectome adds nothing over a 16-parameter linear readout" — and it is reported as such
+rather than fished around.
+
+Three shuffles scored 0.742, 0.946 and 0.927. Two of the three beat the real wiring. There is
+no reading of that under which the connectome is contributing accuracy.
+
+### What the shuffles did that the accuracy number cannot show
+
+They landed in different places. Identical in-degrees, out-degrees, transmitter signs and
+total output per neuron; identical bills, encoder, calibration and decoder; three different
+voting records with three different nearest factions:
+
+| brain | compass | nearest party | AUC |
+|---|---|---|---:|
+| the real connectome | (6.03, 4.47) | REF | 0.688 |
+| shuffle 0 | (6.19, 3.66) | REF | 0.742 |
+| shuffle 1 | (5.54, 9.07) | EKRE | 0.946 |
+| shuffle 2 | (4.94, 8.23) | EKRE | 0.927 |
+
+Mean distance between shuffles: **3.74** compass units, against **4.80** between two Estonian
+parties. A regression fitted twice on the same data gives the same answer twice. A brain
+rewired twice does not, and nothing but a connectome produces that.
+
+### The compass, and why only half of it is real
+
+Party positions come from the Chapel Hill Expert Survey 2024 wave, Estonia, election year
+2023 — this chamber, coded by political scientists with no knowledge of this project. The map
+from votes to compass is fitted on the 101 humans and **frozen before any fly is projected**,
+which is stricter than SPEC §4 requires: every arm gets the same fitted map, not merely the
+same procedure.
+
+Holding out a whole party and refitting:
+
+| axis | held-out error | range of party positions |
+|---|---:|---:|
+| GAL-TAN (liberal–conservative) | **0.79** | 7.4 |
+| economic left–right | **1.74** | 4.1 |
+
+The chamber's dominant voting dimension carries 61% of the variance and correlates r = +0.92
+with GAL-TAN, -0.41 with the economic axis. **Roll-call votes in the XV Riigikogu carry
+cultural position sharply and economic position barely.** The picture has a sharp vertical and
+a soft horizontal; the page draws the held-out error on the plot rather than hiding it in a
+note, because that cross is nearly half the frame wide.
+
+This is a finding about the parliament, not only about the method: in this term the
+government/opposition split runs almost parallel to the liberal–conservative axis, so a
+member's position on it is largely a restatement of how often they backed the coalition.
+
+### Reliability: a single vote is barely reproducible
+
+150 bills, three input phases, initiator bit on, readout centred on each run's own median —
+which is what turns it into a vote:
+
+| | |
+|---|---:|
+| phase 0 vs 1 | r = +0.135 |
+| phase 0 vs 2 | r = +0.271 |
+| phase 1 vs 2 | r = +0.278 |
+| all three on the same side | 34.7% (a coin gives 25%) |
+| signal-to-noise of the disposition | 1.11 |
+
+Content-only, run first, was worse still (r = -0.08, -0.02, -0.09) but also had AUC 0.509 —
+no signal at all — so that test was uninformative rather than negative.
+
+**This does not settle the question.** A compass placement aggregates 461 votes, and a weak
+but consistent per-bill component compounds across a record the way it does for any noisy
+repeated measure. What it does settle is that the within-brain control must be run at full
+corpus length in compass space rather than inferred from these correlations.
+
+### The pending test
+
+Twenty shuffles at full corpus length against the same connectome run three times, all placed
+through the same frozen map. Passes only if rewiring moves a fly at least twice as far as
+re-running it does. Running at the time of writing; the page's verdict sentence is generated
+from the measured ratio in three branches and cannot be written into a result it did not get.
+
+### The brain on screen
+
+The page's hero is 126,072 real `somaLocation` coordinates from MaleCNS v1.0, projected
+dorsally and rendered as a two-channel fluorescence plate — depth-attenuated, depth-of-field,
+tone-mapped, bloomed — with the 32 DNa descending neurons the vote is read from picked out as
+a driver line. The imaging metaphor is the honest one rather than a stylisation: a nuclear
+counterstain of a *Drosophila* CNS shows precisely this, cell bodies in a rind around the
+neuropil. Nothing is registered to anyone else's image and no structure is invented; the
+caption says it is a rendering of measured coordinates, not a photograph of a specimen.
+
+---
 
 ## Iteration 3 — two senses and an arena (2026-09-18)
 
