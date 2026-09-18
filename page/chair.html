@@ -96,7 +96,7 @@ canvas{display:block;width:100%;height:100%}
     </div>
   </div>
   <div class="bottom">
-    <div class="ctl"><button id="play">▶ play</button><button id="sp1" class="on">1×</button><button id="sp4">4×</button><button id="sp12">12×</button><button id="mute">🔔 sound</button></div>
+    <div class="ctl"><button id="play">▶ play</button><button id="sp1">1×</button><button id="sp4" class="on">4×</button><button id="sp12">12×</button><button id="mute">🔔 sound</button></div>
     <canvas id="timeline"></canvas>
     <div class="legend"><i style="background:#FFD36E"></i>fly rings the bell &nbsp;<i style="background:#7FB2FF"></i>real chair: order / bell &nbsp;<i style="background:#3A4658"></i>real chair: time</div>
   </div>
@@ -273,12 +273,12 @@ const ticker = document.getElementById("ticker"), itemEl = document.getElementBy
 const bellmark = document.getElementById("bellmark");
 document.getElementById("date").textContent = D.date; document.getElementById("vdate").textContent = D.date;
 document.getElementById("regions").innerHTML = D.atlas.groups.map(g=>`<span><i style="background:rgb(${REGION[g]})"></i>${g}<b id="hz-${g}">0</b> Hz</span>`).join("");
-let frame = 0, playing = false, speed = 1, lastEv = -1, lastT = 0, acc = 0;
+let frame = 0, playing = false, speed = 4, lastEv = -1, lastT = 0, acc = 0;
 const t0 = new Date(D.start).getTime();
 function clock(ev){ if (!ev) return; const d = new Date(t0 + ev.t*1000); timeEl.textContent = d.toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"}); }
 function line(ev, cls){
   const el = document.createElement("div"); el.className = "line " + cls;
-  const chip = `<span class="chip" style="background:${ev.kind==="heckle"?"#C24B18":(COLOUR[ev.faction]||"#3A4658")}">${ev.kind==="heckle"?"HECKLE":ev.kind==="vote"?"VOTE":ev.kind==="presence"?"ROLL CALL":ev.role==="chair"?"CHAIR":(ev.faction||ev.who).toUpperCase()}</span>`;
+  const chip = `<span class="chip" style="background:${ev.kind==="heckle"?"#C24B18":(COLOUR[ev.faction]||"#3A4658")}">${ev.kind==="heckle"?"HECKLE":ev.kind==="vote"?"VOTE":ev.kind==="presence"?"ROLL CALL":ev.role==="chair"?"CHAIR":ev.role==="gov"?"GOV":(ev.faction||"NON-AFF").toUpperCase()}</span>`;
   const txt = ev.kind==="vote" ? "the hall votes" : ev.kind==="presence" ? "presence check" : ev.text || ev.who;
   el.innerHTML = chip + `<span class="txt">${ev.kind==="speech" && ev.role!=="chair" ? ev.who+": " : ""}${txt}</span>`;
   ticker.appendChild(el); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild);
@@ -300,6 +300,9 @@ function onEvent(i){
 const M = {kinds:{}, bellsBySide:{L:0,R:0,"":0}, thrown:{left:0,right:0}, ritual:0, seen:{}, repeatBells:0, chair:{order:0,bell:0,time:0}, flyBells:0, coincide:0, lastBellIdx:-99};
 function remember(i){
   const ev = D.events[i]; if (!ev) return;
+  // the real chair's marks since the last stimulus, checked against the PREVIOUS bell before
+  // this event's own bell is registered — the chair reacts after the offence, not before it
+  for (let j = lastEv+1; j <= i; j++){ const c = D.events[j]; if (c && c.real_chair){ M.chair[c.real_chair]++; const d = j - M.lastBellIdx; if (c.real_chair!=="time" && M.lastBellIdx>=0 && d >= 0 && d <= 2) M.coincide++; } }
   const kind = ev.kind==="speech" ? (ev.hostility>=0.5 ? "hostile speech" : "civil speech") : ev.kind;
   const k = M.kinds[kind] = M.kinds[kind] || {n:0, gf:0, bells:0, active:0};
   k.n++; k.gf += ev.gf||0; k.active += ev.active||0;
@@ -307,7 +310,6 @@ function remember(i){
   if (ev.gf >= D.bell_gf){ k.bells++; M.flyBells++; M.bellsBySide[ev.side||""]++; M.lastBellIdx = i;
     if (ev.turn > 0.15) M.thrown.right++; else if (ev.turn < -0.15) M.thrown.left++;
     const key = ev.seat || ev.who; if (M.seen[key]) M.repeatBells++; M.seen[key] = (M.seen[key]||0)+1; }
-  for (let j = lastEv+1; j <= i; j++){ const c = D.events[j]; if (c && c.real_chair){ M.chair[c.real_chair]++; if (c.real_chair!=="time" && i - M.lastBellIdx <= 2 && M.lastBellIdx>=0) M.coincide++; } }
   renderMemo();
 }
 function renderMemo(){
@@ -378,9 +380,9 @@ function finish(){
     [S.stimuli, "things happened in the hall"], [S.fly_bells, "times the fly rang the bell"],
     [S.chair_order + S.chair_bell, "times the real chair called for order or rang it"], [S.coincide, "of the fly's bells fell within two events of the chair's"]
   ].map(([n,t])=>`<div class="fig"><b>${n}</b><span>${t}</span></div>`).join("");
-  const K = S.by_kind || {}; const kinds = ["civil speech","hostile speech","heckle","vote","presence"].filter(k => K[k]);
+  const K = S.by_kind || {}; const kinds = ["civil speech","hostile speech","heckle","vote"].filter(k => K[k]);
   document.getElementById("figs").innerHTML += kinds.map(k => `<div class="fig"><b>${K[k].gf}</b><span>giant-fibre spikes, mean, per <i>${k}</i> (×${K[k].n}; ${K[k].bells} bells)</span></div>`).join("");
-  document.getElementById("verdict").textContent = `A speech's own scent on the same side damps the escape: mid-hostility speeches barely ring, confident insults and heckles always do — the network, busy with the speaker, bolts only at a real threat. ${S.hostile} speeches read as hostile; ${S.heckles} disturbances in the record; ${S.ritual} speeches opened with a thank-you, each greeted as new. The real chair also called time ${S.chair_time} times — the fly has no clock. ${S.bio_seconds} seconds of biological time for ${Math.round((D.events[D.events.length-1].t)/60)} minutes of sitting.`;
+  document.getElementById("verdict").textContent = `A speech's own scent on the same side damps the escape: mid-hostility speeches barely ring, confident insults and heckles always do — the network, busy with the speaker, bolts only at a real threat. ${S.hostile} speeches read as hostile; ${S.heckles} disturbances in the record; ${S.ritual} speeches opened with a thank-you, each greeted as new. The real chair also called time ${S.chair_time} times — the fly has no clock. ${S.bio_seconds} seconds of biological time for ${Math.round((D.events[D.events.length-1].t)/60)} minutes of sitting, ${new Date(t0).toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"})} to ${new Date(t0 + D.events[D.events.length-1].t*1000).toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"})}.`;
   document.getElementById("credit").innerHTML = `Simulated, wiring-constrained, engineered I/O mapping. Connectome: MaleCNS v1.0 (CC BY 4.0). Engine: mlx-lif-engine (MIT), Shiu et al. 2024. Transcript, seating and votes: Riigikogu open data (CC BY-SA 3.0); members shown by faction only. Hostility per speech: one calibrated question to a typed classifier; side from the seating chart; seat positions reconstructed from seat numbers and the photograph. The brain image is a rendering of 126,104 measured cell-body positions. Fly photograph: André Karwath, CC BY-SA 2.5.`;
   document.getElementById("end").classList.add("on");
 }
