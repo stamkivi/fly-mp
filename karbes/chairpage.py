@@ -83,11 +83,12 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
             }
         )
     fly_bells = [i for i, r in reactions.items() if r.gf >= BELL_GF]
-    # Conduct only: a time call is a clock, not a reaction to anyone's behaviour.
-    chair_marks = [i for i, e in enumerate(s.events) if e.real_chair and e.real_chair != "time"]
-    # a fly bell "coincides" with a chair mark if the chair acted within the same or the
-    # next two events — the chair reacts after the offence, not during it
-    coincide = sum(1 for i in fly_bells if any(0 <= j - i <= 2 for j in chair_marks))
+    chair_marks = [i for i, e in enumerate(s.events) if e.real_chair]
+    # Conduct only: a time call is a clock, not a reaction to anyone's behaviour. A fly bell
+    # "coincides" with a chair mark if the chair acted within the same or the next two
+    # events — the chair reacts after the offence, not during it.
+    conduct = [i for i in chair_marks if s.events[i].real_chair != "time"]
+    coincide = sum(1 for i in fly_bells if any(0 <= j - i <= 2 for j in conduct))
     summary = {
         "events": len(s.events),
         "stimuli": len(rec.reactions),
