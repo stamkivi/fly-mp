@@ -32,6 +32,16 @@ def _fmt(x: float, n: int = 2) -> str:
     return f"{x:.{n}f}"
 
 
+#: The headline counts the brains that finished, so a run that loses one does not ship a
+#: title claiming otherwise.
+_WORDS = {
+    3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten",
+    11: "Eleven", 12: "Twelve", 13: "Thirteen", 14: "Fourteen", 15: "Fifteen", 16: "Sixteen",
+    17: "Seventeen", 18: "Eighteen", 19: "Nineteen", 20: "Twenty", 21: "Twenty-one",
+    22: "Twenty-two", 23: "Twenty-three", 24: "Twenty-four",
+}
+
+
 def copy(bundle: dict) -> dict[str, str]:
     """Every sentence on the page that quotes a number, written from the numbers."""
     within = bundle["within_brain_spread"] or math.nan
@@ -97,6 +107,8 @@ def copy(bundle: dict) -> dict[str, str]:
         # and escaping quotes there turns every apostrophe into mojibake.
         "__HEAD_VERDICT__": html.escape(verdict, quote=False),
         "__N_REWIRED__": str(len(rewired)),
+        "__N_WORD__": _WORDS.get(len(rewired), str(len(rewired))),
+        "__N_WORD_LOWER__": _WORDS.get(len(rewired), str(len(rewired))).lower(),
         "__N_REAL__": str(len(real)),
         "__N_BILLS__": str(karbes["votes"]),
         "__KARBES_PARTY__": html.escape(karbes["nearest_party"]),
