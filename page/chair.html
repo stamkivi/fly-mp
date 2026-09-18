@@ -98,7 +98,7 @@ canvas{display:block;width:100%;height:100%}
       <div class="tag">Its brain — 166,700 neurons, live</div>
       <canvas id="brain" role="img" aria-label="The fly brain, rendered from real cell-body positions, with the neurons firing at this moment of the sitting drawn over it."></canvas>
       <div class="coach" id="coach-wave" style="left:24px;top:40%"><b>the wave</b>Every speech starts the brain from silence. Antennal lobe at 5 ms, mushroom body at 15 ms — shown here fourteen times slower than life.</div>
-      <div class="coach" id="coach-bell" style="right:24px;top:40%"><b>the bell</b>Something came at the chair: the giant fibre fired — the fly's escape reflex — and it threw itself away from that side of the hall. That is the fly ringing the bell.</div>
+      <div class="coach" id="coach-bell" style="right:24px;top:40%"><b>the bell</b>Something came at the chair: the giant fibre fired — the fly's escape reflex — and it threw itself away from that side of the hall. That is the fly ringing the bell. A hundred milliseconds later it has forgotten.</div>
       <div class="memo" id="memo"><div class="tag" style="position:static;margin-bottom:6px">What the page remembers, and the brain cannot</div><div id="memobody"></div></div>
       <div class="regions" id="regions"></div>
     </div>
@@ -319,12 +319,12 @@ function onEvent(i){
   if (ev.seat) lit[ev.seat] = {t: performance.now(), kind: ev.kind};
   if (ev.kind==="vote" || ev.kind==="presence") for (const s of D.seats) lit[s.place] = {t: performance.now(), kind: "vote"};
   if (ev.gf >= D.bell_gf){ ding(); coach("bell"); flash = 1; jolt = {x: ev.side==="L" ? 16 : ev.side==="R" ? -16 : 0, y: -8, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
-    const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">FLY</span><span class="txt">rings the bell — giant fibre ×${ev.gf}, ${ev.side==="L"?"throws itself right":ev.side==="R"?"throws itself left":"flinches"}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
+    const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">FLY</span><span class="txt">rings the bell${ev.gf_first_ms!=null ? " after "+ev.gf_first_ms.toFixed(0)+" ms" : ""} — giant fibre ×${ev.gf}, ${ev.side==="L"?"throws itself right":ev.side==="R"?"throws itself left":"flinches"}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
   remember(i);
   lastEv = i;
 }
 /* ---------- memory: the tally the brain cannot keep ---------- */
-const M = {kinds:{}, bellsBySide:{L:0,R:0,"":0}, thrown:{left:0,right:0}, ritual:0, seen:{}, repeatBells:0, chair:{order:0,bell:0,time:0}, flyBells:0, coincide:0, lastBellIdx:-99};
+const M = {kinds:{}, bellsBySide:{L:0,R:0,"":0}, thrown:{left:0,right:0}, ritual:0, seen:{}, repeatBells:0, chair:{order:0,bell:0,time:0}, flyBells:0, coincide:0, lastBellIdx:-99, rt:[]};
 function remember(i){
   const ev = D.events[i]; if (!ev) return;
   // the real chair's marks since the last stimulus, checked against the PREVIOUS bell before
@@ -334,7 +334,7 @@ function remember(i){
   const k = M.kinds[kind] = M.kinds[kind] || {n:0, gf:0, bells:0, active:0};
   k.n++; k.gf += ev.gf||0; k.active += ev.active||0;
   if (ev.text && /^(Aitäh|Suur tänu|Tänan)/.test(ev.text) && ev.role!=="chair") M.ritual++;
-  if (ev.gf >= D.bell_gf){ k.bells++; M.flyBells++; M.bellsBySide[ev.side||""]++; M.lastBellIdx = i;
+  if (ev.gf >= D.bell_gf){ k.bells++; M.flyBells++; M.bellsBySide[ev.side||""]++; M.lastBellIdx = i; if (ev.gf_first_ms!=null) M.rt.push(ev.gf_first_ms);
     if (ev.turn > 0.15) M.thrown.right++; else if (ev.turn < -0.15) M.thrown.left++;
     const key = ev.seat || ev.who; if (M.seen[key]) M.repeatBells++; M.seen[key] = (M.seen[key]||0)+1; }
   renderMemo();
@@ -343,7 +343,7 @@ function renderMemo(){
   const order = ["civil speech","hostile speech","heckle","vote","presence"], mx = Math.max(1, ...order.map(k => (M.kinds[k]||{}).n ? M.kinds[k].gf/M.kinds[k].n : 0));
   let h = order.filter(k => M.kinds[k]).map(k => { const v = M.kinds[k], g = v.gf/v.n; return `<div class="row"><span>${k} ×${v.n}</span><span class="bar"><i style="width:${100*g/mx}%;background:${g>=D.bell_gf?"#FFD36E":"#3A4658"}"></i></span><b>${g.toFixed(0)}</b></div>`; }).join("");
   h += `<div class="two"><span>giant fibre, mean spikes per kind ↑</span><span></span>`
-     + `<span>fly rang the bell <b>${M.flyBells}</b>× · thrown left <b>${M.thrown.left}</b>, right <b>${M.thrown.right}</b></span>`
+     + `<span>fly rang the bell <b>${M.flyBells}</b>× · thrown left <b>${M.thrown.left}</b>, right <b>${M.thrown.right}</b>${M.rt.length ? " · reaction time <b>"+(M.rt.reduce((a,b)=>a+b,0)/M.rt.length).toFixed(0)+" ms</b>" : ""}</span>`
      + `<span>real chair: order <b>${M.chair.order}</b>, bell <b>${M.chair.bell}</b>, time <b>${M.chair.time}</b> · coincided <b>${M.coincide}</b></span>`
      + `<span>rang at the same seat again <b>${M.repeatBells}</b>× — it does not remember the first</span>`
      + `<span>greeted <i>Aitäh!</i> as new <b>${M.ritual}</b>×</span></div>`;
@@ -403,7 +403,7 @@ playBtn.onclick = () => setPlay(!playing);
 document.getElementById("mute").onclick = () => { muted = !muted; document.getElementById("mute").textContent = muted ? "🔕 muted" : "🔔 sound"; };
 for (const [id, s] of [["sp1",1],["sp4",4],["sp12",12]]) document.getElementById(id).onclick = () => { speed = s; for (const b of ["sp1","sp4","sp12"]) document.getElementById(b).classList.toggle("on", b===id); };
 document.getElementById("start").onclick = () => { document.getElementById("veil").classList.add("gone"); sizeHall(); sizeBrain(); setPlay(true); };
-function resetMemory(){ for (const k of Object.keys(M.kinds)) delete M.kinds[k]; M.bellsBySide={L:0,R:0,"":0}; M.thrown={left:0,right:0}; M.ritual=0; M.seen={}; M.repeatBells=0; M.chair={order:0,bell:0,time:0}; M.flyBells=0; M.coincide=0; M.lastBellIdx=-99; renderMemo(); }
+function resetMemory(){ for (const k of Object.keys(M.kinds)) delete M.kinds[k]; M.rt=[]; M.bellsBySide={L:0,R:0,"":0}; M.thrown={left:0,right:0}; M.ritual=0; M.seen={}; M.repeatBells=0; M.chair={order:0,bell:0,time:0}; M.flyBells=0; M.coincide=0; M.lastBellIdx=-99; renderMemo(); }
 document.getElementById("again").onclick = () => { document.getElementById("end").classList.remove("on"); frame=0; curEv=-1; lastEv=-1; ticker.innerHTML=""; lit={}; resetMemory(); setPlay(true); };
 addEventListener("resize", () => { sizeHall(); sizeBrain(); });
 function finish(){

@@ -61,6 +61,8 @@ class Reaction:
     spikes: int
     active: int
     frames: int
+    gf_first_ms: float | None = None  # reaction time: first giant-fibre spike after onset
+    gf_last_ms: float | None = None
 
 
 @dataclass
@@ -165,6 +167,9 @@ def record(
         on_frames = max(1, round(e.bio * FPS))
         counts = run.counts
         turn = decode.turn_index(counts, L, R, baseline=bias, dead_band=0.0).turn
+        gf_ticks = run.events[np.isin(run.events[:, 1], GF), 0] if len(run.events) else np.zeros(0)
+        gf_first = round(float(gf_ticks.min()) / 10.0, 1) if len(gf_ticks) else None
+        gf_last = round(float(gf_ticks.max()) / 10.0, 1) if len(gf_ticks) else None
         rec.reactions.append(
             Reaction(
                 index=i,
@@ -175,6 +180,8 @@ def record(
                 spikes=len(run.events),
                 active=int((counts > 0).sum()),
                 frames=frames,
+                gf_first_ms=gf_first,
+                gf_last_ms=gf_last,
             )
         )
         for g in groups:
