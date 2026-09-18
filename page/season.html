@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kärbes — the 102nd member</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F6F4EF;--card:#FFF;--ink:#1B1A18;--mute:#6E6A63;--rule:#E2DED5;--fly:#E2622C;
+      --display:"Fraunces",Georgia,serif;--body:"IBM Plex Sans",system-ui,sans-serif;
+      --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);line-height:1.5;
+     -webkit-font-smoothing:antialiased}
+.stage{position:relative;height:100svh;min-height:620px;display:flex;flex-direction:column;
+       padding:18px 24px 16px;gap:12px}
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+.brand{font-family:var(--display);font-weight:600;font-size:22px}
+.brand span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+            color:var(--mute);margin-left:10px;font-weight:400}
+.counter{font-family:var(--mono);font-size:12.5px;color:var(--mute)}
+.counter b{color:var(--ink);font-weight:500}
+
+.board{flex:1;display:grid;grid-template-rows:1fr auto;gap:12px;min-height:0}
+.panel{background:var(--card);border:1px solid var(--rule);border-radius:10px;position:relative;
+       overflow:hidden}
+#spectrum{display:block;width:100%;height:100%}
+.tag{position:absolute;left:16px;top:13px;font-family:var(--mono);font-size:10.5px;
+     letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+
+.strip{display:grid;grid-template-columns:1.25fr 1fr;gap:12px;min-height:132px}
+.ticker{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:12px 14px;
+        overflow:hidden;position:relative}
+.ticker .row{display:flex;gap:10px;align-items:baseline;font-size:13px;padding:2.5px 0;
+             opacity:0;transform:translateY(6px);animation:in .3s forwards}
+@keyframes in{to{opacity:1;transform:none}}
+.ticker .row .v{font-family:var(--mono);font-size:11px;min-width:58px;font-weight:500}
+.ticker .row .v.POOLT{color:#2E7D4F}.ticker .row .v.VASTU{color:#B3402C}
+.ticker .row .v.EI_HAALETANUD{color:var(--mute)}
+.ticker .row .t{color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ticker .row .g{font-family:var(--mono);font-size:10px;color:var(--mute);flex:none}
+.bars{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:12px 14px}
+.bar{display:grid;grid-template-columns:52px 1fr 42px;gap:8px;align-items:center;
+     font-family:var(--mono);font-size:11px;margin-bottom:5px}
+.bar .track{height:9px;background:#F1EEE7;border-radius:2px;position:relative;overflow:hidden}
+.bar .fill{position:absolute;top:0;bottom:0;left:50%;width:0;transition:width .35s,left .35s}
+.bar .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--rule)}
+
+.veil{position:absolute;inset:0;display:grid;place-items:center;padding:26px;
+      background:rgba(246,244,239,.94);backdrop-filter:blur(3px);transition:opacity .5s}
+.veil.gone{opacity:0;pointer-events:none}
+.open{max-width:660px;text-align:center}
+.open h1{font-family:var(--display);font-weight:600;font-size:clamp(30px,5vw,46px);line-height:1.08;
+         margin:0 0 14px}
+.open p{color:var(--mute);font-size:16px;margin:0 auto 8px;max-width:50ch}
+.go{margin-top:24px;font-family:var(--body);font-size:16px;font-weight:600;color:#fff;
+    background:var(--ink);border:0;border-radius:8px;padding:14px 26px;cursor:pointer}
+.go:hover{background:#000}
+.flyimg{width:118px;height:auto;margin:0 auto 18px;display:block}
+
+.result{background:var(--card);border:1px solid var(--rule);border-radius:10px;padding:14px 16px;
+        display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:16px;align-items:center;
+        animation:rise .45s cubic-bezier(.2,.7,.3,1)}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(max-width:1000px){.result{grid-template-columns:1fr 1fr}}
+.result h2{font-family:var(--display);font-weight:600;font-size:19px;margin:0 0 3px;line-height:1.2}
+.result p{margin:0;font-size:12.5px;color:var(--mute)}
+.twist{font-family:var(--mono);font-size:11px;color:var(--mute);line-height:1.6}
+.twist b{color:var(--ink);font-weight:500}
+.again{font-family:var(--mono);font-size:12px;background:none;border:1px solid var(--rule);
+       border-radius:6px;padding:9px 14px;cursor:pointer;color:var(--ink);white-space:nowrap}
+.notes{max-width:720px;margin:0 auto;padding:60px 24px 90px;color:var(--mute);font-size:14.5px}
+.notes h3{font-family:var(--display);color:var(--ink);font-size:19px;margin:32px 0 8px}
+.notes b{color:var(--ink)}
+.cue{text-align:center;font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+     text-transform:uppercase}
+</style>
+</head>
+<body>
+<main class="stage">
+  <div class="top">
+    <div class="brand">Kärbes<span>the 102nd member</span></div>
+    <div class="counter" id="counter"></div>
+  </div>
+
+  <div class="board">
+    <div class="panel">
+      <canvas id="spectrum" role="img" aria-label="The chamber, and where the fly sits."></canvas>
+      <div class="tag">the chamber, as its own votes arrange it</div>
+    </div>
+    <div class="strip">
+      <div class="ticker" id="ticker"></div>
+      <div class="bars" id="bars"></div>
+    </div>
+  </div>
+
+  <div class="veil" id="veil">
+    <div class="open">
+      <img class="flyimg" id="flyimg" alt="A Drosophila melanogaster fly, seen from above">
+      <h1>The Riigikogu has 101 seats.<br>We gave the 102nd to a fly.</h1>
+      <p id="open-lede"></p>
+      <button class="go" id="go">Put it through every vote</button>
+    </div>
+  </div>
+
+  <div class="result" id="result" hidden>
+    <div>
+      <h2 id="r-title"></h2>
+      <p id="r-sub"></p>
+    </div>
+    <div class="twist" id="r-blind"></div>
+    <div class="twist" id="r-rewired"></div>
+    <button class="again" id="again">Run it again</button>
+  </div>
+</main>
+
+<section class="notes">
+  <div class="cue">how this works</div>
+  <h3>What just happened</h3>
+  <p id="n-what"></p>
+  <h3>Why it lands where it lands</h3>
+  <p id="n-why"></p>
+  <h3>Honest caveats</h3>
+  <p id="n-caveats"></p>
+</section>
+
+<script id="bundle" type="application/json">__SEASON_JSON__</script>
+<script>
+"use strict";
+const B = JSON.parse(document.getElementById("bundle").textContent);
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const ET = {POOLT:"Poolt", VASTU:"Vastu", EI_HAALETANUD:"—"};
+const C = B.chamber, COL = C.colours;
+document.getElementById("flyimg").src = "data:image/png;base64,__FLY_B64__";
+
+const ARM = "informed";
+const arm = B.arms[ARM], conv = B.convergence[ARM];
+const TL = B.timeline;
+
+document.getElementById("open-lede").textContent =
+  `${TL.length} real votes from this Riigikogu, one at a time, through a spiking simulation `
+  + `of an actual fly brain. Where it ends up sitting is the answer.`;
+
+/* ---------- the spectrum ---------- */
+const cv = document.getElementById("spectrum"), ctx = cv.getContext("2d");
+let W = 0, H = 0;
+function size(){
+  const r = cv.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);
+  W = Math.round(r.width * d); H = Math.round(r.height * d);
+  cv.width = W; cv.height = H;
+}
+const xs = C.members.map(m => m.dim1);
+const LO = Math.min(...xs) - 2, HI = Math.max(...xs) + 2;
+/* Members are laid out by their own voting record, so parties emerge rather than being
+   drawn as groups. Vertical position is a deterministic spread within a party band. */
+const LANES = ["REF","E200","SDE","none","KESK","Isamaa","EKRE"];
+const placed = C.members.map((m, i) => {
+  const lane = Math.max(0, LANES.indexOf(m.faction));
+  return {...m, lane, jitter: ((i * 2654435761) % 1000) / 1000};
+});
+
+function draw(upto, flyX){
+  if (!W) size();
+  const d = Math.min(devicePixelRatio || 1, 2);
+  ctx.clearRect(0,0,W,H);
+  const padL = 84*d, padR = 28*d, top = 92*d, bot = 46*d;
+  const X = v => padL + (W - padL - padR) * (v - LO) / (HI - LO);
+  const laneH = (H - top - bot) / LANES.length;
+
+  ctx.strokeStyle = "#EFEBE3"; ctx.lineWidth = 1*d;
+  ctx.beginPath(); ctx.moveTo(padL, H - bot + 12*d); ctx.lineTo(W - padR, H - bot + 12*d); ctx.stroke();
+  ctx.fillStyle = "#9A958C"; ctx.font = `${10.5*d}px "IBM Plex Mono",monospace`;
+  ctx.fillText("votes with the government", padL, H - bot + 30*d);
+  const rt = "votes with the opposition";
+  ctx.fillText(rt, W - padR - ctx.measureText(rt).width, H - bot + 30*d);
+
+  LANES.forEach((f, i) => {
+    const y = top + laneH * (i + 0.5);
+    const mem = placed.filter(m => m.faction === f);
+    if (!mem.length) return;
+    ctx.fillStyle = COL[f] || "#A9A49B";
+    ctx.font = `500 ${11*d}px "IBM Plex Mono",monospace`;
+    ctx.fillText(f === "none" ? "no faction" : f, 8*d, y + 4*d);
+    for (const m of mem){
+      const yy = y + (m.jitter - 0.5) * laneH * 0.62;
+      ctx.globalAlpha = .85;
+      ctx.beginPath(); ctx.arc(X(m.dim1), yy, 3.6*d, 0, 7); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  });
+
+  if (flyX !== null){
+    const fx = X(flyX);
+    ctx.strokeStyle = "rgba(226,98,44,.30)"; ctx.lineWidth = 1.5*d;
+    ctx.setLineDash([4*d, 4*d]);
+    ctx.beginPath(); ctx.moveTo(fx, top - 26*d); ctx.lineTo(fx, H - bot + 8*d); ctx.stroke();
+    ctx.setLineDash([]);
+    if (flyReady){
+      const w = 96*d, h = w * (FLY.height / FLY.width);
+      ctx.drawImage(FLY, fx - w*0.5, top - 30*d - h, w, h);
+    }
+    ctx.fillStyle = "#E2622C"; ctx.font = `600 ${12.5*d}px "IBM Plex Mono",monospace`;
+    const lbl = "Kärbes";
+    ctx.fillText(lbl, fx - ctx.measureText(lbl).width/2, top - 16*d);
+  }
+}
+
+const FLY = new Image(); let flyReady = false;
+FLY.onload = () => { flyReady = true; draw(0, null); };
+FLY.src = "data:image/png;base64,__FLY_B64__";
+
+/* ---------- agreement bars ---------- */
+const FACTIONS = ["REF","E200","SDE","KESK","Isamaa","EKRE"];
+document.getElementById("bars").innerHTML = FACTIONS.map(f =>
+  `<div class="bar"><span style="color:${COL[f]}">${f}</span>`
+  + `<span class="track"><span class="mid"></span>`
+  + `<span class="fill" data-f="${f}" style="background:${COL[f]}"></span></span>`
+  + `<span class="val" data-f="${f}">—</span></div>`).join("");
+const fills = {}, vals = {};
+document.querySelectorAll(".fill").forEach(e => fills[e.dataset.f] = e);
+document.querySelectorAll(".val").forEach(e => vals[e.dataset.f] = e);
+function setBars(ag){
+  for (const f of FACTIONS){
+    const v = ag[f];
+    if (v === undefined){ vals[f].textContent = "—"; continue; }
+    const pct = Math.abs(v - 0.5) * 200;           // 0.5 is chance; deviation is the signal
+    fills[f].style.width = pct/2 + "%";
+    fills[f].style.left = v >= 0.5 ? "50%" : (50 - pct/2) + "%";
+    vals[f].textContent = (v*100).toFixed(0) + "%";
+  }
+}
+
+/* ---------- playback ---------- */
+const ticker = document.getElementById("ticker");
+const counter = document.getElementById("counter");
+const veil = document.getElementById("veil"), result = document.getElementById("result");
+const TOTAL_MS = REDUCED ? 2500 : 21000;
+let raf = 0, t0 = 0, lastShown = -1;
+
+document.getElementById("go").onclick = start;
+document.getElementById("again").onclick = start;
+
+function start(){
+  cancelAnimationFrame(raf);
+  veil.classList.add("gone"); result.hidden = true;
+  ticker.innerHTML = ""; setBars({}); lastShown = -1;
+  t0 = performance.now(); raf = requestAnimationFrame(tick);
+}
+
+function tick(now){
+  const p = Math.min(1, (now - t0) / TOTAL_MS);
+  const n = Math.floor(p * TL.length);
+  counter.innerHTML = `<b>${n}</b> / ${TL.length} votes`;
+
+  for (let i = Math.max(0, lastShown + 1); i < Math.min(n, TL.length); i++){
+    const b = TL[i];
+    if (!b) continue;
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<span class="v ${b.code}">${ET[b.code]}</span>`
+      + `<span class="t">${b.title}</span>`
+      + `<span class="g">${b.government ? "govt" : "member"}</span>`;
+    ticker.appendChild(row);
+    while (ticker.children.length > 7) ticker.removeChild(ticker.firstChild);
+  }
+  lastShown = Math.min(n, TL.length) - 1;
+
+  const k = Math.min(conv.length - 1, Math.floor(p * conv.length));
+  if (k >= 0){ draw(n, conv[k].dim1); setBars(conv[k].agreement); }
+  else draw(0, null);
+
+  if (p >= 1){ finish(); return; }
+  raf = requestAnimationFrame(tick);
+}
+
+function finish(){
+  draw(TL.length, arm.dim1); setBars(arm.agreement);
+  counter.innerHTML = `<b>${TL.length}</b> / ${TL.length} votes`;
+  const near = arm.nearest[0];
+  const crossbench = arm.nearest.filter(m => m.faction === "none").length;
+  document.getElementById("r-title").textContent =
+    crossbench >= 3 ? "It would sit on the crossbench" : "Where it sits";
+  document.getElementById("r-sub").innerHTML =
+    `Closest of the ${C.seats} to its record: <b>${near.name}</b>`
+    + (near.faction === "none" ? ", who belongs to no faction" : ` (${near.faction})`)
+    + `. Agreement runs ${(Math.max(...Object.values(arm.agreement))*100).toFixed(0)}% with the `
+    + `government parties and ${(Math.min(...Object.values(arm.agreement))*100).toFixed(0)}% with EKRE.`;
+  document.getElementById("r-blind").innerHTML = __TWIST_BLIND__;
+  document.getElementById("r-rewired").innerHTML = __TWIST_REWIRED__;
+  result.hidden = false;
+}
+
+document.getElementById("n-what").innerHTML = __N_WHAT__;
+document.getElementById("n-why").innerHTML = __N_WHY__;
+document.getElementById("n-caveats").innerHTML = __N_CAVEATS__;
+
+addEventListener("resize", () => { size(); draw(TL.length, null); });
+size(); draw(0, null); setBars({});
+</script>
+</body>
+</html>

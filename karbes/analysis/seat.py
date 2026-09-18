@@ -45,17 +45,29 @@ class Seat:
     nearest_members: list[dict]
 
 
-def _stance(code: str) -> float:
-    """The fly's stance on the *bill*, matching how the vote matrix encodes members."""
+def _stance(code: str, inverted: bool) -> float:
+    """The fly's stance on the *bill*, matching how the vote matrix encodes members.
+
+    The emitted code is a vote on the *motion*, so on a `Tagasi lukkamine` POOLT means
+    killing the bill. Leaving that flip in made agreement and AUC point opposite ways: the
+    readout tracked the government line at AUC 0.69 while the recorded agreement with the
+    same faction came out at 0.42.
+    """
     if code == POOLT:
-        return votematrix.SUPPORT
+        return votematrix.OPPOSE if inverted else votematrix.SUPPORT
     if code == VASTU:
-        return votematrix.OPPOSE
+        return votematrix.SUPPORT if inverted else votematrix.OPPOSE
     return votematrix.DECLINE
 
 
-def place(ballots: list, vm: votematrix.VoteMatrix, space: idealpoint.Space) -> Seat:
+def place(
+    ballots: list,
+    vm: votematrix.VoteMatrix,
+    space: idealpoint.Space,
+    inverted: dict[str, bool] | None = None,
+) -> Seat:
     """Score one fly's record against the chamber."""
+    inverted = inverted or {}
     by_voting = {b.voting_uuid if hasattr(b, "voting_uuid") else b["voting_uuid"]: b for b in ballots}
     column = {v.uuid: j for j, v in enumerate(vm.votes)}
 
@@ -73,7 +85,7 @@ def place(ballots: list, vm: votematrix.VoteMatrix, space: idealpoint.Space) -> 
             continue
         code = b.code if hasattr(b, "code") else b["code"]
         turn = b.turn if hasattr(b, "turn") else b["turn"]
-        stance[j] = _stance(code)
+        stance[j] = _stance(code, inverted.get(uuid, False))
         turns.append(turn)
         if code in (POOLT, VASTU):
             decided += 1
@@ -89,7 +101,7 @@ def place(ballots: list, vm: votematrix.VoteMatrix, space: idealpoint.Space) -> 
             turn = b.turn if hasattr(b, "turn") else b["turn"]
             wants = line[j] == votematrix.SUPPORT
             if code in (POOLT, VASTU):
-                agree[f].append((_stance(code) == votematrix.SUPPORT) == wants)
+                agree[f].append((_stance(code, inverted.get(uuid, False)) == votematrix.SUPPORT) == wants)
             auc_scores[f][0].append(turn)
             auc_scores[f][1].append(wants)
 

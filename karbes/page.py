@@ -126,3 +126,108 @@ def write(path: Path, page: str) -> Path:
     path.write_text(page, encoding="utf-8")
     log.info("page: %s (%.0f KB)", path, path.stat().st_size / 1024)
     return path
+
+
+# --------------------------------------------------------------------------- season page
+
+SEASON_TEMPLATE = Path("page/season.html")
+
+
+def season_copy(bundle: dict) -> dict[str, str]:
+    """The prose for the season page, with its own numbers in it."""
+    informed, blind = bundle["arms"]["informed"], bundle["arms"]["blind"]
+    rew = bundle.get("rewired") or {}
+    gov = max(informed["agreement"], key=informed["agreement"].get)
+    best = informed["agreement"][gov] * 100
+    worst_f = min(informed["agreement"], key=informed["agreement"].get)
+    worst = informed["agreement"][worst_f] * 100
+
+    twist_blind = (
+        "<b>Take away one bit and it is noise.</b> The same brain, the same bills, but never "
+        "told who tabled each one: AUC "
+        f"{blind['auc_advances']:.2f} against a 0.50 null, and agreement within a point or "
+        "two of chance with every faction. What the bill says is not what decides it."
+    )
+    if rew:
+        aucs = [r["auc_advances"] for r in rew.values()]
+        spread = [r["dim1"] for r in rew.values() if r["dim1"] is not None]
+        beaten = sum(1 for a in aucs if a >= informed["auc_advances"])
+        # The control is the experiment, so it reports whichever way it came out.
+        if beaten >= max(1, len(aucs) // 2):
+            twist_rewired = (
+                "<b>The wiring is not what does it.</b> Shuffle the connectome — every neuron "
+                "keeps its in-degree, out-degree and sign, only who reaches whom is "
+                f"randomised — and {len(rew)} rewired brains score AUC "
+                + ", ".join(f"{a:.2f}" for a in aucs)
+                + f" against this one's {informed['auc_advances']:.2f}. The seat comes from the "
+                "signal being fed in, not from this particular tangle of neurons."
+            )
+        else:
+            twist_rewired = (
+                f"<b>The wiring is doing the work.</b> {len(rew)} degree-preserving rewirings "
+                "score AUC " + ", ".join(f"{a:.2f}" for a in aucs)
+                + f" against this fly's {informed['auc_advances']:.2f}, and land at "
+                + ", ".join(f"{x:+.1f}" for x in spread)
+                + f" against its {informed['dim1']:+.1f}."
+            )
+    else:
+        twist_rewired = (
+            "<b>The rewired control is still running.</b> Same connectome, degree-preserving "
+            "shuffle, same bills. Whether the wiring or merely the degrees produce this seat "
+            "is not yet answered here."
+        )
+
+    what = (
+        f"Every one of the {informed['votes']} contested votes in this Riigikogu went through a "
+        "spiking simulation of a real fly brain — 166,700 neurons and 24.5 million connections "
+        "from the MaleCNS connectome, on the published Shiu et al. model. Each bill was scored "
+        "on ten topics drawn from what Estonian voters actually rank, turned into smells on the "
+        "fly's antennae, and the vote read from the descending neurons that steer a walking "
+        "fly. The chamber behind it is arranged by its own votes: members near each other voted "
+        "alike, and the parties fall out of that rather than being drawn in."
+    )
+    why = (
+        "The fly is also told one thing that is not in the bill: whether the government tabled "
+        "it or a member did. That single bit calls 94% of outcomes in this chamber on its own — "
+        "government bills advance 99.3% of the time, members' bills 10.4% — while the content "
+        f"of the bill predicts far less. With it, the fly agrees {best:.0f}% with {gov} and "
+        f"{worst:.0f}% with {worst_f}; its readout separates the government line at AUC "
+        f"{informed['auc_advances']:.2f}. That is not comprehension. It is the fly picking up "
+        "the one signal that actually runs the place."
+    )
+    caveats = (
+        "<b>The mapping is engineered, not discovered.</b> No glomerulus in a fly means "
+        "&ldquo;healthcare&rdquo;, and no fly has an opinion about who tabled a bill; both "
+        "assignments are arbitrary and were fixed before any agreement was measured. "
+        "<b>The threshold is cosmetic.</b> AUC is threshold-free and is the statistic quoted "
+        "above; the poolt/vastu split only exists so there is something to show, and it is set "
+        "to make the fly decline about as often as a real member does. "
+        "<b>It is a simulation.</b> Wiring-constrained, with an engineered input and output, "
+        "and it says nothing about what a fly experiences. "
+        "<b>And the rewired control is the experiment, not a footnote</b> — if a shuffled "
+        "connectome does this just as well, then what you are watching is the strength of one "
+        "procedural signal, not a property of this brain."
+    )
+    return {
+        "__TWIST_BLIND__": json.dumps(twist_blind),
+        "__TWIST_REWIRED__": json.dumps(twist_rewired),
+        "__N_WHAT__": json.dumps(what),
+        "__N_WHY__": json.dumps(why),
+        "__N_CAVEATS__": json.dumps(caveats),
+    }
+
+
+def build_season(bundle: dict) -> str:
+    """Fill the season template."""
+    template = SEASON_TEMPLATE.read_text(encoding="utf-8")
+    fly = Path("page/assets/fly.png")
+    tokens = {
+        "__SEASON_JSON__": json.dumps(bundle, ensure_ascii=False).replace("</", "<\\/"),
+        "__FLY_B64__": base64.b64encode(fly.read_bytes()).decode(),
+        **season_copy(bundle),
+    }
+    for token, value in tokens.items():
+        if token not in template:
+            raise ValueError(f"season template has no {token}")
+        template = template.replace(token, value)
+    return template
