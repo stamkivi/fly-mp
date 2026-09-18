@@ -2,6 +2,91 @@
 
 *Stage 2b, the one-bill replay slice. uv-mac-mini, 2026-09-17/18, MaleCNS v1.0.*
 
+## Iteration 3 — two senses and an arena (2026-09-18)
+
+*Design locked in SPEC §"Iteration 3". Everything below §"The short answer" is the Stage 2b
+record and stands as written, except where this section supersedes it.*
+
+### The problem
+
+Stage 2b's fly declined on every bill and every phase. The cause is arithmetic: net drive
+spans ±8.0 across eight channels and **the median real bill delivers +0.187 — 2.3% of the
+range**, which predicts a per-bill effect of ~0.006 against the 0.005 actually measured. A
+fly that always abstains is not a member of parliament.
+
+### The one bit, re-measured on 565 contested votes
+
+| | |
+|---|---:|
+| P(advances \| **government**-tabled) | **0.993** |
+| P(advances \| member or committee) | **0.104** |
+| accuracy of that bit alone | **0.942** |
+| majority baseline | 0.526 |
+
+EKRE backs 94.7% of members' bills and 2.0% of government ones, mirroring Reform's
+99.1%/10.9%. The scoring model is initiator-blind by construction, and the topic channels
+correlate with the bit at only r = 0.10–0.44, so routing it through a second sense adds
+information rather than laundering the first.
+
+### Three arms, 60 bills, AUC against "does the bill advance"
+
+| arm | AUC | pre-registered |
+|---|---:|---:|
+| smell (substance) | 0.564 | ~.74 for a *fitted* content model; a single whiff gets far less |
+| **vision (who tabled it)** | **0.983** | ~.94 |
+| both | 0.930 | ~.90 |
+
+The procedural sense is not a little better than the substantive one. It is decisive.
+
+### Vision, measured
+
+* **Photoreceptors are unusable.** All 6,098 are histaminergic and this pack keeps only ACh,
+  GABA and glutamate as presynaptic sources, so every one has **zero outgoing edges**.
+  Vision enters at the motion detectors instead.
+* **T4/T5**: 13,580 cholinergic cells, 13× the olfactory input surface. Driving them
+  asymmetrically by eye moves the turn index with **d′ 9.67 (t 19.3)** against olfaction's
+  2.63.
+* **LC4 (6,362 contacts) + LPLC2 (4,862) → DNp01** monosynaptically, onto two cells. Silent
+  at rest, 117 spikes at 5 Hz of drive, 635 at 150 Hz.
+
+### The arena
+
+Eight pots on a ring, one per channel, emitting by `|score × confidence × salience|`; which
+antenna each reaches depends on the fly's heading, so the projection changes as it turns.
+**The loop is the amplifier** — chemotaxis works under bad per-step SNR because a small bias
+with positive feedback commits over many steps.
+
+Four bugs stood between that idea and a fly that walks, and all four were real:
+
+1. **The sign was inverted.** Odour on the right makes the turn index *more positive* by
+   0.125, and heading is a standard maths angle, so the fly steered away from what attracted
+   it. It was running anti-chemotaxis, which is why it circled.
+2. **The odour field saturated.** Clamping each antenna at a ceiling meant both sides pinned
+   as the fly neared a pot, so the gradient vanished exactly where it was needed. Bilateral
+   comparison is a ratio and is now coded as one.
+3. **The wrong baseline was subtracted.** The single-whiff offset is −0.08; under the
+   arena's mid drive it is −0.48, and the residual rotated the fly continuously.
+4. **It could not cross its own arena.** 0.055 body lengths per step covered 0.88 against a
+   ring of 1.0, so "nearest pot" was decided by drift.
+
+With those fixed, on the shipped bill the seeing fly homes on `who_decides` — the strongest
+pot at 0.33 — while the blind fly wanders off to `burden`. The two are bit-identical for
+eight steps and then separate at the reveal.
+
+**And one more absolute threshold that fired on everything:** one-sided optic flow alone
+drives DNp01 to **376 spikes**, because strong lateral motion is itself a threat cue. Alarm
+has to be the excess over that, not a raw count. With it flow-relative, 4.5% of the corpus
+looms hard enough to bolt.
+
+### Not claimed
+
+One bill, one seed. That the seeing fly homes while the blind one wanders is a single
+observation, not a result — it has not been run across the corpus. The channel-to-glomerulus
+pairing and the choice of which eye means "government" stay arbitrary and pre-registered. No
+fly has an opinion about who tabled a bill; the fly is the exhibit, not the evidence.
+
+---
+
 ## The short answer
 
 **A fly brain, and now a measurable vote.** The animation draws 15,999 real soma
