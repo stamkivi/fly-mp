@@ -109,6 +109,14 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
         "by_kind": _by_kind(s, rec),
     }
 
+    # The page draws at most this many cells per frame; a 27-hour sitting would otherwise ship
+    # 8 MB. Trimmed here, at build time, with a fixed seed, so no recording is redone.
+    RASTER_CAP, ONSET_CAP = 150, 110
+    rng = np.random.default_rng(0)
+
+    def trim(frames: list[list[int]], cap: int) -> list[list[int]]:
+        return [sorted(rng.choice(fr, cap, replace=False).tolist()) if len(fr) > cap else fr for fr in frames]
+
     def pack(frames: list[list[int]]) -> tuple[str, list[int]]:
         off = [0]
         for fr in frames:
@@ -116,8 +124,8 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
         flat = np.fromiter((x for fr in frames for x in fr), dtype="<u2", count=off[-1])
         return base64.b64encode(flat.tobytes()).decode(), off
 
-    raster_b64, raster_off = pack(rec.raster)
-    onset_b64, onset_off = pack(rec.onset)
+    raster_b64, raster_off = pack(trim(rec.raster, RASTER_CAP))
+    onset_b64, onset_off = pack(trim(rec.onset, ONSET_CAP))
     return {
         "schema": "karbes-chair/2",
         "date": s.date,
