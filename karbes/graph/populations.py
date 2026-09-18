@@ -63,6 +63,21 @@ DN_SUPERCLASS = "descending_neuron"
 #: dynamic range (Rayshubskiy et al., *Cell* 2024).
 DNA_FAMILY = re.compile(r"DNa\d+")
 
+#: The visual motion detectors, and the entry point for the *procedural* sense.
+#:
+#: **Not the photoreceptors.** All 6,098 are histaminergic, and this pack keeps only
+#: acetylcholine, GABA and glutamate as presynaptic sources, so every photoreceptor has
+#: zero outgoing edges and driving one is a no-op. T4 and T5 are cholinergic, live, and
+#: 13,580 cells — thirteen times the olfactory input surface. Driving them asymmetrically
+#: by eye moves the DNa turn index with d' 9.67 against olfaction's 2.63.
+T4T5 = re.compile(r"T[45][a-d]")
+
+#: Looming. LC4 (6,362 contacts) and LPLC2 (4,862) drive DNp01 monosynaptically — the
+#: published giant-fibre escape circuit, onto exactly two cells. Silent at rest and
+#: saturating by 150 Hz, so it is an all-or-nothing alarm rather than a graded readout.
+LOOMING_TYPES = ("LC4", "LPLC2")
+GIANT_FIBRE = "DNp01"
+
 
 @dataclass
 class Populations:
@@ -76,6 +91,10 @@ class Populations:
     dna_right: np.ndarray
     orn_left: np.ndarray  # ORNs by rootSide; a bill arrives on one side or the other
     orn_right: np.ndarray
+    t4t5_left: np.ndarray  # visual motion detectors, the procedural sense
+    t4t5_right: np.ndarray
+    looming: np.ndarray  # LC4 + LPLC2, into the giant fibre
+    giant_fibre: np.ndarray  # DNp01, two cells
     types: dict[int, str]  # body ID -> type, for audit logs
 
     @property
@@ -174,6 +193,27 @@ def load(root: Path) -> Populations:
         if c == "olfactory" and ty in wanted and b in kept and side in orn_side:
             orn_side[side].append(b)
 
+    vis: dict[str, list[int]] = {"L": [], "R": []}
+    looming, giant = [], []
+    for b, ty, cls_sup, side in zip(body, typ, sup, soma_side, strict=True):
+        if b not in kept or not ty:
+            continue
+        if T4T5.fullmatch(ty) and side in vis:
+            vis[side].append(b)
+        elif ty in LOOMING_TYPES:
+            looming.append(b)
+        elif ty == GIANT_FIBRE:
+            giant.append(b)
+    if not looming or not giant:
+        raise ValueError(f"looming {len(looming)} / giant fibre {len(giant)} cells resolved")
+
+    log.info(
+        "vision: T4/T5 L %d / R %d   looming %d -> giant fibre %d",
+        len(vis["L"]),
+        len(vis["R"]),
+        len(looming),
+        len(giant),
+    )
     log.info(
         "readout: DNa family L %d / R %d   drive: ORN rootSide L %d / R %d",
         len(dna["L"]),
@@ -190,6 +230,10 @@ def load(root: Path) -> Populations:
         dna_right=np.sort(np.array(dna["R"], dtype=np.int64)),
         orn_left=np.sort(np.array(orn_side["L"], dtype=np.int64)),
         orn_right=np.sort(np.array(orn_side["R"], dtype=np.int64)),
+        t4t5_left=np.sort(np.array(vis["L"], dtype=np.int64)),
+        t4t5_right=np.sort(np.array(vis["R"], dtype=np.int64)),
+        looming=np.sort(np.array(looming, dtype=np.int64)),
+        giant_fibre=np.sort(np.array(giant, dtype=np.int64)),
         types={int(b): t for b, t, k in zip(body, typ, keep, strict=True) if k and t},
     )
 
@@ -201,6 +245,8 @@ def summary(pops: Populations) -> str:
             f"  {channel:<12} {neg:<10} n={len(pops.orn[neg]):<4} {pos:<10} n={len(pops.orn[pos])}"
         )
     lines.append(f"  drive        ORN rootSide L n={len(pops.orn_left)} R n={len(pops.orn_right)}")
+    lines.append(f"  vision       T4/T5       L n={len(pops.t4t5_left)} R n={len(pops.t4t5_right)}")
+    lines.append(f"  alarm        looming n={len(pops.looming)} -> DNp01 n={len(pops.giant_fibre)}")
     lines.append(f"  readout      DNa family  L n={len(pops.dna_left)} R n={len(pops.dna_right)}")
     lines.append(f"  (audit only) all DNs     L n={len(pops.dn_left)} R n={len(pops.dn_right)}")
     return "\n".join(lines)
