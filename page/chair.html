@@ -146,7 +146,7 @@ let jolt = {x:0,y:0,t:0}, flash = 0;
 function drawBrain(f, alphaNext){
   if (!plateBox) sizeBrain();
   bctx.clearRect(0,0,BW,BH); bctx.fillStyle="#07090E"; bctx.fillRect(0,0,BW,BH);
-  const age = (performance.now()-jolt.t)/420, k = age<1 ? (1-age)*(1-age) : 0;
+  const age = (performance.now()-jolt.t)/800, k = age<1 ? (1-age)*(1-age) : 0;
   const ox = jolt.x*k*dpr, oy = jolt.y*k*dpr;
   bctx.save(); bctx.translate(ox, oy);
   if (PLATE.complete) bctx.drawImage(PLATE, plateBox.x, plateBox.y, plateBox.w, plateBox.h);
@@ -170,7 +170,7 @@ function drawBrain(f, alphaNext){
       bctx.fillStyle = "#151B26"; bctx.fillRect(x0, y, W, 9*dpr); bctx.fillStyle = col; bctx.fillRect(x0, y, W*Math.min(1, v/mx), 9*dpr);
       bctx.fillStyle = "#E9EEF6"; bctx.textAlign = "left"; bctx.fillText(String(v), x0 + W*Math.min(1, v/mx) + 6*dpr, y + 8*dpr); bctx.textAlign = "right"; });
     bctx.textAlign = "left"; }
-  if (flash > 0){ bctx.fillStyle = `rgba(255,236,190,${0.55*flash})`; bctx.fillRect(plateBox.x-40, plateBox.y-40, plateBox.w+80, plateBox.h+80); flash *= 0.82; if (flash<0.02) flash=0; }
+  if (flash > 0){ bctx.fillStyle = `rgba(255,236,190,${0.55*flash})`; bctx.fillRect(plateBox.x-40, plateBox.y-40, plateBox.w+80, plateBox.h+80); flash *= 0.93; if (flash<0.02) flash=0; }
   bctx.restore();
 }
 
@@ -219,7 +219,7 @@ function drawHall(){
   const desk = hctx.createLinearGradient(0,HH*0.84,0,HH); desk.addColorStop(0,"#66788F"); desk.addColorStop(1,"#3A4658");
   hctx.fillStyle = desk; hctx.fillRect(0, HH*0.84, HW, HH*0.16);
   hctx.fillStyle = "#B07A3E"; hctx.fillRect(0, HH*0.84, HW, 5*dpr);
-  const age = (now-jolt.t)/420, k = age<1 ? (1-age)*(1-age) : 0;
+  const age = (now-jolt.t)/800, k = age<1 ? (1-age)*(1-age) : 0;
   if (FLY.complete){ const fw = HW*0.17; hctx.save(); hctx.translate(HW*0.5 + jolt.x*k*dpr*1.8, HH*0.925 + jolt.y*k*dpr); hctx.rotate(-jolt.x*k*0.03);
     hctx.shadowColor="rgba(0,0,0,.6)"; hctx.shadowBlur=14*dpr; hctx.shadowOffsetY=6*dpr; hctx.drawImage(FLY, -fw/2, -fw/2, fw, fw); hctx.restore(); }
   hctx.fillStyle = flash>0 ? "#FFD36E" : "#8E7A45"; hctx.beginPath(); hctx.arc(HW*0.70, HH*0.93, 6*dpr, 0, 6.28); hctx.fill();
@@ -247,13 +247,13 @@ function line(ev, cls){
 function onEvent(i){
   const ev = D.events[i]; if (!ev) return;
   clock(ev); itemEl.textContent = ev.item;
+  // the real chair's marks live on chair events, which carry no frames: surface them first
+  for (let j = lastEv+1; j < i; j++){ const c = D.events[j]; if (c && c.role==="chair"){ if (c.real_chair) line({...c, text: c.real_chair==="bell" ? "(rings the bell)" : c.real_chair==="order" ? "calls for order: "+c.text : "calls time: "+c.text}, "chair"); else if (c.text) line(c, "chair"); } }
   line(ev, ev.kind);
   if (ev.seat) lit[ev.seat] = {t: performance.now(), kind: ev.kind};
   if (ev.kind==="vote" || ev.kind==="presence") for (const s of D.seats) lit[s.place] = {t: performance.now(), kind: "vote"};
-  if (ev.gf >= D.bell_gf){ flash = 1; jolt = {x: ev.side==="L" ? 14 : ev.side==="R" ? -14 : 0, y: -6, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 900);
+  if (ev.gf >= D.bell_gf){ flash = 1; jolt = {x: ev.side==="L" ? 16 : ev.side==="R" ? -16 : 0, y: -8, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
     const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">FLY</span><span class="txt">rings the bell — giant fibre ×${ev.gf}, throws itself ${ev.side==="L"?"right":ev.side==="R"?"left":"back"}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
-  // the real chair's marks live on chair events, which have no frames: surface them when the next frame-bearing event arrives
-  for (let j = lastEv+1; j < i; j++){ const c = D.events[j]; if (c && c.role==="chair"){ if (c.real_chair) line({...c, text: c.real_chair==="bell" ? "(rings the bell)" : c.real_chair==="order" ? "calls for order: "+c.text : "calls time: "+c.text}, "chair"); else if (c.text) line(c, "chair"); } }
   lastEv = i;
 }
 /* silence frames belong to no event; when the event index changes to a new stimulus, fire it */
