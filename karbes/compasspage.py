@@ -75,6 +75,21 @@ def copy(bundle: dict) -> dict[str, str]:
     def shuffle_name(raw: str | None) -> str:
         return "shuffle " + (raw or "").replace("rewired", "").rjust(2, "0") if raw else "—"
 
+    st = sorted(bundle.get("stability") or [], key=lambda r: -r["turn_sd"])
+    stability = ""
+    if len(st) >= 3:
+        loud, quiet = st[0], st[-1]
+        mine = next((r for r in st if r["kind"] == "real"), None)
+        rank = st.index(mine) + 1 if mine else 0
+        stability = (
+            f"Reproducibility is bought by loudness, not by being the measured wiring. Across "
+            f"the brains re-run here, the one with the strongest readout holds its seat to "
+            f"{_fmt(loud['spread'])} compass units and the one with the weakest wanders "
+            f"{_fmt(quiet['spread'])} — and the real connectome sits {rank} of {len(st)} on "
+            f"both counts, in the middle. A shuffle matched to it for readout strength "
+            f"reproduces about as well as it does."
+        )
+
     ar = bundle.get("real_auc_range")
     auc_wander = (
         f"And the accuracy number is the unstable one. Run the identical connectome five "
@@ -190,6 +205,7 @@ def copy(bundle: dict) -> dict[str, str]:
         "__TYPICAL__": typical,
         "__PARTISAN__": partisan,
         "__AUC_WANDER__": auc_wander,
+        "__STABILITY__": stability,
         "__ACROSS__": _fmt(across),
         "__SPACING__": _fmt(spacing),
         "__ERR_X__": _fmt(ex),

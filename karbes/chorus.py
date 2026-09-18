@@ -128,6 +128,11 @@ _BASE_RERUN = "rewired0"
 _RERUN = re.compile(r"^rewired\d+-phase\d+$")
 
 
+def _base(name: str) -> str:
+    """The brain a record belongs to. `rewired16-phase2` and `rewired16` are one brain."""
+    return name.split("-phase")[0]
+
+
 def _kind(name: str) -> str:
     if name.startswith("karbes"):
         return "real"
@@ -203,6 +208,7 @@ def place_all(
 
     flies = []
     records: dict[str, list[dict]] = {}
+    strength: dict[str, float] = {}
     for path in sorted(root.glob("*.json")):
         name = path.stem
         ballots = json.loads(path.read_text(encoding="utf-8"))
@@ -210,6 +216,7 @@ def place_all(
         records[name] = ballots
         x, y = cmap.project(stance(ballots, vm, inverted))
         turns = np.array([b["turn"] for b in ballots])
+        strength[name] = float(np.std(turns))
         adv = np.array([b["advances"] for b in ballots])
         a = float(auc(turns, adv))
         codes = [b["code"] for b in ballots]
@@ -264,6 +271,26 @@ def place_all(
     # dominant axis in *either* direction. A fly that lands at a pole has picked a side and
     # predicts well; one that lands between them predicts nothing. Being a good predictor of
     # this parliament means being a partisan in it.
+    # Reproducibility tracks how strongly a brain's readout responds, not whether its wiring
+    # is the measured one. The first shuffle re-run looked like evidence that structure buys
+    # stability; it was the third-quietest of the twenty, and a matched-strength shuffle
+    # reproduces about as well as the real connectome. Recording the relation stops that
+    # story being told again.
+    stability = []
+    by_brain: dict[str, list[dict]] = {}
+    for f in flies:
+        by_brain.setdefault(_base(f["name"]), []).append(f)
+    for base, group in sorted(by_brain.items()):
+        if len(group) < 2:
+            continue
+        stability.append({
+            "brain": base,
+            "kind": "real" if base.startswith("karbes") else "rewired",
+            "runs": len(group),
+            "spread": round(spread([(g["x"], g["y"]) for g in group]), 3),
+            "turn_sd": round(float(np.mean([strength[g["name"]] for g in group])), 4),
+        })
+
     partisanship = None
     if len(rewired_pts) >= 5:
         midline = float(np.median([v[1] for v in CHES_2024.values()]))
@@ -317,6 +344,7 @@ def place_all(
         "furthest": furthest["name"] if furthest else None,
         "typicality": typicality,
         "partisanship": partisanship,
+        "stability": stability,
         "split": split,
         # JSON has no NaN, and a page that reads NaN as a number prints one. A spread that
         # could not be measured is absent, not zero.
