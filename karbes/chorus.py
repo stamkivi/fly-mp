@@ -253,6 +253,22 @@ def place_all(
 
     karbes = next((f for f in flies if f["name"] == "karbes"), None)
 
+    # Why the real connectome scores badly, rather than an apology for it. AUC here is
+    # direction-free by construction (max(a, 1-a)), so it rewards tracking the chamber's
+    # dominant axis in *either* direction. A fly that lands at a pole has picked a side and
+    # predicts well; one that lands between them predicts nothing. Being a good predictor of
+    # this parliament means being a partisan in it.
+    partisanship = None
+    if len(rewired_pts) >= 5:
+        midline = float(np.median([v[1] for v in CHES_2024.values()]))
+        far = np.array([abs(f["y"] - midline) for f in flies if f["kind"] == "rewired"])
+        aucs = np.array([f["auc_advances"] for f in flies if f["kind"] == "rewired"])
+        partisanship = {
+            "midline": round(midline, 3),
+            "r": round(float(np.corrcoef(far, aucs)[0, 1]), 3),
+            "karbes_from_midline": round(abs(karbes["y"] - midline), 3) if karbes else None,
+        }
+
     # Is the measured connectome distinguished among its own shuffles, or is it one of them?
     # The page should not imply the former when the data says the latter.
     typicality = None
@@ -294,6 +310,7 @@ def place_all(
         "flies": flies,
         "furthest": furthest["name"] if furthest else None,
         "typicality": typicality,
+        "partisanship": partisanship,
         "split": split,
         # JSON has no NaN, and a page that reads NaN as a number prints one. A spread that
         # could not be measured is absent, not zero.

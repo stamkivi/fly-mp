@@ -75,6 +75,17 @@ def copy(bundle: dict) -> dict[str, str]:
     def shuffle_name(raw: str | None) -> str:
         return "shuffle " + (raw or "").replace("rewired", "").rjust(2, "0") if raw else "—"
 
+    pn = bundle.get("partisanship") or {}
+    partisan = (
+        f"There is a reason it scores badly, and it is not modesty. Across the rewirings, the "
+        f"further a brain lands from the middle of the chamber the better it predicts which "
+        f"bills advance (r = {_fmt(pn['r'])}). Being a good predictor of this parliament means "
+        f"having picked a side in it. Kärbes lands {_fmt(pn['karbes_from_midline'])} from the "
+        f"midline — it has not picked one, and it predicts accordingly."
+        if pn
+        else ""
+    )
+
     ty = bundle.get("typicality") or {}
     typical = ""
     if ty:
@@ -167,6 +178,7 @@ def copy(bundle: dict) -> dict[str, str]:
         "__WITHIN__": "—" if math.isnan(within) else _fmt(within),
         "__PER_BILL__": per_bill,
         "__TYPICAL__": typical,
+        "__PARTISAN__": partisan,
         "__ACROSS__": _fmt(across),
         "__SPACING__": _fmt(spacing),
         "__ERR_X__": _fmt(ex),
