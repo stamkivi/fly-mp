@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kärbes takes the chair — __DATE__</title>
+<title>Kärbes takes the chair__DATE__</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidd
 .brand{font-family:var(--display);font-weight:600;font-size:22px}
 .brand span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-left:12px;font-weight:400}
 .clock{font-family:var(--mono);font-size:13px;color:var(--mute)}.clock b{color:var(--ink);font-weight:500;font-size:18px}
-.others{margin-right:18px;font-size:11px}.others a{color:var(--mute);text-decoration:none;border-bottom:1px dotted var(--rule);margin-left:10px}.others a:hover{color:var(--ink)}
+.sel{font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:4px 8px;margin-right:14px}
 .board{display:grid;grid-template-columns:5fr 7fr;gap:12px;min-height:0}
 .panel{background:var(--panel);border:1px solid var(--rule);border-radius:12px;position:relative;overflow:hidden;min-height:0}
 canvas{display:block;width:100%;height:100%}
@@ -70,14 +70,25 @@ canvas{display:block;width:100%;height:100%}
 .fig b{display:block;font-family:var(--mono);font-size:22px;font-weight:500}.fig span{font-size:11px;color:var(--mute)}
 .credit{font-family:var(--mono);font-size:9.5px;color:#8E897F;margin-top:14px;line-height:1.5}
 @media(max-width:900px){
-  .stage{padding:10px 10px 8px}
-  .board{grid-template-columns:1fr;grid-template-rows:6fr 7fr}
-  .figs{grid-template-columns:1fr 1fr}
-  .nav{grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:8px 12px}
-  #timeline{grid-column:1 / -1;height:34px}
-  .legend{text-align:left}
-  .ticker{top:44px;gap:2px}.line{font-size:11.5px}.line:nth-child(-n+2){display:none}
+  html,body{height:auto;overflow:auto}
+  .stage{height:auto;min-height:100svh;padding:10px 10px 24px;gap:8px}
+  .top{flex-wrap:wrap;gap:4px 12px}.brand{font-size:19px}.brand span{display:block;margin:2px 0 0}
+  .clock{font-size:12px}.clock b{font-size:15px}.sel{margin-right:8px}
+  .nav{grid-template-columns:1fr;grid-template-rows:auto auto auto;gap:8px}
+  .ctl{flex-wrap:wrap}.ctl button{padding:7px 10px}
+  #timeline{height:36px}.legend{text-align:left}
+  .board{grid-template-columns:1fr;grid-template-rows:auto auto}
+  #hallpanel{aspect-ratio:4/3;min-height:280px}
+  #brainpanel{min-height:420px}
+  .ticker{top:40px;gap:2px}.line{font-size:11px}.line:nth-child(-n+2){display:none}
   .item{display:none}.tag{font-size:9px}
+  .coach{left:14px!important;right:14px!important;top:50px!important;max-width:none;font-size:11.5px}
+  .memo{font-size:9.5px;bottom:56px}.memo .row{grid-template-columns:110px 1fr 36px}.memo .two{grid-template-columns:1fr}
+  .regions{gap:4px 10px;flex-wrap:wrap;font-size:9px}
+  .veil,.end{position:fixed}
+  .open{padding:10px 14px}.open h1{font-size:26px}.open p{font-size:14px}
+  .figs{grid-template-columns:1fr 1fr;gap:8px}.fig b{font-size:18px}
+  .hallphoto{max-width:100%}
 }
 </style>
 </head>
@@ -85,7 +96,7 @@ canvas{display:block;width:100%;height:100%}
 <div class="stage">
   <div class="top">
     <div class="brand">Kärbes<span data-i18n="brandTag">takes the chair · simulated</span></div>
-    <div class="clock" id="clock"><span class="others">__OTHERS__</span>Riigikogu, <b id="date">—</b> <b id="time">--:--</b></div>
+    <div class="clock" id="clock"><select id="sitting" class="sel" aria-label="Sitting"></select>Riigikogu, <b id="date">—</b> <b id="time">--:--</b></div>
   </div>
   <div class="nav">
     <div class="ctl"><button id="play">▶ play</button><button id="sp1">1×</button><button id="sp4" class="on">4×</button><button id="sp12">12×</button><button id="mute">🔔 sound</button><span class="seg"><button id="lang-en" class="on">EN</button><button id="lang-et">ET</button></span></div>
@@ -130,15 +141,22 @@ canvas{display:block;width:100%;height:100%}
 </div>
 
 <script id="bundle" type="application/json">__BUNDLE_JSON__</script>
-<script>
-const D = JSON.parse(document.getElementById("bundle").textContent);
+<script id="sittings" type="application/json">__SITTINGS_JSON__</script>
+<script type="module">
+/* one page, several sittings: the bundle is inlined (one self-contained file) or fetched for the
+   sitting named by ?d= from the list in #sittings */
+let D = null, playing = false, muted = false, booted = false;
+const SITTINGS = JSON.parse(document.getElementById("sittings").textContent || "[]");
+const WANT = new URLSearchParams(location.search).get("d");
+{ const inline = document.getElementById("bundle").textContent.trim(); if (inline) D = JSON.parse(inline); }
+function current(){ const iso = D ? D.iso : WANT; return SITTINGS.find(x => x.iso === iso) || SITTINGS.find(x => x.default) || SITTINGS[0] || null; }
 const T = {
  en: {brandTag:"takes the chair · simulated", tagHall:"The hall, from the Speaker's desk", tagBrain:"Its brain, 166,700 neurons", tagMemo:"The sitting so far",
   bellmark:"▲ the fly rings the bell", other:"see also:", introTitle:"The 102nd member takes the chair",
   introP1:`One sitting of the Riigikogu, <span id="vdate"></span>, played to a complete simulated fruit-fly brain sitting in the Speaker's seat. Every speech reaches it as a scent from the speaker's side of the hall. Every insult comes straight at it. So does every heckle.`,
   introP2:"When its escape reflex fires, it rings the bell. On the timeline below, what the real chair did.",
   introFine:"Its memory lasts 20 milliseconds. It hears the hundredth <i>Aitäh!</i> as the first, and every heckler is a stranger.",
-  start:"Open the sitting", introHint:"About a minute at 4×, four minutes at 1×. Sound on: there is a bell.",
+  start:"Open the sitting", loading:"loading the sitting…", loadFail:"could not load the sitting", introHint:"About a minute at 4×, four minutes at 1×. Sound on: there is a bell.",
   creditHall:"Photo: Paul Kuimet, Riigikogu. The photograph is unaltered; the lights, the bell's glow and the fly are drawn on a layer above it.",
   endTitle:"Sitting closed", again:"Watch again", watch:"Watch", play:"▶ play", pause:"❚❚ pause", sound:"🔔 sound", muted:"🔕 muted",
   coachWave:"<b>the wave</b>Every speech wakes the brain from silence: the smell centre lights at 5 ms, the memory centre at 15 ms. Shown here fourteen times slower than life.",
@@ -166,7 +184,7 @@ const T = {
   introP1:`Üks Riigikogu istung, <span id="vdate"></span>, mängitud ette äädikakärbse tervele simuleeritud ajule, mis istub juhataja toolil. Iga kõne jõuab temani lõhnana sellelt poolelt saali, kus kõneleja istub. Iga solvang sööstab otse tema poole. Iga vahelehüüe samuti.`,
   introP2:"Kui tema põgenemisrefleks käivitub, helistab ta kella. Ajajoonel all on kõrval ka see, mida tegi päris juhataja.",
   introFine:"Tema mälu kestab 20 millisekundit. Sajandat „Aitäh!“ kuuleb ta nagu esimest ja iga vahelehüüdja on talle võõras.",
-  start:"Ava istung", introHint:"Kiirusel 4× kestab umbes minuti, kiirusel 1× neli. Pane heli sisse, kell heliseb.",
+  start:"Ava istung", loading:"istung laeb…", loadFail:"istungit ei õnnestunud laadida", introHint:"Kiirusel 4× kestab umbes minuti, kiirusel 1× neli. Pane heli sisse, kell heliseb.",
   creditHall:"Foto: Paul Kuimet, Riigikogu. Fotot pole muudetud: tuled, kella kuma ja kärbes on joonistatud eraldi kihile selle peale.",
   endTitle:"Istung on lõppenud", again:"Vaata uuesti", watch:"Vaata", play:"▶ esita", pause:"❚❚ paus", sound:"🔔 heli", muted:"🔕 heli väljas",
   coachWave:"<b>laine</b>Iga kõne äratab aju vaikusest: haistmiskeskus süttib 5 ms, mälukeskus 15 ms pärast. Siin näed seda neliteist korda aeglasemalt kui päriselt.",
@@ -192,25 +210,41 @@ const T = {
   title:(d)=>`Kärbes juhataja toolil — ${d}`}};
 let lang = "en";
 const t = k => T[lang][k] ?? T.en[k] ?? k;
-const dateStr = () => lang === "et" ? D.date_et : D.date;
+const dateStr = () => { if (D) return lang === "et" ? D.date_et : D.date; const c = current(); return c ? (lang === "et" ? c.date_et : c.date) : ""; };
 function applyLang(){
   document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
-  document.querySelectorAll(".others a").forEach(a => { a.textContent = lang === "et" ? a.dataset.et : a.dataset.en; });
+  document.querySelectorAll("#sitting option").forEach(o => { o.textContent = lang === "et" ? o.dataset.et : o.dataset.en; });
   const vd = document.getElementById("vdate"); if (vd) vd.textContent = dateStr();
   document.getElementById("date").textContent = dateStr(); document.title = t("title")(dateStr());
   document.getElementById("lang-en").classList.toggle("on", lang === "en"); document.getElementById("lang-et").classList.toggle("on", lang === "et");
   document.getElementById("play").textContent = playing ? t("pause") : t("play");
   document.getElementById("mute").textContent = muted ? t("muted") : t("sound");
+  if (!booted) return;
   document.getElementById("regions").innerHTML = D.atlas.groups.map(g=>`<span title="${g}"><i style="background:rgb(${REGION[g]})"></i>${t("regions")[g]||g}<b id="hz-${g}">0</b> Hz</span>`).join("");
-  if (typeof renderMemo === "function") renderMemo();
+  renderMemo();
   if (document.getElementById("end").classList.contains("on")) finish();
 }
+/* the selector, the language buttons and the intro work before the data has arrived */
+{ const sel = document.getElementById("sitting");
+  if (SITTINGS.length > 1){
+    sel.innerHTML = SITTINGS.map(x => `<option value="${x.iso}" data-en="${x.date}" data-et="${x.date_et}">${x.date}</option>`).join("");
+    sel.onchange = () => { const x = SITTINGS.find(y => y.iso === sel.value); if (x && x.href) location.href = x.href; };
+  } else sel.style.display = "none";
+  document.getElementById("lang-en").onclick = () => { lang = "en"; applyLang(); }; document.getElementById("lang-et").onclick = () => { lang = "et"; applyLang(); };
+  applyLang(); const c = current(); if (c) sel.value = c.iso;
+  if (!D){
+    const btn = document.getElementById("start"); btn.disabled = true; btn.dataset.i18n = "loading"; applyLang();
+    try { const r = await fetch(c.data); if (!r.ok) throw new Error(r.status); D = await r.json(); }
+    catch (e){ btn.dataset.i18n = "loadFail"; applyLang(); throw e; }
+    btn.disabled = false; btn.dataset.i18n = "start"; applyLang(); sel.value = D.iso;
+  } }
 const FPS = D.fps, N = D.raster_off.length - 1;
 const COLOUR = Object.fromEntries(D.seats.map(s => [s.faction, s.colour]));
 COLOUR["GOV"] = "#E9EEF6"; COLOUR[""] = "#A9A49B";
 const REGION = {optic:[79,168,204], central:[222,95,160], cord:[95,185,127], ascending:[139,123,208], descending:[238,154,60]};
 const dpr = Math.min(devicePixelRatio || 1, 2);
+const MOBILE = matchMedia("(max-width:900px)");
 
 /* ---------- atlas ---------- */
 const b64 = s => { const bin = atob(s); const u = new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; };
@@ -232,11 +266,14 @@ const brain = document.getElementById("brain"), bctx = brain.getContext("2d");
 const PLATE = new Image(); PLATE.src = "data:image/jpeg;base64,__BRAIN_B64__";
 let BW=0, BH=0, plateBox=null, glowLayers=null;
 function sizeBrain(){
+  const panel = document.getElementById("brainpanel"), memo = document.getElementById("memo"), memoH = memo.offsetHeight, memoBottom = parseFloat(getComputedStyle(memo).bottom) || 36;
+  if (MOBILE.matches){ const w = brain.getBoundingClientRect().width; panel.style.height = Math.round(44 + (w-24)/(D.brain.width/D.brain.height) + memoH + memoBottom + 78 + 8) + "px"; }
+  else panel.style.height = "";
   const r = brain.getBoundingClientRect(); BW = Math.round(r.width*dpr); BH = Math.round(r.height*dpr);
   brain.width = BW; brain.height = BH;
   const ar = D.brain.width / D.brain.height;
   // the plate takes what is left above the motor bars, the tally and the region legend
-  const reserve = (document.getElementById("memo").offsetHeight + 36 + 78) * dpr;
+  const reserve = (memoH + memoBottom + 78) * dpr;
   let w = BW - 24*dpr, h = w / ar; const maxH = BH - 44*dpr - reserve; if (h > maxH){ h = maxH; w = h * ar; }
   plateBox = {x:(BW-w)/2, y: 44*dpr, w, h};
   glowLayers = D.atlas.groups.map((g, gi) => {
@@ -375,6 +412,7 @@ function drawHall(){
     gr.addColorStop(0,`rgba(${col},${1*ga})`); gr.addColorStop(0.22,`rgba(${col},${.7*ga})`); gr.addColorStop(0.5,`rgba(${col},${.25*ga})`); gr.addColorStop(1,`rgba(${col},0)`);
     hctx.fillStyle = gr; hctx.fillRect(p.x-R,p.y-R,R*2,R*2);
     hctx.globalCompositeOperation = "source-over";
+    if (many){ hctx.fillStyle = `rgba(${col},${.7*a})`; hctx.beginPath(); hctx.arc(p.x,p.y,p.w*0.3,0,6.2832); hctx.fill(); hctx.globalCompositeOperation = "lighter"; continue; }
     hctx.fillStyle = `rgba(${col},${.95*a})`; hctx.beginPath(); hctx.arc(p.x,p.y,p.w*0.42,0,6.2832); hctx.fill();
     hctx.fillStyle = `rgba(255,255,255,${.95*a})`; hctx.beginPath(); hctx.arc(p.x,p.y,p.w*0.22,0,6.2832); hctx.fill();
     hctx.globalCompositeOperation = "lighter";
@@ -402,7 +440,7 @@ const ticker = document.getElementById("ticker"), itemEl = document.getElementBy
 const bellmark = document.getElementById("bellmark");
 
 
-let frame = 0, playing = false, speed = 4, lastEv = -1, lastT = 0, acc = 0;
+let frame = 0, speed = 4, lastEv = -1, lastT = 0, acc = 0;
 const t0 = new Date(D.start).getTime();
 function clock(ev){ if (!ev) return; const d = new Date(t0 + ev.t*1000); const day = Math.floor((ev.t + new Date(t0).getUTCHours()*3600 + 3*3600) / 86400); timeEl.textContent = d.toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"}) + (day >= 1 ? " +" + day + t("dayMark") : ""); }
 function who(ev){ return lang === "et" ? (ev.who_et || ev.who) : ev.who; }
@@ -464,7 +502,7 @@ function coach(what){ if (coached[what]) return; coached[what] = true; const el 
   setTimeout(() => { el.classList.add("on"); setTimeout(() => el.classList.remove("on"), what==="wave" ? 5200 : 6500); }, what==="wave" ? 900 : 150); }
 
 /* ---------- sound ---------- */
-let AC = null, muted = false;
+let AC = null;
 function ding(){ if (muted) return; try { AC = AC || new (window.AudioContext||window.webkitAudioContext)(); const t = AC.currentTime;
   for (const [f, g, d] of [[2093, .22, .45], [3520, .10, .30], [1046, .06, .6]]){ const o = AC.createOscillator(), v = AC.createGain(); o.frequency.value = f; o.type = "sine";
     v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(g, t+0.004); v.gain.exponentialRampToValueAtTime(0.0001, t+d);
@@ -527,7 +565,7 @@ function finish(){
   document.getElementById("credit").innerHTML = t("credit");
   document.getElementById("end").classList.add("on");
 }
-document.getElementById("lang-en").onclick = () => { lang = "en"; applyLang(); }; document.getElementById("lang-et").onclick = () => { lang = "et"; applyLang(); };
+booted = true;
 applyLang();
 requestAnimationFrame(step);
 </script>

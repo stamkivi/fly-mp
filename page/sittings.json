@@ -1,0 +1,19 @@
+[
+  {
+    "iso": "2026-05-20",
+    "default": true,
+    "steno": "data/raw/meta/steno_verbatims_20260520.json",
+    "recording": "runs/chair/2026-05-20.json",
+    "display_url": "https://pluralplatform.dsp.so/wnkwOlhO-k-rbes-takes-the-chair-20-may-2026",
+    "blurb_en": "An ordinary Wednesday: question time with the government, then a plenary that ran past midnight. The chair never once called for order.",
+    "blurb_et": "Tavaline kolmapäev: infotund valitsusega ja täiskogu istung, mis kestis üle kesköö. Juhataja ei kutsunud kordagi kedagi korrale."
+  },
+  {
+    "iso": "2023-06-19",
+    "steno": "data/raw/steno/2023-06-19.json",
+    "recording": "runs/chair/2023-06-19.json",
+    "display_url": "https://pluralplatform.dsp.so/qcTvNjks-k-rbes-takes-the-chair-19-june-2023",
+    "blurb_en": "The 27-hour extraordinary session: the tax package and the marriage equality bill tied to confidence votes, the opposition obstructing through the night.",
+    "blurb_et": "27-tunnine erakorraline istung: maksupakett ja abieluvõrdsuse eelnõu seoti usaldusküsimusega, opositsioon obstrueeris läbi öö."
+  }
+]

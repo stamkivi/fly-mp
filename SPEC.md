@@ -18,8 +18,7 @@ better testbed than Doom. The honest question is:
 So the rewired control is not an afterthought — it is the experiment. Everything else is apparatus.
 
 This document is the project's spec and the source of truth; it supersedes the planning copy it was
-promoted from. Source briefing:
-<https://pluralplatform.dsp.so/2CcZ0GXk-fly-connectome-briefing-malecns-v1-0>.
+promoted from.
 
 Measurements below were taken live on 2026-09-16 and are the evidence base for the design decisions
 that follow. They are expensive to re-derive under the API rate limit — do not delete them, and

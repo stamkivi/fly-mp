@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kärbes — the 102nd member takes the chair</title>
+<meta name="description" content="A complete simulated fruit-fly brain sits in the Speaker's chair of the Estonian parliament and rings the bell when its escape reflex fires. Real sittings, real transcripts, a real connectome.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F4EF;--panel:#FFFFFF;--ink:#1B1A18;--mute:#6E6A63;--rule:#E2DED5;--accent:#1B6B8C;--gold:#B8860B;
+      --display:"Fraunces",Georgia,serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin:0 auto;padding:22px 20px 60px}
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:22px}
+.brand{font-family:var(--display);font-weight:600;font-size:22px}
+.brand span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-left:12px;font-weight:400}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.seg button{font-family:var(--mono);font-size:11px;background:var(--panel);color:var(--ink);border:0;padding:6px 10px;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.hero{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--rule);background:var(--panel)}
+.hero img.hall{display:block;width:100%;height:auto}
+.hero img.fly{position:absolute;width:12%;min-width:72px;left:50%;bottom:6%;transform:translateX(-50%);filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(32px,5.5vw,54px);line-height:1.02;margin:28px 0 12px;letter-spacing:-.01em}
+.lead{font-size:18px;max-width:60ch;margin:0 0 6px}
+.fine{font-size:13px;color:var(--mute);max-width:64ch}
+h2{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:500;margin:40px 0 12px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{display:block;background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:18px 18px 16px;color:inherit;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 14px 30px -18px rgba(0,0,0,.35)}
+.card .when{font-family:var(--display);font-size:26px;font-weight:600;line-height:1.1}
+.card p{font-size:14px;color:#3E3A35;margin:8px 0 12px;min-height:3.2em}
+.card .figs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.card .fig b{display:block;font-family:var(--mono);font-size:20px;font-weight:500}
+.card .fig span{font-family:var(--mono);font-size:9.5px;color:var(--mute);letter-spacing:.02em}
+.card .go{display:inline-block;font-weight:600;font-size:14px;color:var(--bg);background:var(--ink);border-radius:8px;padding:10px 16px}
+.how{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.how div{background:var(--panel);border:1px solid var(--rule);border-radius:12px;padding:16px;font-size:14px}
+.how b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:6px;font-weight:500}
+table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12px;background:var(--panel);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+th,td{text-align:right;padding:9px 12px;border-top:1px solid var(--rule)}
+th{font-weight:500;color:var(--mute);border-top:0}
+td:first-child,th:first-child{text-align:left;font-family:var(--body);color:#3E3A35}
+.credit{font-family:var(--mono);font-size:10.5px;color:#8E897F;line-height:1.6;margin-top:36px;max-width:80ch}
+.credit a{color:var(--accent);text-decoration:none}
+@media(max-width:720px){.cards,.how{grid-template-columns:1fr}.card .figs{grid-template-columns:repeat(2,1fr)}.wrap{padding:16px 14px 40px}th,td{padding:7px 8px;font-size:11px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">Kärbes<span data-en="the 102nd member · simulated" data-et="102. liige · simulatsioon">the 102nd member · simulated</span></div>
+    <span class="seg"><button id="lang-en" class="on">EN</button><button id="lang-et">ET</button></span>
+  </div>
+
+  <div class="hero">
+    <img class="hall" src="data:image/jpeg;base64,__HALL_B64__" alt="The Riigikogu session hall from the Speaker's desk. Photo: Paul Kuimet, Riigikogu.">
+    <img class="fly" src="data:image/png;base64,__FLY_B64__" alt="">
+  </div>
+
+  <h1 data-en="The 102nd member takes the chair" data-et="Riigikogu 102. liige asub istungit juhatama">The 102nd member takes the chair</h1>
+  <p class="lead" data-en="A complete simulated fruit-fly brain, all 166,700 neurons of it, sits in the Speaker's seat of the Estonian parliament while a real sitting is played to it. Every speech reaches it as a scent from the speaker's side of the hall. Every insult comes straight at it. When its escape reflex fires, it rings the bell."
+     data-et="Äädikakärbse terve simuleeritud aju, kõik 166 700 neuronit, istub Riigikogu juhataja toolil, samal ajal kui talle mängitakse ette üks päris istung. Iga kõne jõuab temani lõhnana sellelt poolelt saali, kus kõneleja istub. Iga solvang sööstab otse tema poole. Kui põgenemisrefleks käivitub, helistab ta kella.">A complete simulated fruit-fly brain, all 166,700 neurons of it, sits in the Speaker's seat of the Estonian parliament while a real sitting is played to it. Every speech reaches it as a scent from the speaker's side of the hall. Every insult comes straight at it. When its escape reflex fires, it rings the bell.</p>
+  <p class="fine" data-en="Its memory lasts 20 milliseconds. It hears the hundredth Aitäh! as the first, and every heckler is a stranger. The page keeps the tally the brain cannot, and shows what the real chair did at the same moments."
+     data-et="Tema mälu kestab 20 millisekundit. Sajandat „Aitäh!“ kuuleb ta nagu esimest ja iga vahelehüüdja on talle võõras. Leht peab arvet, mida aju ei suuda, ja näitab, mida päris juhataja samal hetkel tegi.">Its memory lasts 20 milliseconds. It hears the hundredth Aitäh! as the first, and every heckler is a stranger. The page keeps the tally the brain cannot, and shows what the real chair did at the same moments.</p>
+
+  <h2 data-en="Pick a sitting" data-et="Vali istung">Pick a sitting</h2>
+  <div class="cards">__CARDS__</div>
+
+  <h2 data-en="How it works" data-et="Kuidas see töötab">How it works</h2>
+  <div class="how">
+    <div><b data-en="the hall" data-et="saal">the hall</b><span data-en="The Riigikogu's own transcript, second by second: who spoke, from which seat, what was heckled, when the chair rang the bell. Seating comes from the hall plan." data-et="Riigikogu enda stenogramm sekundi täpsusega: kes rääkis, milliselt kohalt, mida hüüti vahele, millal juhataja kella helistas. Istekohad tulevad saaliplaanist.">The Riigikogu's own transcript, second by second: who spoke, from which seat, what was heckled, when the chair rang the bell. Seating comes from the hall plan.</span></div>
+    <div><b data-en="the brain" data-et="aju">the brain</b><span data-en="The MaleCNS connectome, every neuron and synapse of one male fruit fly, run as a spiking model. A speech is a scent on one side; a hostile speech or a heckle is an object rushing at the fly. The giant fibre, its escape reflex, decides the bell." data-et="MaleCNS-i konnektoom, ühe isase äädikakärbse iga neuron ja sünaps, impulsimudelina. Kõne on lõhn ühelt poolt; vaenulik kõne või vahelehüüe on kärbse poole sööstev objekt. Hiidkiud, tema põgenemisrefleks, otsustab kella.">The MaleCNS connectome, every neuron and synapse of one male fruit fly, run as a spiking model. A speech is a scent on one side; a hostile speech or a heckle is an object rushing at the fly. The giant fibre, its escape reflex, decides the bell.</span></div>
+    <div><b data-en="the honesty" data-et="ausus">the honesty</b><span data-en="The tone of each speech is judged by a language model with one calibrated question, not by the fly. What the fly adds is the reflex itself: its 4 ms timing, its side, and the damping that lets a merely sharp speech pass while a heckle never does." data-et="Iga kõne tooni hindab keelemudel ühe kalibreeritud küsimusega, mitte kärbes. Kärbse panus on refleks ise: selle 4 ms ajastus, pool ja summutus, mis laseb lihtsalt terava kõne läbi, aga vahelehüüde mitte kunagi.">The tone of each speech is judged by a language model with one calibrated question, not by the fly. What the fly adds is the reflex itself: its 4 ms timing, its side, and the damping that lets a merely sharp speech pass while a heckle never does.</span></div>
+  </div>
+
+  <h2 data-en="Fly against chair" data-et="Kärbes ja juhataja">Fly against chair</h2>
+  __TABLE__
+  <p class="fine" style="margin-top:10px" data-en="The fly is the same instrument on both days: a heckle always rings, a civil speech almost never, reaction time 4 ms. The human chair is a different instrument. It polices the room; the fly polices the speaker."
+     data-et="Kärbes on mõlemal päeval sama mõõteriist: vahelehüüe paneb kella helisema alati, viisakas kõne peaaegu mitte kunagi, reaktsiooniaeg 4 ms. Päris juhataja on teine mõõteriist. Tema valvab saali, kärbes valvab kõnelejat.">The fly is the same instrument on both days: a heckle always rings, a civil speech almost never, reaction time 4 ms. The human chair is a different instrument. It polices the room; the fly polices the speaker.</p>
+
+  <div class="credit">
+    <span data-en="A simulation: a real fly's wiring, with inputs and outputs of our choosing. It makes no claim about what a fly experiences."
+          data-et="Simulatsioon: päris kärbse aju ühendusskeem, sisendid ja väljundid meie valitud. See ei väida midagi selle kohta, mida kärbes tunneb.">A simulation: a real fly's wiring, with inputs and outputs of our choosing. It makes no claim about what a fly experiences.</span><br>
+    Connectome: <a href="https://www.janelia.org/project-team/flyem/male-cns-connectome">MaleCNS v1.0</a> (CC BY 4.0) · engine: <a href="https://github.com/philshiu/Drosophila_brain_model">Shiu et al. 2024</a> model, mlx-lif-engine (MIT) · transcripts, seating and votes: <a href="https://api.riigikogu.ee/">Riigikogu open data</a> (CC BY-SA 3.0) · hall photo: Paul Kuimet, Riigikogu · fly illustration: Orkin · brain image: 126,104 measured cell-body positions ·
+    <a href="__REPO__">source and findings on GitHub</a>
+  </div>
+</div>
+<script id="sittings" type="application/json">__SITTINGS_JSON__</script>
+<script>
+let lang = "en";
+function applyLang(){
+  document.querySelectorAll("[data-en]").forEach(el => { el.textContent = lang === "et" ? el.dataset.et : el.dataset.en; });
+  document.documentElement.lang = lang;
+  document.getElementById("lang-en").classList.toggle("on", lang === "en"); document.getElementById("lang-et").classList.toggle("on", lang === "et");
+  document.title = lang === "et" ? "Kärbes — Riigikogu 102. liige asub istungit juhatama" : "Kärbes — the 102nd member takes the chair";
+}
+document.getElementById("lang-en").onclick = () => { lang = "en"; applyLang(); };
+document.getElementById("lang-et").onclick = () => { lang = "et"; applyLang(); };
+applyLang();
+</script>
+</body>
+</html>

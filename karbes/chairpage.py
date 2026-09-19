@@ -157,7 +157,8 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
     raster_b64, raster_off = pack(trim(rec.raster, RASTER_CAP))
     onset_b64, onset_off = pack(trim(rec.onset, ONSET_CAP))
     return {
-        "schema": "karbes-chair/2",
+        "schema": "karbes-chair/3",
+        "iso": start_iso[:10],
         "date": s.date,
         "date_et": s.date_et,
         "title": s.title,
@@ -221,23 +222,39 @@ def _by_kind(s: Sitting, rec: Recording) -> dict:
     }
 
 
-def build(b: dict, others: dict[str, dict] | None = None) -> str:
-    """`others` maps a sitting's date label to {"url": ..., "summary": ...}: the top-bar
-    links, and the one-line comparison the end card makes with the other sitting."""
-    t = TEMPLATE.read_text(encoding="utf-8")
-    others = others or {}
-    links = "".join(f'<a href="{o["url"]}" data-en="{html.escape(d)}" data-et="{html.escape(o.get("date_et", d))}">{html.escape(o.get("date_et", d))}</a>' for d, o in others.items())
-    compare = [
-        {"date": d, "date_et": o.get("date_et", d), "url": o["url"], "stimuli": o["summary"]["stimuli"], "fly_bells": o["summary"]["fly_bells"],
-         "chair_order": o["summary"]["chair_order"] + o["summary"]["chair_bell"], "heckles": o["summary"]["heckles"],
-         "hostile": o["summary"]["hostile"], "coincide": o["summary"]["coincide"]}
-        for d, o in others.items() if o.get("summary")
+def with_others(b: dict, sittings: list[dict]) -> dict:
+    """The bundle plus the one-line comparison the end card makes with the other sittings."""
+    keys = ("stimuli", "fly_bells", "heckles", "hostile", "coincide")
+    others = [
+        {
+            "date": x["date"],
+            "date_et": x["date_et"],
+            "url": x["href"],
+            "chair_order": x["summary"]["chair_order"] + x["summary"]["chair_bell"],
+            **{k: x["summary"][k] for k in keys},
+        }
+        for x in sittings
+        if x.get("summary") and x["iso"] != b["iso"]
     ]
-    b = dict(b, others=compare)
+    return dict(b, others=others)
+
+
+def build(b: dict, sittings: list[dict], inline: bool = True) -> str:
+    """One viewer page. `sittings` is the list behind the top-bar selector:
+    [{iso, date, date_et, href, data?, summary?, default?}]. With `inline` the bundle is
+    embedded and the file stands alone; without it the page fetches `data` for the sitting
+    named by ?d= (the GitHub Pages build, one shell for every sitting)."""
+    t = TEMPLATE.read_text(encoding="utf-8")
+    b = with_others(b, sittings)
+    public = [
+        {k: x[k] for k in ("iso", "date", "date_et", "href", "data", "default") if k in x}
+        for x in sittings
+    ]
+    esc = lambda o: json.dumps(o, ensure_ascii=False).replace("</", "<\\/")
     tokens = {
-        "__DATE__": html.escape(b["date"]),
-        "__OTHERS__": ('<span data-i18n="other">see also:</span>' + links) if links else "",
-        "__BUNDLE_JSON__": json.dumps(b, ensure_ascii=False).replace("</", "<\\/"),
+        "__DATE__": (" — " + html.escape(b["date"])) if inline else "",
+        "__SITTINGS_JSON__": esc(public),
+        "__BUNDLE_JSON__": esc(b) if inline else "",
         "__BRAIN_B64__": base64.b64encode(BRAIN.read_bytes()).decode(),
         "__FLY_B64__": base64.b64encode(FLY.read_bytes()).decode(),
         "__HALL_B64__": base64.b64encode(HALL_PHOTO.read_bytes()).decode()
