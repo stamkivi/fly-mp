@@ -38,6 +38,13 @@ canvas{display:block;width:100%;height:100%}
 .help .x{position:absolute;right:8px;top:6px;background:none;border:0;color:#B9B3A8;font-size:14px;cursor:pointer;padding:4px 6px}
 .help i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 4px 0 2px;vertical-align:middle}
 #help{font-weight:600;min-width:34px}
+.bubbles{position:absolute;inset:0;z-index:4;pointer-events:none}
+.bubble{position:absolute;background:rgba(255,255,255,.97);color:#1B1A18;border-radius:10px;padding:9px 12px 10px;font-size:13px;line-height:1.35;
+  box-shadow:0 12px 30px -12px rgba(0,0,0,.55);border-left:4px solid var(--gold);opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s}
+.bubble.on{opacity:1;transform:none}.bubble.fade{opacity:0;transition:opacity 1.6s}
+.bubble b{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#6E6A63;margin-bottom:3px}
+.bubble.heckle{border-left-color:#C24B18}.bubble.heckle .q{font-style:italic}
+.bubble:after{content:"";position:absolute;left:calc(var(--tail) - 8px);bottom:-9px;border:9px solid transparent;border-top-color:rgba(255,255,255,.97);border-bottom:0}
 .bellmark{position:absolute;right:16px;top:14px;z-index:3;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
   color:var(--gold);opacity:0;transition:opacity .15s;text-transform:uppercase}
 .bellmark.on{opacity:1}
@@ -83,6 +90,7 @@ canvas{display:block;width:100%;height:100%}
   #hallpanel{aspect-ratio:4/3;min-height:280px}
   #brainpanel{min-height:420px}
   .ticker{top:40px;gap:2px}.line{font-size:11px}.line:nth-child(-n+2){display:none}
+  .bubble{font-size:12px;padding:7px 10px 8px}
   .item{display:none}.tag{font-size:9px}
   .help{left:10px;right:10px;bottom:10px;width:auto}
   .memo{font-size:9.5px;bottom:56px}.memo .row{grid-template-columns:110px 1fr 36px}.memo .two{grid-template-columns:1fr}
@@ -111,6 +119,7 @@ canvas{display:block;width:100%;height:100%}
       <div class="item" id="item"></div>
       <canvas id="hall" role="img" aria-label="The Riigikogu hall from the Speaker's desk: two blocks of seats in party colours, the seat of whoever is speaking lit, the fly at the Speaker's desk."></canvas>
       <div class="bellmark" id="bellmark" data-i18n="bellmark">▲ the fly rings the bell</div>
+      <div class="bubbles" id="bubbles" aria-live="polite"></div>
       <div class="ticker" id="ticker"></div>
     </div>
     <div class="panel" id="brainpanel">
@@ -215,7 +224,11 @@ const T = {
   compare:(o)=>` Võrdluseks ${o.date_et}: ${o.stimuli} sündmust, ${o.hostile} vaenulikku kõnet, ${o.heckles} vahelehüüet. Kärbes helistas kella ${o.fly_bells} korda, päris juhataja kutsus korrale ${o.chair_order} korda, neist ${o.coincide} peaaegu samal hetkel.`,
   credit:`Simulatsioon: päris kärbse aju ühendusskeem, sisendid ja väljundid meie valitud. Konnektoom MaleCNS v1.0 (CC BY 4.0), mootor mlx-lif-engine (MIT, Shiu jt 2024). Stenogramm, saaliplaan ja hääletused: Riigikogu avaandmed (CC BY-SA 3.0). Kõne vaenulikkust hindas keelemudel ühe küsimusega; saali pool tuleneb istekohast. Ajupilt: 126 104 mõõdetud rakukeha asukohta. Kärbse illustratsioon: Orkin. Saali foto: Paul Kuimet, Riigikogu. <a href="https://github.com/stamkivi/fly-mp" target="_blank" rel="noopener" style="color:var(--accent)">Lähtekood ja tulemused GitHubis.</a>`,
   title:(d)=>`Kärbes juhataja toolil — ${d}`}};
-let lang = "en";
+/* the language follows the reader: a ?lang= parameter, else the last choice on this site */
+const PARAM_LANG = new URLSearchParams(location.search).get("lang");
+let lang = PARAM_LANG || (() => { try { return localStorage.getItem("karbes.lang"); } catch (e) { return null; } })() || "en";
+if (!["en", "et"].includes(lang)) lang = "en";
+const setLang = l => { lang = l; try { localStorage.setItem("karbes.lang", l); } catch (e) {} applyLang(); };
 const t = k => T[lang][k] ?? T.en[k] ?? k;
 const dateStr = () => { if (D) return lang === "et" ? D.date_et : D.date; const c = current(); return c ? (lang === "et" ? c.date_et : c.date) : ""; };
 function applyLang(){
@@ -223,7 +236,7 @@ function applyLang(){
   document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
   document.querySelectorAll("#sitting option").forEach(o => { o.textContent = lang === "et" ? o.dataset.et : o.dataset.en; });
   const vd = document.getElementById("vdate"); if (vd) vd.textContent = dateStr();
-  document.getElementById("date").textContent = dateStr(); document.title = t("title")(dateStr());
+  document.getElementById("date").textContent = dateStr(); document.title = t("title")(dateStr()); document.documentElement.lang = lang;
   document.getElementById("lang-en").classList.toggle("on", lang === "en"); document.getElementById("lang-et").classList.toggle("on", lang === "et");
   document.getElementById("helpbody").innerHTML = t("help").map(([b, x]) => `<p><b>${b}</b>${x}</p>`).join("");
   document.getElementById("play").textContent = playing ? t("pause") : t("play");
@@ -237,9 +250,9 @@ function applyLang(){
 { const sel = document.getElementById("sitting");
   if (SITTINGS.length > 1){
     sel.innerHTML = SITTINGS.map(x => `<option value="${x.iso}" data-en="${x.date}" data-et="${x.date_et}">${x.date}</option>`).join("");
-    sel.onchange = () => { const x = SITTINGS.find(y => y.iso === sel.value); if (x && x.href) location.href = x.href; };
+    sel.onchange = () => { const x = SITTINGS.find(y => y.iso === sel.value); if (x && x.href) location.href = x.href + (x.href.includes("?") ? "&" : "?") + "lang=" + lang; };
   } else sel.style.display = "none";
-  document.getElementById("lang-en").onclick = () => { lang = "en"; applyLang(); }; document.getElementById("lang-et").onclick = () => { lang = "et"; applyLang(); };
+  document.getElementById("lang-en").onclick = () => setLang("en"); document.getElementById("lang-et").onclick = () => setLang("et");
   const helpbox = document.getElementById("helpbox"), helpbtn = document.getElementById("help");
   const showHelp = on => { helpbox.classList.toggle("on", on); helpbtn.setAttribute("aria-expanded", String(on)); helpbtn.classList.toggle("on", on); };
   helpbtn.onclick = () => showHelp(!helpbox.classList.contains("on")); document.getElementById("helpx").onclick = () => showHelp(false);
@@ -454,6 +467,22 @@ let frame = 0, speed = 4, lastEv = -1, lastT = 0, acc = 0;
 const t0 = new Date(D.start).getTime();
 function clock(ev){ if (!ev) return; const d = new Date(t0 + ev.t*1000); const day = Math.floor((ev.t + new Date(t0).getUTCHours()*3600 + 3*3600) / 86400); timeEl.textContent = d.toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"}) + (day >= 1 ? " +" + day + t("dayMark") : ""); }
 function who(ev){ return lang === "et" ? (ev.who_et || ev.who) : ev.who; }
+/* what the fly jumped at, said from the seat that said it; it stays long enough to read whatever the playback speed */
+const bubbles = document.getElementById("bubbles");
+function bubble(ev){
+  const txt = (ev.text || "").replace(/^\(|\)$/g, "").trim(); if (!txt) return;
+  let short = txt; if (txt.length > 180){ short = txt.slice(0, 178); short = short.slice(0, Math.max(120, short.lastIndexOf(" "))) + "…"; }
+  const el = document.createElement("div"); el.className = "bubble" + (ev.kind === "heckle" ? " heckle" : "");
+  el.innerHTML = `<b>${who(ev)}</b><span class="q">${short.replace(/</g, "&lt;")}</span>`;
+  const r = hall.getBoundingClientRect(), W = r.width, H = r.height;
+  const p = ev.seat && seatPos[ev.seat]; let x, y;
+  if (p){ x = p.x/dpr; y = p.y/dpr; } else { const [fx, fy] = quadPoint(PHOTO[ev.side === "R" ? "R" : "L"], 0.5, 0.3); x = (photoBox.x + fx*photoBox.w)/dpr; y = (photoBox.y + fy*photoBox.h)/dpr; }
+  const bw = Math.min(320, W - 24), left = Math.max(12, Math.min(W - bw - 12, x - bw/2));
+  el.style.width = bw + "px"; el.style.left = left + "px"; el.style.bottom = (H - y + 16) + "px"; el.style.setProperty("--tail", Math.max(14, Math.min(bw - 14, x - left)) + "px");
+  bubbles.appendChild(el); while (bubbles.children.length > 2) bubbles.removeChild(bubbles.firstChild);
+  requestAnimationFrame(() => el.classList.add("on"));
+  setTimeout(() => el.classList.add("fade"), 6000); setTimeout(() => el.remove(), 7800);
+}
 function line(ev, cls){
   const el = document.createElement("div"); el.className = "line " + cls; const C = t("chip");
   const chipText = ev.kind==="heckle" ? C.heckle : ev.kind==="vote" ? C.vote : ev.kind==="presence" ? C.presence : ev.role==="chair" ? C.chair : ev.role==="gov" ? C.gov : (ev.faction === "I" ? "ISAMAA" : ev.faction || C.nonaff).toUpperCase();
@@ -471,7 +500,7 @@ function onEvent(i){
   if (ev.seat) lit[ev.seat] = {t: performance.now(), kind: ev.kind};
   if (ev.role === "gov") lit.__gov = {t: performance.now()};
   if (ev.kind==="vote" || ev.kind==="presence") for (const s of D.seats) lit[s.place] = {t: performance.now(), kind: "vote"};
-  if (ev.gf >= D.bell_gf){ ding(); flash = 1; jolt = {x: ev.side==="L" ? 34 : ev.side==="R" ? -34 : 0, y: -18, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
+  if (ev.gf >= D.bell_gf){ ding(); bubble(ev); flash = 1; jolt = {x: ev.side==="L" ? 34 : ev.side==="R" ? -34 : 0, y: -18, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
     const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">${t("chip").fly}</span><span class="txt">${t("bellLine")(ev.gf_first_ms!=null ? ev.gf_first_ms.toFixed(0) : null, ev.side)}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
   remember(i);
   lastEv = i;
@@ -542,7 +571,7 @@ function drawTimeline(){
   tctx.fillStyle="#1B1A18"; tctx.fillRect(x(frame)-dpr, 0, 2*dpr, H);
 }
 function nextFrame(i){ for (let j=i;j<D.events.length;j++) if (evFrame[j]!==undefined) return evFrame[j]; return N-1; }
-tl.addEventListener("click", e => { const r = tl.getBoundingClientRect(); frame = Math.floor((e.clientX-r.left)/r.width*N); curEv=-1; ticker.innerHTML=""; resetMemory();
+tl.addEventListener("click", e => { const r = tl.getBoundingClientRect(); frame = Math.floor((e.clientX-r.left)/r.width*N); curEv=-1; ticker.innerHTML=""; bubbles.innerHTML=""; resetMemory();
   // replay memory silently up to here, so the tally is what a viewer who watched from the start would have
   const target = D.frame_event.slice(0, frame).filter(x => x>=0).pop() ?? -1; lastEv = -1;
   for (let i = 0; i <= target; i++){ if (D.events[i].bio > 0){ const keep = renderMemo; remember(i); lastEv = i; } } });

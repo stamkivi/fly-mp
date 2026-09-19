@@ -90,15 +90,18 @@ td:first-child,th:first-child{text-align:left;font-family:var(--body);color:#3E3
 </div>
 <script id="sittings" type="application/json">__SITTINGS_JSON__</script>
 <script>
-let lang = "en";
+let lang = new URLSearchParams(location.search).get("lang") || (() => { try { return localStorage.getItem("karbes.lang"); } catch (e) { return null; } })() || "en";
+if (!["en", "et"].includes(lang)) lang = "en";
 function applyLang(){
   document.querySelectorAll("[data-en]").forEach(el => { el.textContent = lang === "et" ? el.dataset.et : el.dataset.en; });
   document.documentElement.lang = lang;
   document.getElementById("lang-en").classList.toggle("on", lang === "en"); document.getElementById("lang-et").classList.toggle("on", lang === "et");
   document.title = lang === "et" ? "Kärbes — Riigikogu 102. liige asub istungit juhatama" : "Kärbes — the 102nd member takes the chair";
+  document.querySelectorAll("a.card").forEach(a => { const u = new URL(a.getAttribute("href"), location.href); u.searchParams.set("lang", lang); a.href = u.pathname.replace(/^.*\//, "") + u.search; });
 }
-document.getElementById("lang-en").onclick = () => { lang = "en"; applyLang(); };
-document.getElementById("lang-et").onclick = () => { lang = "et"; applyLang(); };
+const setLang = l => { lang = l; try { localStorage.setItem("karbes.lang", l); } catch (e) {} applyLang(); };
+document.getElementById("lang-en").onclick = () => setLang("en");
+document.getElementById("lang-et").onclick = () => setLang("et");
 applyLang();
 </script>
 </body>
