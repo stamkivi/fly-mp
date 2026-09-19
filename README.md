@@ -13,23 +13,34 @@ the bell.
 
 ## The story
 
-In 2025 the complete wiring diagram of a fruit fly's brain was published, and the internet started
-putting it to work: the fly flew a drone body, parallel-parked cars, played games for the dopamine.
-One hotel night, this repository's author built a virtual fly brain of his own and asked the most
-absurd question that would stay on the surface: what if the fly were the 102nd member of the
+On 3 September 2026 the complete wiring diagram of a male fruit fly's central nervous system was
+published: [MaleCNS](https://male-cns.janelia.org/), 166,000 neurons and 125 million synapses,
+described in [*Cell*](https://doi.org/10.1016/j.cell.2026.08.015) by Janelia, the MRC Laboratory of
+Molecular Biology, Cambridge and Google Research. Within a week people were running the whole brain
+as a spiking network and wiring it to whatever was at hand: it
+[piloted a drone](https://github.com/pietroagazzi/FlyDrones) from its own visual neurons,
+[drove a car in CARLA](https://github.com/MarkUnthank/flyhard) and tried parallel parking,
+[played Doom](https://github.com/nftechie/doomfly), [Minecraft](https://github.com/blendi-remade/fly-brain-minecraft)
+and [Super Mario 64](https://github.com/ornata/fly), and did Beat Saber for 22 million viewers.
+[404 Media](https://www.404media.co/a-digital-fly-brain-has-taken-over-the-internet/) has the
+round-up; [awesome-fly](https://github.com/cobanov/awesome-fly) keeps the list.
+
+This is one of those experiments. The question: what would the fly do as the 102nd member of the
 Estonian parliament?
 
-The Riigikogu publishes everything as open data, so the fly's first job was to read the bills, smell
-their subject matter through its olfactory receptors (*tax burden* here, *the Russian threat* there),
-see through its optic nerve who had tabled each bill, and vote by reflex. The hope was to place it in
-a faction by its record.
+The Riigikogu publishes its transcripts, votes, bills and seating as
+[open data](https://www.riigikogu.ee/en/open-data/) through a
+[public API](https://api.riigikogu.ee/), so the first attempt was the obvious one. The fly read the
+bills, smelled their subject matter through its olfactory receptors (*tax burden* here, *the Russian
+threat* there), saw through its optic nerve who had tabled each bill, and voted by reflex. The hope
+was to place it in a faction by its record.
 
-That failed, twice over. First, this brain model is purely reflexive: it has no memory, and every
-signal between its neurons decays within a hundred milliseconds. Sniffing a bill is a wander between
+That failed, twice over. First, this brain is purely reflexive: it has no memory, and every signal
+between its neurons decays within a hundred milliseconds. Sniffing a bill is a wander between
 disconnected keywords that never forms a picture. Second, and more interesting, across 784 bills the
-single fact of *who tabled it* predicted the chamber's vote 94% of the time. Whatever the fly smelled
-in the substance, the moment it saw the proposer's name it flew towards the coalition. That is a
-metaphor a democracy might sit with for a moment.
+single fact of *who tabled it* predicted the chamber's vote 94% of the time. Whatever the fly
+smelled in the substance, the moment it saw the proposer's name it flew towards the coalition. That
+is a metaphor a democracy might sit with for a moment.
 
 So the fly was given a job it can do. The one parliamentary role that *is* a reflex is the chair's.
 
@@ -156,7 +167,9 @@ measurements it rests on; `FINDINGS.md` is what each iteration found.
 
 ## Credits and licences
 
-- **Connectome:** MaleCNS v1.0, Janelia FlyEM, CC BY 4.0. Cite the *Cell* paper and the dataset.
+- **Connectome:** [MaleCNS v1.0](https://male-cns.janelia.org/), HHMI Janelia FlyEM with the MRC LMB, Cambridge
+  and Google Research, CC BY 4.0. Paper: *Sexual dimorphism in the complete Drosophila male central
+  nervous system connectome*, [*Cell*, 3 September 2026](https://doi.org/10.1016/j.cell.2026.08.015).
 - **Model:** the leaky integrate-and-fire formulation of Shiu et al. 2024 (*Nature*), run with
   mlx-lif-engine (MIT). `philshiu/Drosophila_brain_model` was used as the specification.
 - **Transcripts, seating, votes:** Riigikogu open data, CC BY-SA 3.0. Estonian text is kept
@@ -169,5 +182,11 @@ measurements it rests on; `FINDINGS.md` is what each iteration found.
 - **Brain image:** rendered from MaleCNS cell-body positions; not a photograph of a specimen.
 - **Type:** Fraunces, IBM Plex Sans and IBM Plex Mono via Google Fonts.
 
-The code in this repository is offered as is, without a licence grant yet; the data and images keep
-the licences above.
+## Licence
+
+The code, the findings and the built pages in this repository are released under
+[Creative Commons Attribution 4.0 International](LICENSE) (CC BY 4.0): use, adapt and redistribute
+with credit. Creative Commons itself notes that its licences are not written with software in mind
+and grant no patent rights; that is accepted here for a project whose substance is the analysis and
+the pages rather than a library. The connectome, the transcripts and the images keep the licences
+listed above.

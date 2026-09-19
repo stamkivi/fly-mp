@@ -65,11 +65,43 @@ def _who_et(e) -> str:
         return f"{f} saadik" if e.faction else "fraktsioonitu saadik"
     if e.kind == "heckle":
         return f"{f} saadik, saalist" if e.faction else "hääl saalist"
-    return {"member": "saadik", "gov": "minister", "floor": "saal", "chair": "juhataja"}.get(e.role, e.role)
+    return {"member": "saadik", "gov": "minister", "floor": "saal", "chair": "juhataja"}.get(
+        e.role, e.role
+    )
+
+
+CHAIRS = Path(__file__).resolve().parent.parent / "page" / "assets" / "chairs.json"
+
+
+def place_on_chairs(seats: list, chairs: dict[str, list[list[float]]]) -> dict[int, list[float]]:
+    """Seat number -> [x, y] on the photograph. Each side's members fill that block's chairs
+    from the front row; the coalition, which outnumbers its block, spills into the back rows
+    of the other block as it does in the real hall, and the last few share a back-row chair."""
+    pos: dict[int, list[float]] = {}
+    free = {side: list(v) for side, v in chairs.items()}
+    for side in ("L", "R"):
+        mine = sorted((x for x in seats if x.side == side), key=lambda x: x.place)
+        for x in mine:
+            if free[side]:
+                pos[x.place] = free[side].pop(0)
+    other = {"L": "R", "R": "L"}
+    for side in ("L", "R"):
+        left_over = [
+            x for x in sorted(seats, key=lambda x: x.place) if x.side == side and x.place not in pos
+        ]
+        spare = free[other[side]][::-1]  # the other block's back rows first
+        for i, x in enumerate(left_over):
+            pos[x.place] = spare[i] if i < len(spare) else chairs[side][-1 - (i - len(spare)) % 8]
+    return pos
 
 
 def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
     seats = hall.load()
+    chair_pos = (
+        place_on_chairs(seats, json.loads(CHAIRS.read_text(encoding="utf-8")))
+        if CHAIRS.exists()
+        else {}
+    )
     frame = json.loads(BRAIN_FRAME.read_text(encoding="utf-8"))
     # atlas coordinates -> voxels -> the plate's frame, in units of the plate's width.
     # plate.render uses ONE isotropic scale, set by the x-span: px = (vx-minX)*k + m*w and
@@ -145,7 +177,10 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
     rng = np.random.default_rng(0)
 
     def trim(frames: list[list[int]], cap: int) -> list[list[int]]:
-        return [sorted(rng.choice(fr, cap, replace=False).tolist()) if len(fr) > cap else fr for fr in frames]
+        return [
+            sorted(rng.choice(fr, cap, replace=False).tolist()) if len(fr) > cap else fr
+            for fr in frames
+        ]
 
     def pack(frames: list[list[int]]) -> tuple[str, list[int]]:
         off = [0]
@@ -173,6 +208,8 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
                 "side": x.side,
                 "row": x.row,
                 "col": x.col,
+                "px": chair_pos.get(x.place, [None, None])[0],
+                "py": chair_pos.get(x.place, [None, None])[1],
             }
             for x in seats
         ],
@@ -239,7 +276,10 @@ def with_others(b: dict, sittings: list[dict]) -> dict:
     return dict(b, others=others)
 
 
-def build(b: dict, sittings: list[dict], inline: bool = True) -> str:
+REPO_URL = "https://github.com/stamkivi/fly-mp"
+
+
+def build(b: dict, sittings: list[dict], inline: bool = True, repo_url: str = REPO_URL) -> str:
     """One viewer page. `sittings` is the list behind the top-bar selector:
     [{iso, date, date_et, href, data?, summary?, default?}]. With `inline` the bundle is
     embedded and the file stands alone; without it the page fetches `data` for the sitting
@@ -254,6 +294,7 @@ def build(b: dict, sittings: list[dict], inline: bool = True) -> str:
     tokens = {
         "__DATE__": (" — " + html.escape(b["date"])) if inline else "",
         "__SITTINGS_JSON__": esc(public),
+        "__REPO__": html.escape(repo_url),
         "__BUNDLE_JSON__": esc(b) if inline else "",
         "__BRAIN_B64__": base64.b64encode(BRAIN.read_bytes()).decode(),
         "__FLY_B64__": base64.b64encode(FLY.read_bytes()).decode(),

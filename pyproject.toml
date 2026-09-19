@@ -2,6 +2,7 @@
 name = "karbes"
 version = "0.1.0"
 description = "Kärbes — a MaleCNS connectome simulation cast as the 102nd member of the Riigikogu"
+license = "CC-BY-4.0"
 requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.27",      # Riigikogu fetcher (rate-limited, resumable)

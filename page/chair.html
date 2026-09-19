@@ -19,6 +19,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidd
 .brand span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-left:12px;font-weight:400}
 .clock{font-family:var(--mono);font-size:13px;color:var(--mute)}.clock b{color:var(--ink);font-weight:500;font-size:18px}
 .sel{font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:4px 8px;margin-right:14px}
+.repo{font-family:var(--mono);font-size:11px;color:var(--mute);text-decoration:none;border-bottom:1px dotted var(--rule);margin-right:16px}.repo:hover{color:var(--ink)}
 .board{display:grid;grid-template-columns:5fr 7fr;gap:12px;min-height:0}
 .panel{background:var(--panel);border:1px solid var(--rule);border-radius:12px;position:relative;overflow:hidden;min-height:0}
 canvas{display:block;width:100%;height:100%}
@@ -96,7 +97,7 @@ canvas{display:block;width:100%;height:100%}
 <div class="stage">
   <div class="top">
     <div class="brand">Kärbes<span data-i18n="brandTag">takes the chair · simulated</span></div>
-    <div class="clock" id="clock"><select id="sitting" class="sel" aria-label="Sitting"></select>Riigikogu, <b id="date">—</b> <b id="time">--:--</b></div>
+    <div class="clock" id="clock"><a class="repo" href="__REPO__" target="_blank" rel="noopener" data-i18n="repo">code on GitHub</a><select id="sitting" class="sel" aria-label="Sitting"></select>Riigikogu, <b id="date">—</b> <b id="time">--:--</b></div>
   </div>
   <div class="nav">
     <div class="ctl"><button id="play">▶ play</button><button id="sp1">1×</button><button id="sp4" class="on">4×</button><button id="sp12">12×</button><button id="mute">🔔 sound</button><span class="seg"><button id="lang-en" class="on">EN</button><button id="lang-et">ET</button></span></div>
@@ -156,7 +157,7 @@ const T = {
   introP1:`One sitting of the Riigikogu, <span id="vdate"></span>, played to a complete simulated fruit-fly brain sitting in the Speaker's seat. Every speech reaches it as a scent from the speaker's side of the hall. Every insult comes straight at it. So does every heckle.`,
   introP2:"When its escape reflex fires, it rings the bell. On the timeline below, what the real chair did.",
   introFine:"Its memory lasts 20 milliseconds. It hears the hundredth <i>Aitäh!</i> as the first, and every heckler is a stranger.",
-  start:"Open the sitting", loading:"loading the sitting…", loadFail:"could not load the sitting", introHint:"About a minute at 4×, four minutes at 1×. Sound on: there is a bell.",
+  start:"Open the sitting", repo:"code on GitHub", loading:"loading the sitting…", loadFail:"could not load the sitting", introHint:"About a minute at 4×, four minutes at 1×. Sound on: there is a bell.",
   creditHall:"Photo: Paul Kuimet, Riigikogu. The photograph is unaltered; the lights, the bell's glow and the fly are drawn on a layer above it.",
   endTitle:"Sitting closed", again:"Watch again", watch:"Watch", play:"▶ play", pause:"❚❚ pause", sound:"🔔 sound", muted:"🔕 muted",
   coachWave:"<b>the wave</b>Every speech wakes the brain from silence: the smell centre lights at 5 ms, the memory centre at 15 ms. Shown here fourteen times slower than life.",
@@ -177,14 +178,14 @@ const T = {
   figKind:(k,v)=>`<b>${v.gf}</b><span>mean flinch per <i>${T.en.kinds[k]||k}</i> · ${v.n} of them, ${v.bells} ${v.bells===1?"bell":"bells"}</span>`,
   verdict:(S,mins,from,to,day)=>`The speaker's own scent from the same side damps the escape: a merely sharp speech rarely rings, a clear insult or a heckle always does. ${S.hostile} speeches read as hostile; ${S.heckles} heckles in the record; ${S.ritual} speeches opened with a thank-you and the fly heard each one for the first time. The real chair also called time ${S.chair_time} times. The fly has no clock. ${S.bio_seconds} seconds of fly time for ${mins} minutes of sitting, ${from} to ${to}${day}.`,
   compare:(o)=>` For comparison, ${o.date}: ${o.stimuli} events, ${o.hostile} hostile speeches, ${o.heckles} heckles. The fly rang ${o.fly_bells} times, the real chair called for order ${o.chair_order} times, ${o.coincide} of them at nearly the same moment.`,
-  credit:`A simulation: a real fly's wiring, with inputs and outputs of our choosing. Connectome MaleCNS v1.0 (CC BY 4.0), engine mlx-lif-engine (MIT, Shiu et al. 2024). Transcript, seating and votes: Riigikogu open data (CC BY-SA 3.0). Hostility of each speech judged by a language model with one question; side of the hall from the seat. Brain image: 126,104 measured cell-body positions. Fly illustration: Orkin. Hall photo: Paul Kuimet, Riigikogu.`,
+  credit:`A simulation: a real fly's wiring, with inputs and outputs of our choosing. Connectome MaleCNS v1.0 (CC BY 4.0), engine mlx-lif-engine (MIT, Shiu et al. 2024). Transcript, seating and votes: Riigikogu open data (CC BY-SA 3.0). Hostility of each speech judged by a language model with one question; side of the hall from the seat. Brain image: 126,104 measured cell-body positions. Fly illustration: Orkin. Hall photo: Paul Kuimet, Riigikogu. <a href="__REPO__" target="_blank" rel="noopener" style="color:var(--accent)">Source and findings on GitHub.</a>`,
   title:(d)=>`Kärbes takes the chair — ${d}`},
  et: {brandTag:"juhataja toolil · simulatsioon", tagHall:"Saal juhataja laua tagant", tagBrain:"Kärbse aju, 166 700 neuronit", tagMemo:"Istung seni",
   bellmark:"▲ kärbes helistab kella", other:"vaata ka:", introTitle:"Riigikogu 102. liige asub istungit juhatama",
   introP1:`Üks Riigikogu istung, <span id="vdate"></span>, mängitud ette äädikakärbse tervele simuleeritud ajule, mis istub juhataja toolil. Iga kõne jõuab temani lõhnana sellelt poolelt saali, kus kõneleja istub. Iga solvang sööstab otse tema poole. Iga vahelehüüe samuti.`,
   introP2:"Kui tema põgenemisrefleks käivitub, helistab ta kella. Ajajoonel all on kõrval ka see, mida tegi päris juhataja.",
   introFine:"Tema mälu kestab 20 millisekundit. Sajandat „Aitäh!“ kuuleb ta nagu esimest ja iga vahelehüüdja on talle võõras.",
-  start:"Ava istung", loading:"istung laeb…", loadFail:"istungit ei õnnestunud laadida", introHint:"Kiirusel 4× kestab umbes minuti, kiirusel 1× neli. Pane heli sisse, kell heliseb.",
+  start:"Ava istung", repo:"kood GitHubis", loading:"istung laeb…", loadFail:"istungit ei õnnestunud laadida", introHint:"Kiirusel 4× kestab umbes minuti, kiirusel 1× neli. Pane heli sisse, kell heliseb.",
   creditHall:"Foto: Paul Kuimet, Riigikogu. Fotot pole muudetud: tuled, kella kuma ja kärbes on joonistatud eraldi kihile selle peale.",
   endTitle:"Istung on lõppenud", again:"Vaata uuesti", watch:"Vaata", play:"▶ esita", pause:"❚❚ paus", sound:"🔔 heli", muted:"🔕 heli väljas",
   coachWave:"<b>laine</b>Iga kõne äratab aju vaikusest: haistmiskeskus süttib 5 ms, mälukeskus 15 ms pärast. Siin näed seda neliteist korda aeglasemalt kui päriselt.",
@@ -206,7 +207,7 @@ const T = {
   figKind:(k,v)=>`<b>${v.gf}</b><span>keskmine võpatus <i>${T.et.kindsGen[k]||k}</i> peale · ${v.n} korda, kell helises ${v.bells}×</span>`,
   verdict:(S,mins,from,to,day)=>`Kõneleja enda lõhn samalt poolelt summutab põgenemisrefleksi: lihtsalt terav kõne paneb kella harva helisema, selge solvang või vahelehüüe alati. Vaenulikuks loeti ${S.hostile} kõnet; protokollis on ${S.heckles} vahelehüüet; ${S.ritual} kõnet algas tänusõnaga ja iga kord kuulis kärbes seda esimest korda. Päris juhataja tuletas ka ${S.chair_time} korda meelde, et aeg on läbi. Kärbsel kella pole. ${S.bio_seconds} sekundit kärbse aega ${mins} minuti istungi kohta, ${from}–${to}${day}.`,
   compare:(o)=>` Võrdluseks ${o.date_et}: ${o.stimuli} sündmust, ${o.hostile} vaenulikku kõnet, ${o.heckles} vahelehüüet. Kärbes helistas kella ${o.fly_bells} korda, päris juhataja kutsus korrale ${o.chair_order} korda, neist ${o.coincide} peaaegu samal hetkel.`,
-  credit:`Simulatsioon: päris kärbse aju ühendusskeem, sisendid ja väljundid meie valitud. Konnektoom MaleCNS v1.0 (CC BY 4.0), mootor mlx-lif-engine (MIT, Shiu jt 2024). Stenogramm, saaliplaan ja hääletused: Riigikogu avaandmed (CC BY-SA 3.0). Kõne vaenulikkust hindas keelemudel ühe küsimusega; saali pool tuleneb istekohast. Ajupilt: 126 104 mõõdetud rakukeha asukohta. Kärbse illustratsioon: Orkin. Saali foto: Paul Kuimet, Riigikogu.`,
+  credit:`Simulatsioon: päris kärbse aju ühendusskeem, sisendid ja väljundid meie valitud. Konnektoom MaleCNS v1.0 (CC BY 4.0), mootor mlx-lif-engine (MIT, Shiu jt 2024). Stenogramm, saaliplaan ja hääletused: Riigikogu avaandmed (CC BY-SA 3.0). Kõne vaenulikkust hindas keelemudel ühe küsimusega; saali pool tuleneb istekohast. Ajupilt: 126 104 mõõdetud rakukeha asukohta. Kärbse illustratsioon: Orkin. Saali foto: Paul Kuimet, Riigikogu. <a href="__REPO__" target="_blank" rel="noopener" style="color:var(--accent)">Lähtekood ja tulemused GitHubis.</a>`,
   title:(d)=>`Kärbes juhataja toolil — ${d}`}};
 let lang = "en";
 const t = k => T[lang][k] ?? T.en[k] ?? k;
@@ -297,9 +298,6 @@ function drawBrain(f, alphaNext){
   if (!plateBox) sizeBrain();
   bctx.clearRect(0,0,BW,BH); bctx.fillStyle="#07090E"; bctx.fillRect(plateBox.x, plateBox.y, plateBox.w, plateBox.h);
   bctx.save(); bctx.beginPath(); bctx.rect(plateBox.x, plateBox.y, plateBox.w, plateBox.h); bctx.clip();
-  const k = joltK(performance.now());
-  const ox = jolt.x*k*dpr, oy = jolt.y*k*dpr;
-  bctx.save(); bctx.translate(ox, oy);
   if (PLATE.complete) bctx.drawImage(PLATE, plateBox.x, plateBox.y, plateBox.w, plateBox.h);
   bctx.globalCompositeOperation = "lighter";
   D.atlas.groups.forEach((g, gi) => {
@@ -329,7 +327,7 @@ function drawBrain(f, alphaNext){
     bctx.fillStyle = "#E9EEF6"; bctx.font = `500 ${11*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "left";
     bctx.fillText(t("onset")((Math.min(we, D.onset_bins)*5).toFixed(0).padStart(2), where, Math.round(WAVE_MS/5/speed)), plateBox.x + 16*dpr, plateBox.y + 25*dpr); }
   bctx.globalCompositeOperation = "source-over";
-  bctx.restore(); bctx.restore();
+  bctx.restore();
   // the motor readout for the current event: what the fly's steering and escape neurons did
   const ev = D.events[curEv]; if (ev && ev.gf !== null){
     const y0 = plateBox.y + plateBox.h + 18*dpr, x0 = plateBox.x + 110*dpr, W = plateBox.w - 130*dpr;
@@ -380,8 +378,9 @@ function sizeHall(){
       const row = Math.floor(i / perRow), col = i % perRow, n = Math.min(perRow, seats.length - row*perRow);
       // depth: rows spaced with perspective so far rows sit closer together, as in the image
       const v = Math.pow(row / Math.max(1, rows-1), 0.78), u = (col + 0.5) / n;
-      const [fx, fy] = quadPoint(q, side==="L" ? u : u, v);
-      const scale = 1 - 0.55*v;
+      let [fx, fy] = quadPoint(q, u, v);
+      if (s.px != null){ fx = s.px; fy = s.py; }                        // a chair found in the photograph
+      const scale = 1 - 0.55*Math.min(1, Math.max(0, (0.69 - fy) / 0.19));
       seatPos[s.place] = {x: photoBox.x + fx*photoBox.w, y: photoBox.y + fy*photoBox.h, w: photoBox.w*0.028*scale, h: photoBox.h*0.05*scale, scale};
     });
   }
@@ -392,7 +391,7 @@ function drawHall(){
   hctx.clearRect(0,0,HW,HH);
   hctx.fillStyle = "#26439C"; hctx.fillRect(0,0,HW,HH);
   const now = performance.now(), k = joltK(now);
-  hctx.save(); hctx.translate(jolt.x*k*dpr*0.5, 0);                                      // the view shakes with the fly
+  hctx.save();
   if (HALLPHOTO.complete) hctx.drawImage(HALLPHOTO, photoBox.x, photoBox.y, photoBox.w, photoBox.h);
   // a frost over the ceiling so the transcript reads on it
   const frost = hctx.createLinearGradient(0, 0, 0, HH); frost.addColorStop(0,"rgba(246,244,239,.96)"); frost.addColorStop(0.2,"rgba(246,244,239,.80)"); frost.addColorStop(0.3,"rgba(246,244,239,.30)"); frost.addColorStop(0.4,"rgba(246,244,239,0)");

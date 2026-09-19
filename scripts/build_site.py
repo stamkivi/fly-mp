@@ -18,7 +18,7 @@ from karbes import chairpage, landing, page, sitting
 from karbes.chair import Reaction, Recording
 
 ROOT = Path(__file__).resolve().parents[1]
-REPO_URL = "https://github.com/stamkivi/fly-mp"
+REPO_URL = chairpage.REPO_URL
 CFG = json.loads((ROOT / "page" / "sittings.json").read_text(encoding="utf-8"))
 DOCS, SINGLE = ROOT / "docs", ROOT / "runs" / "page"
 KEYS = (
