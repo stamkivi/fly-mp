@@ -73,34 +73,51 @@ def _who_et(e) -> str:
 CHAIRS = Path(__file__).resolve().parent.parent / "page" / "assets" / "chairs.json"
 
 
-def place_on_chairs(seats: list, chairs: dict[str, list[list[float]]]) -> dict[int, list[float]]:
-    """Seat number -> [x, y] on the photograph. Each side's members fill that block's chairs
-    from the front row; the coalition, which outnumbers its block, spills into the back rows
-    of the other block as it does in the real hall, and the last few share a back-row chair."""
+# Where the two blocks of desks are in the photograph, as fractions of its width and height:
+# near (front) row edges and far (back) row edges, read off the image. Six columns per block,
+# ten rows deep, rows compressing with distance.
+BLOCK = {
+    "L": {"near": (0.02, 0.415, 0.695), "far": (0.27, 0.462, 0.500)},
+    "R": {"near": (0.545, 0.995, 0.695), "far": (0.512, 0.72, 0.500)},
+}
+
+
+def place_on_plan(
+    seats: list, chairs: dict[str, list[list[float]]] | None
+) -> dict[int, list[float]]:
+    """Seat number -> [x, y] on the photograph, from the seat's row and column in the plan,
+    snapped to a chair found in the photograph when one is close."""
     pos: dict[int, list[float]] = {}
-    free = {side: list(v) for side, v in chairs.items()}
-    for side in ("L", "R"):
-        mine = sorted((x for x in seats if x.side == side), key=lambda x: x.place)
-        for x in mine:
-            if free[side]:
-                pos[x.place] = free[side].pop(0)
-    other = {"L": "R", "R": "L"}
-    for side in ("L", "R"):
-        left_over = [
-            x for x in sorted(seats, key=lambda x: x.place) if x.side == side and x.place not in pos
-        ]
-        spare = free[other[side]][::-1]  # the other block's back rows first
-        for i, x in enumerate(left_over):
-            pos[x.place] = spare[i] if i < len(spare) else chairs[side][-1 - (i - len(spare)) % 8]
+    used: set[tuple[float, float]] = set()
+    for s in seats:
+        blk = BLOCK[s.side]
+        t = s.row / 9
+        v = 1 - 1 / (1 + 2.2 * t)  # perspective: far rows sit closer together
+        v /= 1 - 1 / 3.2
+        x0 = blk["near"][0] + (blk["far"][0] - blk["near"][0]) * v
+        x1 = blk["near"][1] + (blk["far"][1] - blk["near"][1]) * v
+        y = blk["near"][2] + (blk["far"][2] - blk["near"][2]) * v
+        # column 0 is nearest the aisle: the right edge of the left block, the left edge of the right
+        u = (s.col + 0.5) / 6
+        x = x1 - (x1 - x0) * u if s.side == "L" else x0 + (x1 - x0) * u
+        best = None
+        for cx, cy in (chairs or {}).get(s.side, []):
+            if (cx, cy) in used:
+                continue
+            d = ((cx - x) / 0.022) ** 2 + ((cy - y) / 0.014) ** 2
+            if d < 1 and (best is None or d < best[0]):
+                best = (d, cx, cy)
+        if best:
+            used.add((best[1], best[2]))
+            x, y = best[1], best[2]
+        pos[s.place] = [round(x, 4), round(y, 4)]
     return pos
 
 
 def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
     seats = hall.load()
-    chair_pos = (
-        place_on_chairs(seats, json.loads(CHAIRS.read_text(encoding="utf-8")))
-        if CHAIRS.exists()
-        else {}
+    chair_pos = place_on_plan(
+        seats, json.loads(CHAIRS.read_text(encoding="utf-8")) if CHAIRS.exists() else None
     )
     frame = json.loads(BRAIN_FRAME.read_text(encoding="utf-8"))
     # atlas coordinates -> voxels -> the plate's frame, in units of the plate's width.

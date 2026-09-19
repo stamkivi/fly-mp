@@ -71,13 +71,13 @@ heckler is a stranger.
 | events shown to the fly | 316 | 846 |
 | speeches read as hostile | 17% | 27% |
 | recorded heckles | 11 | 43 |
-| **the fly rang the bell** | **22** | **73** |
+| **the fly rang the bell** | **23** | **73** |
 | real chair: called for order or rang | 0 | 16 |
 | real chair: called time | 7 | 56 |
 | fly and chair within two events of each other | 0 | 1 |
 
 The fly can look a little neurotic. On 20 May the human chair never once called anyone to order,
-while the fly tried to flee the podium 22 times. During the obstruction the human intervened 16
+while the fly tried to flee the podium 23 times. During the obstruction the human intervened 16
 times for noise and procedure, and did so at the same moment as the fly, which reacts in 4 ms, once
 in 73.
 
@@ -99,8 +99,10 @@ Riigikogu transcript ──► events (who, from which seat, what tone) ──�
 1. **The transcript.** `/api/steno/verbatims` gives every utterance with a second-resolution
    timestamp and speaker; stage directions carry the heckles (*Hääl saalist*), the presence checks and
    the votes; the chair's own words carry its calls for order and its bell. `/api/hallplan` maps each
-   member to a seat and a faction. Coalition sits to the fly's right, opposition to its left, as in
-   the photograph.
+   member to a seat number and a faction, and the Riigikogu's published
+   [seating plan](https://www.riigikogu.ee/en/parliament-of-estonia/composition/seating-plan/) turns
+   the number into a place: six pairs of columns, ten rows deep. From the Speaker's chair, EKRE,
+   Isamaa and most of Reform sit to the right of the aisle; Eesti 200, Centre and SDE to the left.
 2. **The tone.** Each speech is put to a language classifier with one calibrated question: how
    hostile is this, on a five-point scale, with a confidence. That number, not the fly, decides how
    threatening a speech is. Nothing else about the text reaches the brain.
@@ -124,8 +126,8 @@ the bills.
 
 The wiring is real; the inputs and outputs are metaphors. There are no "aye" neurons in a fly, and
 no "bell" neurons: the mapping from transcript to stimulus and from giant fibre to bell is ours. It
-makes no claim about what a fly experiences. The seating is reconstructed from seat numbers and the
-photograph. MPs' words are public record and appear as they were spoken; the subject of the page is
+makes no claim about what a fly experiences. Seats follow the published plan; their positions on the
+photograph are read off the image. MPs' words are public record and appear as they were spoken; the subject of the page is
 the fly, not any member.
 
 ## What did not work first

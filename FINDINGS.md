@@ -41,9 +41,12 @@ The Riigikogu API documents two endpoints in its README and serves 72 (`/v3/api-
 `/api/steno/verbatims` is the verbatim record with **second-resolution timestamps**, speaker,
 text, and disturbances, votes and the bell inline: 30,598 speaker events across the term,
 556 on 20 May 2026 (12:00→00:04 UTC, 71,719 words, 63 speakers). `/api/hallplan` gives
-seat number, member, faction and the official party colours; the numbered plan itself is not
-published and positions are reconstructed from seat order and the photograph from the
-Speaker's desk (two blocks, six rows). `texts[]` on every draft carries the full legal text —
+every member a seat number and a faction. *(Revised 2026-09-19: the numbered plan is published
+after all, at riigikogu.ee under Composition → Seating plan, and the numbers encode the geometry —
+six pairs of columns, ten rows, counted down the columns from the front. Until then positions were
+reconstructed from seat order and the photograph as two blocks of six rows, with the coalition
+assumed to the Speaker's right; that assumption was wrong — EKRE, Isamaa and most of Reform sit to
+the Speaker's right, the rest to the left — and both sittings were re-recorded with the real sides.)* `texts[]` on every draft carries the full legal text —
 50,297 words for the Crisis Act — which the earlier "no bill texts" claim missed.
 
 ### The stimulus, three rules, all declared
@@ -72,7 +75,7 @@ itself, which `vision.py` had already found the day before. Speeches moved to sc
 
 | | |
 |---|---:|
-| fly rang the bell (giant fibre ≥ 8 spikes) | **22** |
+| fly rang the bell (giant fibre ≥ 8 spikes) | **23** |
 | of which heckles | 11 of 11 |
 | real chair: called for order / rang the bell for order / called time | 0 / 0 / 7 |
 | fly bells within two events of a chair *conduct* action | 0 — there were none to coincide with |
@@ -106,16 +109,18 @@ conduct events: 1,512 events, 846 stimuli, 641 s of biological time.
 | stimuli | 316 | 846 |
 | speeches read as hostile (> 0.3) | 54 (17%) | 227 (27%) |
 | recorded disturbances | 11 | 43 |
-| fly rang the bell | 22 | **73** |
+| fly rang the bell | 23 | **73** |
 | real chair: called for order / rang for order | 0 / 0 | **8 / 8** |
 | real chair: called time | 7 | 56 |
 | fly bells within two events of a chair conduct action | — | **1** |
 
-Mean giant-fibre response by kind held its shape across the two days — heckles 174.7 and
-173.6, civil speeches 0.5 and 1.0, votes 0 and 0 — which is what a reflex should do.
+Mean giant-fibre response by kind held its shape across the two days — heckles 173.6 and
+175.4, civil speeches 0.4 and 1.0, votes 0 and 0 — which is what a reflex should do.
 
 **The fly and the chair police different things.** On the night the chair intervened sixteen
-times for conduct, the fly rang seventy-three times and the two coincided once. The chair's
+times for conduct, the fly rang seventy-three times and the two coincided once. *(Numbers in this section are from
+the 2026-09-19 re-recording with the real seating; the first pass, with the mirrored sides, gave
+22 and 73.)* The chair's
 interventions are about the *floor* — *Saalis on liiga suur lärm*, the bell rung over general
 noise — while the fly, by construction, reacts to the *speaker*: a hostile speech looms, a
 recorded heckle lunges. The stenographer's record of disturbances is the floor as heard from
@@ -130,11 +135,11 @@ onset.
 
 | | 20 May 2026 | 19 June 2023 |
 |---|---:|---:|
-| bells | 22 | 73 |
-| reaction time, median | **4.5 ms** | **4.2 ms** |
+| bells | 23 | 73 |
+| reaction time, median | **4.5 ms** | **4.4 ms** |
 | range | 3.3 – 7.6 ms | 3.3 – 8.3 ms |
-| heckle (giant fibre ≥ 120) | 4.3 ms | 4.2 ms |
-| hostile speech | 5.2 ms | 5.2 ms |
+| heckle (giant fibre ≥ 120) | 4.1 ms | 4.2 ms |
+| hostile speech | 5.2 ms | 5.5 ms |
 | burst length, median | 445 ms | 445 ms |
 
 Four milliseconds from the first looming spike to the first giant-fibre spike. LC4 and

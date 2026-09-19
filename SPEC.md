@@ -1358,9 +1358,16 @@ named heckles from the floor.
   40 Hz at 1.0. Validated on the one reprimand in the record.
 * **A heckle lunges** from the heckler's seat; **a vote fills the hall**.
 
-Side is political laterality from the seating chart — coalition to the Speaker's right,
-opposition to the left, the Riigikogu's actual numbered plan being unpublished — and the page
-says so. Members appear by faction and role, never by name.
+Side is physical, from the Riigikogu's published seating plan (revised 2026-09-19; the
+paragraph above stood until then and read: political laterality, coalition to the Speaker's
+right, opposition left, "the numbered plan being unpublished"). The plan is at
+riigikogu.ee → Composition → Seating plan: six pairs of columns, ten rows deep, the Board at
+the top, and the seat numbers run down the columns (1–10 the left column of pair 1, front to
+back; 11–20 its right column; 21–40 pair 2; … to 118). Plan-left is the Speaker's right. From
+the chair: pairs 1–3 (EKRE, Isamaa, most of Reform) to the right of the aisle, pairs 4–6 (the
+rest of Reform, Eesti 200, Centre, SDE, the non-affiliated) to the left. `hall.geometry()` is
+that rule. Members appear by faction and role in the ticker; heckle stage directions carry the
+names the public transcript has.
 
 ### What is recorded and what the page keeps
 
