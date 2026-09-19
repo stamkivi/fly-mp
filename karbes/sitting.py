@@ -58,11 +58,21 @@ class Event:
     bio: float = 0.0  # seconds of biological time this event is played for
 
 
+ET_MONTHS = ("jaanuar", "veebruar", "märts", "aprill", "mai", "juuni", "juuli", "august",
+             "september", "oktoober", "november", "detsember")
+
+
+def date_et(t: datetime) -> str:
+    t = t.astimezone()
+    return f"{t.day}. {ET_MONTHS[t.month - 1]} {t.year}"
+
+
 @dataclass
 class Sitting:
     date: str
     title: str
     events: list[Event] = field(default_factory=list)
+    date_et: str = ""
 
     @property
     def stimuli(self) -> list[Event]:
@@ -144,7 +154,8 @@ def load(path: Path, seats: list[hall.Seat] | None = None) -> Sitting:
                                         "(rings the bell — time)", "", item, real_chair="time"))
     events.sort(key=lambda x: x.t)
     date = t0.astimezone().strftime("%-d %B %Y") if t0 else path.stem[-10:]
-    return Sitting(date=date, title=raw[0].get("title", "") if raw else "", events=events)
+    return Sitting(date=date, title=raw[0].get("title", "") if raw else "", events=events,
+                   date_et=date_et(t0) if t0 else date)
 
 
 def attach_tone(s: Sitting, root: Path = Path("data/raw")) -> int:

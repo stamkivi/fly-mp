@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kärbes takes the chair — __DATE__</title>
+<title>Kärbes istungi juhatajana — __DATE__</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -39,8 +39,8 @@ canvas{display:block;width:100%;height:100%}
 .bellmark{position:absolute;right:16px;top:14px;z-index:3;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
   color:#FFD36E;opacity:0;transition:opacity .15s;text-transform:uppercase}
 .bellmark.on{opacity:1}
-.memo{position:absolute;left:14px;right:14px;bottom:34px;z-index:2;font-family:var(--mono);font-size:10.5px;color:var(--mute);line-height:1.55}
-.memo .row{display:grid;grid-template-columns:150px 1fr 44px;gap:8px;align-items:center}
+.memo{position:absolute;left:14px;right:14px;bottom:36px;z-index:2;font-family:var(--mono);font-size:10.5px;color:var(--mute);line-height:1.55}
+.memo .row{display:grid;grid-template-columns:150px 1fr 44px;line-height:1.35;gap:8px;align-items:center}
 .memo .bar{height:6px;background:#151B26;border-radius:2px;overflow:hidden}.memo .bar i{display:block;height:100%}
 .memo b{color:var(--ink);font-weight:500;text-align:right}
 .memo .two{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;margin-top:4px}
@@ -83,54 +83,123 @@ canvas{display:block;width:100%;height:100%}
 <body>
 <div class="stage">
   <div class="top">
-    <div class="brand">Kärbes<span>takes the chair · simulated</span></div>
+    <div class="brand">Kärbes<span data-i18n="brandTag">istungi juhatajana · simulatsioon</span></div>
     <div class="clock" id="clock"><span class="others">__OTHERS__</span>Riigikogu, <b id="date">—</b> <b id="time">--:--</b></div>
   </div>
   <div class="board">
     <div class="panel" id="hallpanel">
-      <div class="tag">The hall, from the Speaker's desk</div>
+      <div class="tag" data-i18n="tagHall">Saal, juhataja lauast</div>
       <div class="item" id="item"></div>
       <canvas id="hall" role="img" aria-label="The Riigikogu hall from the Speaker's desk: two blocks of seats in party colours, the seat of whoever is speaking lit, the fly at the Speaker's desk."></canvas>
-      <div class="bellmark" id="bellmark">▲ the fly rings the bell</div>
+      <div class="bellmark" id="bellmark" data-i18n="bellmark">▲ kärbes helistab kella</div>
       <div class="ticker" id="ticker"></div>
     </div>
     <div class="panel" id="brainpanel">
-      <div class="tag">Its brain — 166,700 neurons, live</div>
+      <div class="tag" data-i18n="tagBrain">Tema aju — 166 700 neuronit, otse</div>
       <canvas id="brain" role="img" aria-label="The fly brain, rendered from real cell-body positions, with the neurons firing at this moment of the sitting drawn over it."></canvas>
-      <div class="coach" id="coach-wave" style="left:24px;top:40%"><b>the wave</b>Every speech starts the brain from silence. Antennal lobe at 5 ms, mushroom body at 15 ms — shown here fourteen times slower than life.</div>
-      <div class="coach" id="coach-bell" style="right:24px;top:40%"><b>the bell</b>Something came at the chair: the giant fibre fired — the fly's escape reflex — and it threw itself away from that side of the hall. That is the fly ringing the bell. A hundred milliseconds later it has forgotten.</div>
-      <div class="memo" id="memo"><div class="tag" style="position:static;margin-bottom:6px">What the page remembers, and the brain cannot</div><div id="memobody"></div></div>
+      <div class="coach" id="coach-wave" style="left:24px;top:40%" data-i18n-html="coachWave"></div>
+      <div class="coach" id="coach-bell" style="right:24px;top:40%" data-i18n-html="coachBell"></div>
+      <div class="memo" id="memo"><div class="tag" style="position:static;margin-bottom:6px" data-i18n="tagMemo">Mida leht mäletab ja aju ei suuda</div><div id="memobody"></div></div>
       <div class="regions" id="regions"></div>
     </div>
   </div>
   <div class="bottom">
-    <div class="ctl"><button id="play">▶ play</button><button id="sp1">1×</button><button id="sp4" class="on">4×</button><button id="sp12">12×</button><button id="mute">🔔 sound</button></div>
+    <div class="ctl"><button id="play">▶ play</button><button id="sp1">1×</button><button id="sp4" class="on">4×</button><button id="sp12">12×</button><button id="mute">🔔 heli</button><button id="lang" title="English">EN</button></div>
     <canvas id="timeline" role="slider" aria-label="Position in the sitting. Yellow ticks: the fly rang the bell. Blue: the real chair called for order. Grey: the real chair called time."></canvas>
-    <div class="legend"><i style="background:#FFD36E"></i>fly rings the bell &nbsp;<i style="background:#7FB2FF"></i>real chair: order / bell &nbsp;<i style="background:#3A4658"></i>real chair: time</div>
+    <div class="legend" data-i18n-html="legend"></div>
   </div>
   <div class="veil" id="veil"><div class="open">
     <img class="hallphoto" src="data:image/jpeg;base64,__HALL_B64__" alt="The Riigikogu session hall from the Speaker's desk">
     <img class="flyimg" src="data:image/png;base64,__FLY_B64__" alt="">
-    <h1>The 102nd member takes the chair</h1>
-    <p>One sitting of the Riigikogu, <span id="vdate"></span>, played to a complete simulated fruit-fly brain sitting in the Speaker's seat. Every speech reaches it as a scent from the speaker's side of the hall. Every insult comes at it. Every heckle lunges.</p>
-    <p>When the giant fibre fires, it rings the bell. Below, what the real chair did.</p>
-    <p class="fine">Its memory is 20 milliseconds. It greets the hundredth <i>Aitäh!</i> as the first, and every heckler as a stranger.</p>
-    <button class="go" id="start">Open the sitting</button>
-    <p class="fine" style="margin-top:12px">About a minute at 4×; four at 1×. Sound on — there is a bell.</p>
-    <div class="credit">Hall: Foto: Paul Kuimet, Riigikogu. Shown unaltered.</div>
+    <h1 data-i18n="introTitle">102. liige asub juhataja kohale</h1>
+    <p data-i18n-html="introP1"></p>
+    <p data-i18n="introP2"></p>
+    <p class="fine" data-i18n-html="introFine"></p>
+    <button class="go" id="start" data-i18n="start">Ava istung</button>
+    <p class="fine" style="margin-top:12px" data-i18n="introHint"></p>
+    <div class="credit" data-i18n="creditHall"></div>
   </div></div>
   <div class="end" id="end"><div class="open">
-    <h1>Sitting closed</h1>
+    <h1 data-i18n="endTitle">Istung on lõppenud</h1>
     <div class="figs" id="figs"></div>
     <p class="fine" id="verdict"></p>
     <div class="credit" id="credit"></div>
-    <button class="go" id="again">Watch again</button>
+    <button class="go" id="again" data-i18n="again">Vaata uuesti</button>
   </div></div>
 </div>
 
 <script id="bundle" type="application/json">__BUNDLE_JSON__</script>
 <script>
 const D = JSON.parse(document.getElementById("bundle").textContent);
+const T = {
+ et: {brandTag:"istungi juhatajana · simulatsioon", tagHall:"Saal, juhataja lauast", tagBrain:"Tema aju — 166 700 neuronit, otse", tagMemo:"Mida leht mäletab ja aju ei suuda",
+  bellmark:"▲ kärbes helistab kella", other:"teine istung:", introTitle:"102. liige asub juhataja kohale",
+  introP1:`Üks Riigikogu istung, <span id="vdate"></span>, mängitud ette tervele simuleeritud äädikakärbse ajule, mis istub juhataja kohal. Iga kõne jõuab temani lõhnana kõneleja poolelt saalist. Iga solvang tuleb talle kallale. Iga vahelehüüe sööstab.`,
+  introP2:"Kui hiidkiud rakendub, helistab ta kella. All: mida tegi päris juhataja.", introFine:"Tema mälu on 20 millisekundit. Sajandat <i>Aitäh!</i> tervitab ta nagu esimest ja iga vahelehüüdjat nagu võõrast.",
+  start:"Ava istung", introHint:"Umbes minut kiirusel 4×; neli minutit kiirusel 1×. Heli sees — kell on olemas.",
+  creditHall:"Saal: Foto: Paul Kuimet, Riigikogu. Fotot näidatakse muutmata kujul; tuled, kella helk ja kärbes on joonistatud selle peale eraldi kihina.",
+  endTitle:"Istung on lõppenud", again:"Vaata uuesti", watch:"Vaata", play:"▶ mängi", pause:"❚❚ paus", sound:"🔔 heli", muted:"🔕 vaigistatud",
+  coachWave:"<b>laine</b>Iga kõne käivitab aju vaikusest. Haistesagar 5 ms, seenkeha 15 ms — siin näidatud neliteist korda aeglasemalt kui elus.",
+  coachBell:"<b>kell</b>Midagi tuli juhataja poole: hiidkiud rakendus — kärbse põgenemisrefleks — ja ta viskus saali sellest küljest eemale. See ongi kärbse kellahelin. Sada millisekundit hiljem on ta selle unustanud.",
+  legend:`<i style="background:#FFD36E"></i>kärbes helistab kella &nbsp;<i style="background:#7FB2FF"></i>päris juhataja: kord / kell &nbsp;<i style="background:#3A4658"></i>päris juhataja: aeg`,
+  chip:{chair:"JUHATAJA", gov:"VALITSUS", heckle:"VAHELEHÜÜE", vote:"HÄÄLETUS", presence:"KOHALOLEK", fly:"KÄRBES", nonaff:"FRAKTSIOONITU"},
+  halls_votes:"saal hääletab", presence_check:"kohaloleku kontroll", rings:"helistab kella", after:(ms)=>` ${ms} ms pärast`, giant:"hiidkiud", throwR:"viskub paremale", throwL:"viskub vasakule", flinch:"võpatab",
+  ringsBell:"(helistab kella)", callsOrder:"kutsub korrale: ", callsTime:"annab märku ajast: ",
+  steerL:"pööre vasakule", steerR:"pööre paremale", escape:"põgenemisrefleks",
+  regions:{optic:"silmad", central:"keskaju", cord:"keha", ascending:"kehast üles", descending:"kehasse alla"},
+  kinds:{"civil speech":"viisakas kõne","hostile speech":"vaenulik kõne","heckle":"vahelehüüe","vote":"hääletus","presence":"kohalolek"},
+  memoGF:"hiidkiud, keskmine impulsse liigi kohta ↑", memoBells:(n,l,r,rt)=>`kärbes helistas kella <b>${n}</b>× · viskus vasakule <b>${l}</b>, paremale <b>${r}</b>${rt}`, memoRT:(ms)=>` · reaktsiooniaeg <b>${ms} ms</b>`,
+  memoChair:(o,b,t,c)=>`päris juhataja: korrale <b>${o}</b>, kell <b>${b}</b>, aeg <b>${t}</b> · langes kokku <b>${c}</b>`, memoRepeat:(n)=>`helistas sama koha peale uuesti <b>${n}</b>× — esimest ta ei mäleta`, memoRitual:(n)=>`tervitas <i>Aitäh!</i> kui uut <b>${n}</b>×`,
+  onset:(ms,where,slow)=>`algus · +${ms} ms · süttib: ${where}  (aeglustatud ${slow}×)`, where:{optic:"silmad", central:"keskaju — haistmine ja mälu", cord:"keha", ascending:"signaalid kehast üles", descending:"signaalid kehasse alla"},
+  nextDay:" järgmisel päeval", twoDays:" kaks päeva hiljem", dayMark:"p",
+  figs:(S)=>[[S.stimuli,"sündmust saalis"],[S.fly_bells,"korda helistas kärbes kella"],[S.chair_order+S.chair_bell,"korda kutsus päris juhataja korrale või helistas kella"],[S.coincide,"kärbse kellahelinat langes kahe sündmuse sisse juhataja omast"]],
+  figKind:(k,v)=>`<b>${v.gf}</b><span>hiidkiu impulsse, keskmiselt, <i>${T.et.kinds[k]||k}</i> kohta (×${v.n}; ${v.bells} ${v.bells===1?"kell":"kella"})</span>`,
+  verdict:(S,mins,from,to,day)=>`Kõne enda lõhn samalt poolelt summutab põgenemist: keskmise vaenulikkusega kõned helistavad harva, kindlad solvangud ja vahelehüüded alati — kõnelejaga hõivatud võrk sööstab ainult tõelise ohu peale. ${S.hostile} kõnet loeti vaenulikuks; ${S.heckles} häiret protokollis; ${S.ritual} kõnet algas tänusõnaga, igaüks tervitatud kui uus. Päris juhataja andis ka ${S.chair_time} korda märku ajast — kärbsel pole kella. ${S.bio_seconds} sekundit bioloogilist aega ${mins} minuti istungi kohta, ${from}–${to}${day}.`,
+  compare:(o)=>` Võrdluseks: ${o.date_et} — ${o.stimuli} sündmust, ${o.hostile} vaenulikuks loetud kõnet, ${o.heckles} häiret — helistas kärbes ${o.fly_bells} korda ja päris juhataja kutsus korrale ${o.chair_order} korda; ${o.coincide} kärbse kellahelinat langes kahe sündmuse sisse juhataja omast.`,
+  credit:`Simulatsioon, ühendustega piiratud, projekteeritud sisend-väljund-vastendus. Konnektoom: MaleCNS v1.0 (CC BY 4.0). Mootor: mlx-lif-engine (MIT), Shiu jt 2024. Stenogramm, saaliplaan ja hääletused: Riigikogu avaandmed (CC BY-SA 3.0). Kõne vaenulikkus: üks kalibreeritud küsimus tüübitud klassifikaatorile; pool saaliplaani järgi; istekohad rekonstrueeritud kohanumbrite ja foto põhjal. Ajupilt on 126 104 mõõdetud rakukeha asukoha renderdus. Kärbse foto: André Karwath, CC BY-SA 2.5.`,
+  title:(d)=>`Kärbes istungi juhatajana — ${d}`},
+ en: {brandTag:"takes the chair · simulated", tagHall:"The hall, from the Speaker's desk", tagBrain:"Its brain — 166,700 neurons, live", tagMemo:"What the page remembers, and the brain cannot",
+  bellmark:"▲ the fly rings the bell", other:"other sitting:", introTitle:"The 102nd member takes the chair",
+  introP1:`One sitting of the Riigikogu, <span id="vdate"></span>, played to a complete simulated fruit-fly brain sitting in the Speaker's seat. Every speech reaches it as a scent from the speaker's side of the hall. Every insult comes at it. Every heckle lunges.`,
+  introP2:"When the giant fibre fires, it rings the bell. Below, what the real chair did.", introFine:"Its memory is 20 milliseconds. It greets the hundredth <i>Aitäh!</i> as the first, and every heckler as a stranger.",
+  start:"Open the sitting", introHint:"About a minute at 4×; four at 1×. Sound on — there is a bell.",
+  creditHall:"Hall: Foto: Paul Kuimet, Riigikogu. The photograph is shown unaltered; the lights, the bell's glow and the fly are drawn on a layer above it.",
+  endTitle:"Sitting closed", again:"Watch again", watch:"Watch", play:"▶ play", pause:"❚❚ pause", sound:"🔔 sound", muted:"🔕 muted",
+  coachWave:"<b>the wave</b>Every speech starts the brain from silence. Antennal lobe at 5 ms, mushroom body at 15 ms — shown here fourteen times slower than life.",
+  coachBell:"<b>the bell</b>Something came at the chair: the giant fibre fired — the fly's escape reflex — and it threw itself away from that side of the hall. That is the fly ringing the bell. A hundred milliseconds later it has forgotten.",
+  legend:`<i style="background:#FFD36E"></i>fly rings the bell &nbsp;<i style="background:#7FB2FF"></i>real chair: order / bell &nbsp;<i style="background:#3A4658"></i>real chair: time`,
+  chip:{chair:"CHAIR", gov:"GOV", heckle:"HECKLE", vote:"VOTE", presence:"ROLL CALL", fly:"FLY", nonaff:"NON-AFF"},
+  halls_votes:"the hall votes", presence_check:"presence check", rings:"rings the bell", after:(ms)=>` after ${ms} ms`, giant:"giant fibre", throwR:"throws itself right", throwL:"throws itself left", flinch:"flinches",
+  ringsBell:"(rings the bell)", callsOrder:"calls for order: ", callsTime:"calls time: ",
+  steerL:"steer left", steerR:"steer right", escape:"escape reflex",
+  regions:{optic:"eyes", central:"centre", cord:"body", ascending:"up from body", descending:"down to body"},
+  kinds:{"civil speech":"civil speech","hostile speech":"hostile speech","heckle":"heckle","vote":"vote","presence":"presence"},
+  memoGF:"giant fibre, mean spikes per kind ↑", memoBells:(n,l,r,rt)=>`fly rang the bell <b>${n}</b>× · thrown left <b>${l}</b>, right <b>${r}</b>${rt}`, memoRT:(ms)=>` · reaction time <b>${ms} ms</b>`,
+  memoChair:(o,b,t,c)=>`real chair: order <b>${o}</b>, bell <b>${b}</b>, time <b>${t}</b> · coincided <b>${c}</b>`, memoRepeat:(n)=>`rang at the same seat again <b>${n}</b>× — it does not remember the first`, memoRitual:(n)=>`greeted <i>Aitäh!</i> as new <b>${n}</b>×`,
+  onset:(ms,where,slow)=>`it begins · +${ms} ms · lit: ${where}  (slowed ${slow}×)`, where:{optic:"the eyes", central:"the centre — smell and memory", cord:"the body", ascending:"signals up from the body", descending:"signals down to the body"},
+  nextDay:" the next day", twoDays:" two days later", dayMark:"d",
+  figs:(S)=>[[S.stimuli,"things happened in the hall"],[S.fly_bells,"times the fly rang the bell"],[S.chair_order+S.chair_bell,"times the real chair called for order or rang it"],[S.coincide,"of the fly's bells fell within two events of the chair's"]],
+  figKind:(k,v)=>`<b>${v.gf}</b><span>giant-fibre spikes, mean, per <i>${k}</i> (×${v.n}; ${v.bells} bells)</span>`,
+  verdict:(S,mins,from,to,day)=>`A speech's own scent on the same side damps the escape: mid-hostility speeches barely ring, confident insults and heckles always do — the network, busy with the speaker, bolts only at a real threat. ${S.hostile} speeches read as hostile; ${S.heckles} disturbances in the record; ${S.ritual} speeches opened with a thank-you, each greeted as new. The real chair also called time ${S.chair_time} times — the fly has no clock. ${S.bio_seconds} seconds of biological time for ${mins} minutes of sitting, ${from} to ${to}${day}.`,
+  compare:(o)=>` For comparison, on ${o.date} — ${o.stimuli} things happened, ${o.hostile} speeches read as hostile, ${o.heckles} disturbances — the fly rang ${o.fly_bells} times and the real chair called for order ${o.chair_order} times; ${o.coincide} of the fly's bells fell within two events of the chair's.`,
+  credit:`Simulated, wiring-constrained, engineered I/O mapping. Connectome: MaleCNS v1.0 (CC BY 4.0). Engine: mlx-lif-engine (MIT), Shiu et al. 2024. Transcript, seating and votes: Riigikogu open data (CC BY-SA 3.0). Hostility per speech: one calibrated question to a typed classifier; side from the seating chart; seat positions reconstructed from seat numbers and the photograph. The brain image is a rendering of 126,104 measured cell-body positions. Fly photograph: André Karwath, CC BY-SA 2.5.`,
+  title:(d)=>`Kärbes takes the chair — ${d}`}};
+let lang = "et";
+const t = k => T[lang][k] ?? T.en[k] ?? k;
+const dateStr = () => lang === "et" ? D.date_et : D.date;
+function applyLang(){
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
+  document.querySelectorAll(".others a").forEach(a => { a.textContent = lang === "et" ? a.dataset.et : a.dataset.en; });
+  const vd = document.getElementById("vdate"); if (vd) vd.textContent = dateStr();
+  document.getElementById("date").textContent = dateStr(); document.title = t("title")(dateStr());
+  document.getElementById("lang").textContent = lang === "et" ? "EN" : "ET";
+  document.getElementById("play").textContent = playing ? t("pause") : t("play");
+  document.getElementById("mute").textContent = muted ? t("muted") : t("sound");
+  document.getElementById("regions").innerHTML = D.atlas.groups.map(g=>`<span title="${g}"><i style="background:rgb(${REGION[g]})"></i>${t("regions")[g]||g}<b id="hz-${g}">0</b> Hz</span>`).join("");
+  if (typeof renderMemo === "function") renderMemo();
+  if (document.getElementById("end").classList.contains("on")) finish();
+}
 const FPS = D.fps, N = D.raster_off.length - 1;
 const COLOUR = Object.fromEntries(D.seats.map(s => [s.faction, s.colour]));
 COLOUR["GOV"] = "#E9EEF6"; COLOUR[""] = "#A9A49B";
@@ -172,6 +241,7 @@ function sizeBrain(){
     return c; });
 }
 const peak = {}; for (const g of D.atlas.groups){ peak[g] = Math.max(0.5, ...D.group_hz[g]); }
+const GROUPN = {}; for (let i=0;i<K;i++){ if (inside(i)){ const g = D.atlas.groups[GRP[i]]; GROUPN[g] = (GROUPN[g]||0)+1; } }
 const MOTOR = {dna: Math.max(10, ...D.events.map(e => Math.max(e.dna_l||0, e.dna_r||0))), gf: Math.max(20, ...D.events.map(e => e.gf||0))};
 let jolt = {x:0,y:0,t:0}, flash = 0;
 function drawBrain(f, alphaNext){
@@ -196,101 +266,114 @@ function drawBrain(f, alphaNext){
   if (wave.k >= 0 && we < D.onset_bins){
     const b = Math.floor(we), fade = 1 - (we - b)*0.4, tally = {};
     for (let bb = Math.max(0, b-2); bb <= b; bb++){
-      const age = b - bb, a = (age===0 ? 1 : age===1 ? 0.5 : 0.22) * fade, R = (age===0 ? 9 : 6)*dpr;
+      const age = b - bb, a = (age===0 ? 1 : age===1 ? 0.5 : 0.22) * fade, R = (age===0 ? 4.5 : 3)*dpr;
       for (const i of onsetAt(wave.k, bb)){ if (!inside(i)) continue;
         if (age===0) tally[D.atlas.groups[GRP[i]]] = (tally[D.atlas.groups[GRP[i]]]||0)+1;
         const px = plateBox.x + XY[i*2]*plateBox.w, py = plateBox.y + XY[i*2+1]*plateBox.w;
         const gr = bctx.createRadialGradient(px,py,0,px,py,R); gr.addColorStop(0,`rgba(255,250,225,${a})`); gr.addColorStop(0.35,`rgba(255,215,140,${a*0.6})`); gr.addColorStop(1,"rgba(255,200,120,0)");
         bctx.fillStyle = gr; bctx.fillRect(px-R,py-R,R*2,R*2);
-        bctx.fillStyle = `rgba(255,255,255,${a})`; bctx.fillRect(px-1.2*dpr, py-1.2*dpr, 2.4*dpr, 2.4*dpr); } }
-    const lead = Object.entries(tally).sort((x,y)=>y[1]-x[1])[0];
-    const where = lead ? ({optic:"optic lobes", central: lead[1] > 40 ? "central brain — mushroom body" : "central brain", cord:"nerve cord", ascending:"ascending neurons", descending:"descending neurons"}[lead[0]] || lead[0]) : "";
+        bctx.fillStyle = `rgba(255,255,255,${a})`; bctx.fillRect(px-0.9*dpr, py-0.9*dpr, 1.8*dpr, 1.8*dpr); } }
+    const lead = Object.entries(tally).map(([g,n]) => [g, n / Math.max(1, GROUPN[g]||1), n]).sort((x,y)=>y[1]-x[1])[0];
+    const where = lead ? (t("where")[lead[0]] || lead[0]) : "";
+    bctx.fillStyle = "rgba(7,9,14,.72)"; bctx.fillRect(plateBox.x + 10*dpr, plateBox.y + 10*dpr, 330*dpr, 22*dpr);
     bctx.fillStyle = "#E9EEF6"; bctx.font = `500 ${11*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "left";
-    bctx.fillText(`onset  +${(Math.min(we, D.onset_bins)*5).toFixed(0).padStart(2)} ms   ${where}`, plateBox.x, plateBox.y - 9*dpr);
-    bctx.fillStyle = "#8B97AA"; bctx.font = `${9.5*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "right"; bctx.fillText(`slowed ${Math.round(WAVE_MS/5/speed)}×`, plateBox.x + plateBox.w, plateBox.y - 9*dpr); bctx.textAlign = "left"; }
+    bctx.fillText(t("onset")((Math.min(we, D.onset_bins)*5).toFixed(0).padStart(2), where, Math.round(WAVE_MS/5/speed)), plateBox.x + 16*dpr, plateBox.y + 25*dpr); }
   bctx.globalCompositeOperation = "source-over";
   // the motor readout for the current event: what the fly's steering and escape neurons did
   const ev = D.events[curEv]; if (ev && ev.gf !== null){
-    const y0 = plateBox.y + plateBox.h + 26*dpr, x0 = plateBox.x + 110*dpr, W = plateBox.w - 130*dpr;
+    const y0 = plateBox.y + plateBox.h + 18*dpr, x0 = plateBox.x + 110*dpr, W = plateBox.w - 130*dpr;
     bctx.font = `${10*dpr}px "IBM Plex Mono",monospace`; bctx.textAlign = "right";
-    [["DNa left", ev.dna_l ?? 0, MOTOR.dna, "#7FB2FF"], ["DNa right", ev.dna_r ?? 0, MOTOR.dna, "#7FB2FF"], ["giant fibre", ev.gf, MOTOR.gf, ev.gf>=D.bell_gf ? "#FFD36E" : "#8E7A45"]].forEach(([lab, v, mx, col], i) => {
+    [[t("steerL"), ev.dna_l ?? 0, MOTOR.dna, "#7FB2FF"], [t("steerR"), ev.dna_r ?? 0, MOTOR.dna, "#7FB2FF"], [t("escape"), ev.gf, MOTOR.gf, ev.gf>=D.bell_gf ? "#FFD36E" : "#8E7A45"]].forEach(([lab, v, mx, col], i) => {
       const y = y0 + i*15*dpr; bctx.fillStyle = "#8B97AA"; bctx.fillText(lab, x0 - 10*dpr, y + 8*dpr);
       bctx.fillStyle = "#151B26"; bctx.fillRect(x0, y, W, 9*dpr); bctx.fillStyle = col; bctx.fillRect(x0, y, W*Math.min(1, v/mx), 9*dpr);
       bctx.fillStyle = "#E9EEF6"; bctx.textAlign = "left"; bctx.fillText(String(v), x0 + W*Math.min(1, v/mx) + 6*dpr, y + 8*dpr); bctx.textAlign = "right"; });
     bctx.textAlign = "left"; }
-  if (flash > 0){ bctx.fillStyle = `rgba(255,236,190,${0.55*flash})`; bctx.fillRect(plateBox.x-40, plateBox.y-40, plateBox.w+80, plateBox.h+80); flash *= 0.93; if (flash<0.02) flash=0; }
+  if (flash > 0){ bctx.strokeStyle = `rgba(255,220,130,${Math.min(1,flash)})`; bctx.lineWidth = 6*dpr*Math.min(1,flash); bctx.strokeRect(plateBox.x-3*dpr, plateBox.y-3*dpr, plateBox.w+6*dpr, plateBox.h+6*dpr);
+    bctx.fillStyle = `rgba(255,230,170,${0.10*Math.min(1,flash)})`; bctx.fillRect(plateBox.x, plateBox.y, plateBox.w, plateBox.h); flash *= 0.90; if (flash<0.02) flash=0; }
   bctx.restore();
 }
 
 /* ---------- hall ---------- */
 const hall = document.getElementById("hall"), hctx = hall.getContext("2d");
 const FLY = new Image(); FLY.src = "data:image/png;base64,__FLY_B64__";
+const HALLPHOTO = new Image(); HALLPHOTO.src = "data:image/jpeg;base64,__HALL_B64__";
+/* Where the chairs are in the photograph (Paul Kuimet, from the Speaker's desk), as fractions
+   of its width and height: one quadrilateral per block, near edge first. Read off the image by
+   eye; the lights land on chairs, not on a diagram. The photograph itself is not modified —
+   everything below is drawn on the canvas above it. */
+const PHOTO = {w: 1024, h: 682,
+  L: {nl:[0.01,0.70], nr:[0.485,0.70], fr:[0.468,0.50], fl:[0.30,0.50]},   // near-left, near-right, far-right, far-left
+  R: {nl:[0.53,0.70], nr:[0.995,0.70], fr:[0.705,0.50], fl:[0.548,0.50]},
+  bell:[0.722,0.515], desk:[0.5,0.90], aisleTop:[0.505,0.44]};
 let HW=0, HH=0, seatPos = {};
 const rows = Math.max(...D.seats.map(s=>s.row))+1, cols = Math.max(...D.seats.map(s=>s.col))+1;
+let photoBox = {x:0,y:0,w:0,h:0};
+function lerp(a,b,t){ return a + (b-a)*t; }
+function quadPoint(q, u, v){ // u across the block (0 = outer edge... we use 0 = left), v depth (0 = near row)
+  const lx = lerp(q.nl[0], q.fl[0], v), ly = lerp(q.nl[1], q.fl[1], v);
+  const rx = lerp(q.nr[0], q.fr[0], v), ry = lerp(q.nr[1], q.fr[1], v);
+  return [lerp(lx, rx, u), lerp(ly, ry, u)];
+}
 function sizeHall(){
   const r = hall.getBoundingClientRect(); HW = Math.round(r.width*dpr); HH = Math.round(r.height*dpr); hall.width = HW; hall.height = HH;
+  // the photograph fills the width; the remaining height is wall above and desk below
+  // cover the panel below the ticker: the desk sits at the bottom edge, the sides crop symmetrically
+  const top = 52*dpr*0 + HH*0.0, avail = HH; let ph = avail, pw = ph * PHOTO.w / PHOTO.h;
+  if (pw < HW){ pw = HW; ph = pw * PHOTO.h / PHOTO.w; }
+  photoBox = {x: (HW - pw)/2, y: HH - ph, w: pw, h: ph};
   seatPos = {};
-  // two blocks in perspective from the Speaker's desk: the near row wide and large, the far row narrow and small
-  const narrow = HW < 620*dpr; const top = HH*(narrow?0.44:0.38), bot = HH*(narrow?0.74:0.77), aisle = HW*0.05;
-  for (const s of D.seats){
-    const depth = s.row/(rows-1);
-    const y = bot - Math.pow(depth, 0.85)*(bot-top);
-    const scale = 1 - 0.45*depth;
-    const blockW = (HW/2 - aisle - 10*dpr)*scale, x0 = HW/2 + (s.side==="R" ? aisle : -aisle - blockW);
-    const cw = blockW/cols, x = x0 + (s.side==="R" ? s.col : cols-1-s.col)*cw + cw/2;
-    seatPos[s.place] = {x, y, w: cw*0.78, h: 15*dpr*scale + 5*dpr, scale};
+  const byside = {L: D.seats.filter(s=>s.side==="L"), R: D.seats.filter(s=>s.side==="R")};
+  for (const side of ["L","R"]){
+    const seats = byside[side].slice().sort((a,b)=>a.place-b.place), q = PHOTO[side];
+    const perRow = Math.ceil(seats.length / rows);
+    seats.forEach((s, i) => {
+      const row = Math.floor(i / perRow), col = i % perRow, n = Math.min(perRow, seats.length - row*perRow);
+      // depth: rows spaced with perspective so far rows sit closer together, as in the image
+      const v = Math.pow(row / Math.max(1, rows-1), 0.78), u = (col + 0.5) / n;
+      const [fx, fy] = quadPoint(q, side==="L" ? u : u, v);
+      const scale = 1 - 0.55*v;
+      seatPos[s.place] = {x: photoBox.x + fx*photoBox.w, y: photoBox.y + fy*photoBox.h, w: photoBox.w*0.028*scale, h: photoBox.h*0.05*scale, scale};
+    });
   }
 }
-let lit = {};  // place -> {t, kind, colour}
+let lit = {};
 function drawHall(){
   if (!HW) sizeHall();
   hctx.clearRect(0,0,HW,HH);
-  const wall = hctx.createLinearGradient(0,0,0,HH); wall.addColorStop(0,"#2E4DAB"); wall.addColorStop(.5,"#213A8A"); wall.addColorStop(1,"#101B3E");
-  hctx.fillStyle = wall; hctx.fillRect(0,0,HW,HH);
-  // the far wall from the photograph: three arches, the door, and the clock above it
-  hctx.fillStyle = "rgba(255,255,255,.04)";
-  for (const cx of [0.16, 0.84]){ hctx.beginPath(); hctx.ellipse(HW*cx, HH*0.27, HW*0.075, HH*0.09, 0, Math.PI, 0); hctx.fill(); hctx.fillRect(HW*cx-HW*0.075, HH*0.27, HW*0.15, HH*0.07); }
-  hctx.fillStyle = "#0B1230"; hctx.fillRect(HW*0.463, HH*0.265, HW*0.074, HH*0.09);           // the door
-  hctx.fillStyle = "rgba(255,255,255,.06)"; hctx.fillRect(HW*0.455, HH*0.26, HW*0.09, 3*dpr);
-  const cr = HW*0.021, ccx = HW*0.5, ccy = HH*0.228;                                             // the clock
-  hctx.fillStyle = "#F2EFE6"; hctx.beginPath(); hctx.arc(ccx, ccy, cr, 0, 6.2832); hctx.fill();
-  hctx.strokeStyle = "#5B4A2E"; hctx.lineWidth = 1.5*dpr; hctx.stroke();
-  const ev = D.events[Math.max(0,curEv)]; if (ev){ const d = new Date(t0 + ev.t*1000 + 3*3600*1000); const h = d.getUTCHours()%12 + d.getUTCMinutes()/60, m = d.getUTCMinutes();
-    hctx.strokeStyle = "#1B1A18"; hctx.lineCap = "round"; hctx.lineWidth = 2*dpr; hctx.beginPath(); hctx.moveTo(ccx, ccy); hctx.lineTo(ccx + Math.sin(h/12*6.2832)*cr*0.55, ccy - Math.cos(h/12*6.2832)*cr*0.55); hctx.stroke();
-    hctx.lineWidth = 1.3*dpr; hctx.beginPath(); hctx.moveTo(ccx, ccy); hctx.lineTo(ccx + Math.sin(m/60*6.2832)*cr*0.82, ccy - Math.cos(m/60*6.2832)*cr*0.82); hctx.stroke(); }
-  // the floor and the aisle carpet
-  const floor = hctx.createLinearGradient(0,HH*0.35,0,HH*0.84); floor.addColorStop(0,"rgba(120,90,60,.10)"); floor.addColorStop(1,"rgba(120,90,60,.28)");
-  hctx.fillStyle = floor; hctx.fillRect(0, HH*0.35, HW, HH*0.49);
-  hctx.fillStyle = "rgba(170,60,50,.22)"; hctx.beginPath(); hctx.moveTo(HW*0.478, HH*0.35); hctx.lineTo(HW*0.522, HH*0.35); hctx.lineTo(HW*0.56, HH*0.84); hctx.lineTo(HW*0.44, HH*0.84); hctx.closePath(); hctx.fill();
-  const order = D.seats.slice().sort((a,b)=>b.row-a.row), now = performance.now();
-  for (const s of order){
+  hctx.fillStyle = "#26439C"; hctx.fillRect(0,0,HW,HH);
+  const now = performance.now(), age = (now-jolt.t)/800, k = age<1 ? (1-age)*(1-age) : 0;
+  hctx.save(); hctx.translate(jolt.x*k*dpr*0.5, 0);                                      // the view shakes with the fly
+  if (HALLPHOTO.complete) hctx.drawImage(HALLPHOTO, photoBox.x, photoBox.y, photoBox.w, photoBox.h);
+  // a little dusk over the far hall so the lights read
+  const dusk = hctx.createLinearGradient(0, 0, 0, HH); dusk.addColorStop(0,"rgba(6,9,20,.86)"); dusk.addColorStop(0.26,"rgba(6,9,20,.55)"); dusk.addColorStop(0.42,"rgba(6,9,20,.22)"); dusk.addColorStop(0.75,"rgba(6,9,20,.10)"); dusk.addColorStop(1,"rgba(6,9,20,.0)");
+  hctx.fillStyle = dusk; hctx.fillRect(0, 0, HW, HH);
+  // the seats: nothing at rest — the chairs are in the photograph — and a lamp on whoever is speaking
+  hctx.globalCompositeOperation = "lighter";
+  for (const s of D.seats){
     const p = seatPos[s.place]; if (!p) continue;
-    const l = lit[s.place]; const a = l ? Math.max(0, 1-(now-l.t)/(l.kind==="heckle"?900:1600)) : 0;
-    if (a>0){ const R = p.w*2.4; const gr = hctx.createRadialGradient(p.x,p.y-p.h/2,0,p.x,p.y-p.h/2,R);
-      gr.addColorStop(0, l.kind==="heckle" ? `rgba(255,120,60,${.8*a})` : hexa(s.colour, .75*a)); gr.addColorStop(1,"rgba(0,0,0,0)");
-      hctx.fillStyle=gr; hctx.fillRect(p.x-R,p.y-p.h/2-R,R*2,R*2); }
-    // desk with a lit edge, then the chair: a dark leather back with a rounded top and the faction's tab
-    hctx.fillStyle = `rgba(150,102,52,${0.5+0.4*p.scale})`; hctx.fillRect(p.x-p.w/2, p.y, p.w, 5*dpr*p.scale+2*dpr);
-    hctx.fillStyle = `rgba(215,160,95,${0.35+0.4*p.scale})`; hctx.fillRect(p.x-p.w/2, p.y, p.w, 1.2*dpr);
-    hctx.fillStyle = a>0 ? mix(s.colour, "#17181C", 0.3+0.7*a) : "#17181C"; roundRect(p.x-p.w*0.38, p.y-p.h, p.w*0.76, p.h+2*dpr, 4*dpr*p.scale+1.5*dpr); hctx.fill();
-    hctx.fillStyle = "rgba(255,255,255,.07)"; roundRect(p.x-p.w*0.30, p.y-p.h+2*dpr, p.w*0.60, p.h*0.35, 3*dpr); hctx.fill();
-    hctx.fillStyle = s.colour; hctx.globalAlpha = 0.6 + 0.4*a; hctx.fillRect(p.x-p.w*0.18, p.y-p.h-1.5*dpr, p.w*0.36, 3*dpr); hctx.globalAlpha = 1;
+    const l = lit[s.place]; if (!l) continue;
+    const speaking = D.events[curEv] && D.events[curEv].seat === s.place && D.events[curEv].kind === "speech" && playing;
+    const a = speaking ? 1 : Math.max(0, 1-(now-(l.off||l.t))/(l.kind==="heckle"?900:1400));
+    if (speaking) l.off = now;
+    if (a <= 0.01) continue;
+    const R = p.w*4.2; const gr = hctx.createRadialGradient(p.x,p.y,0,p.x,p.y,R);
+    const col = l.kind==="heckle" ? "255,110,50" : hexrgb(s.colour);
+    gr.addColorStop(0,`rgba(${col},${1*a})`); gr.addColorStop(0.22,`rgba(${col},${.7*a})`); gr.addColorStop(0.5,`rgba(${col},${.25*a})`); gr.addColorStop(1,`rgba(${col},0)`);
+    hctx.fillStyle = gr; hctx.fillRect(p.x-R,p.y-R,R*2,R*2);
+    hctx.fillStyle = `rgba(255,255,255,${.95*a})`; hctx.beginPath(); hctx.arc(p.x,p.y,p.w*0.34,0,6.2832); hctx.fill();
+    hctx.strokeStyle = `rgba(${col},${.9*a})`; hctx.lineWidth = 2*dpr; hctx.beginPath(); hctx.arc(p.x,p.y,p.w*0.7,0,6.2832); hctx.stroke();
   }
-  // the government bench, front right, then the Speaker's desk with the fly on it
-  hctx.fillStyle = "rgba(233,238,246,.10)"; roundRect(HW*0.56, HH*0.785, HW*0.40, 16*dpr, 3*dpr); hctx.fill();
-  hctx.fillStyle = "#9AA6B8"; hctx.font = `${9*dpr}px "IBM Plex Mono",monospace`; hctx.fillText("GOVERNMENT", HW*0.575, HH*0.785 + 11*dpr);
-  const desk = hctx.createLinearGradient(0,HH*0.84,0,HH); desk.addColorStop(0,"#6A7C94"); desk.addColorStop(1,"#3A4658");
-  hctx.fillStyle = desk; hctx.fillRect(0, HH*0.84, HW, HH*0.16);
-  hctx.fillStyle = "#B07A3E"; hctx.fillRect(0, HH*0.84, HW, 5*dpr);
-  hctx.fillStyle = "rgba(255,255,255,.08)"; hctx.fillRect(0, HH*0.84+5*dpr, HW, 2*dpr);
-  const age = (now-jolt.t)/800, k = age<1 ? (1-age)*(1-age) : 0;
-  if (FLY.complete){ const fw = HW*0.17; hctx.save(); hctx.translate(HW*0.5 + jolt.x*k*dpr*1.8, HH*0.925 + jolt.y*k*dpr); hctx.rotate(-jolt.x*k*0.03);
-    hctx.shadowColor="rgba(0,0,0,.6)"; hctx.shadowBlur=14*dpr; hctx.shadowOffsetY=6*dpr; hctx.drawImage(FLY, -fw/2, -fw/2, fw, fw); hctx.restore(); }
-  // the bell on the desk, as in the photograph
-  hctx.fillStyle = flash>0 ? "#FFD36E" : "#8E7A45"; hctx.beginPath(); hctx.arc(HW*0.70, HH*0.925, 6*dpr, 0, 6.2832); hctx.fill();
-  hctx.fillStyle = "#5E5030"; hctx.fillRect(HW*0.70-1.5*dpr, HH*0.925-11*dpr, 3*dpr, 6*dpr);
-  hctx.fillStyle = "#6F7D93"; hctx.font = `${9*dpr}px "IBM Plex Mono",monospace`; hctx.fillText("THE SPEAKER", HW*0.5 - 30*dpr, HH*0.99);
+  hctx.globalCompositeOperation = "source-over";
+  // the bell that is actually on the desk in the photograph glows when the fly rings
+  if (flash > 0){ const [bx,by] = PHOTO.bell; const cx = photoBox.x+bx*photoBox.w, cy = photoBox.y+by*photoBox.h, R = photoBox.w*0.05;
+    const gr = hctx.createRadialGradient(cx,cy,0,cx,cy,R); gr.addColorStop(0,`rgba(255,220,120,${.9*flash})`); gr.addColorStop(1,"rgba(255,200,80,0)"); hctx.fillStyle = gr; hctx.fillRect(cx-R,cy-R,R*2,R*2); }
+  hctx.restore();
+  // the fly on the Speaker's desk, thrown by the escape
+  if (FLY.complete){ const fw = HW*0.16; const [dx,dy] = PHOTO.desk;
+    hctx.save(); hctx.translate(photoBox.x+dx*photoBox.w + jolt.x*k*dpr*3.2, photoBox.y+dy*photoBox.h + jolt.y*k*dpr*1.5); hctx.rotate(-jolt.x*k*0.06);
+    hctx.shadowColor="rgba(0,0,0,.55)"; hctx.shadowBlur=16*dpr; hctx.shadowOffsetY=8*dpr; hctx.drawImage(FLY, -fw/2, -fw/2, fw, fw); hctx.restore(); }
 }
+function hexrgb(hex){ const n = parseInt(hex.slice(1),16); return `${n>>16},${(n>>8)&255},${n&255}`; }
 function hexa(hex, a){ const n = parseInt(hex.slice(1),16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; }
 function mix(h1, h2, t){ const a = parseInt(h1.slice(1),16), b = parseInt(h2.slice(1),16); const c = [16,8,0].map(sh => Math.round(((a>>sh)&255)*t + ((b>>sh)&255)*(1-t))); return `rgb(${c.join(",")})`; }
 function roundRect(x,y,w,h,r){ hctx.beginPath(); hctx.moveTo(x+r,y); hctx.arcTo(x+w,y,x+w,y+h,r); hctx.arcTo(x+w,y+h,x,y+h,r); hctx.arcTo(x,y+h,x,y,r); hctx.arcTo(x,y,x+w,y,r); hctx.closePath(); }
@@ -298,28 +381,31 @@ function roundRect(x,y,w,h,r){ hctx.beginPath(); hctx.moveTo(x+r,y); hctx.arcTo(
 /* ---------- playback ---------- */
 const ticker = document.getElementById("ticker"), itemEl = document.getElementById("item"), timeEl = document.getElementById("time");
 const bellmark = document.getElementById("bellmark");
-document.getElementById("date").textContent = D.date; document.getElementById("vdate").textContent = D.date;
-document.getElementById("regions").innerHTML = D.atlas.groups.map(g=>`<span><i style="background:rgb(${REGION[g]})"></i>${g}<b id="hz-${g}">0</b> Hz</span>`).join("");
+
+
 let frame = 0, playing = false, speed = 4, lastEv = -1, lastT = 0, acc = 0;
 const t0 = new Date(D.start).getTime();
-function clock(ev){ if (!ev) return; const d = new Date(t0 + ev.t*1000); const day = Math.floor((ev.t + new Date(t0).getUTCHours()*3600 + 3*3600) / 86400); timeEl.textContent = d.toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"}) + (day >= 1 ? " +" + day + "d" : ""); }
+function clock(ev){ if (!ev) return; const d = new Date(t0 + ev.t*1000); const day = Math.floor((ev.t + new Date(t0).getUTCHours()*3600 + 3*3600) / 86400); timeEl.textContent = d.toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"}) + (day >= 1 ? " +" + day + t("dayMark") : ""); }
+function who(ev){ return lang === "et" ? (ev.who_et || ev.who) : ev.who; }
 function line(ev, cls){
-  const el = document.createElement("div"); el.className = "line " + cls;
-  const chip = `<span class="chip" style="background:${ev.kind==="heckle"?"#C24B18":(COLOUR[ev.faction]||"#3A4658")}">${ev.kind==="heckle"?"HECKLE":ev.kind==="vote"?"VOTE":ev.kind==="presence"?"ROLL CALL":ev.role==="chair"?"CHAIR":ev.role==="gov"?"GOV":(ev.faction||"NON-AFF").toUpperCase()}</span>`;
-  const txt = ev.kind==="vote" ? "the hall votes" : ev.kind==="presence" ? "presence check" : ev.text || ev.who;
-  el.innerHTML = chip + `<span class="txt">${ev.kind==="speech" && ev.role!=="chair" ? ev.who+": " : ""}${txt}</span>`;
+  const el = document.createElement("div"); el.className = "line " + cls; const C = t("chip");
+  const chipText = ev.kind==="heckle" ? C.heckle : ev.kind==="vote" ? C.vote : ev.kind==="presence" ? C.presence : ev.role==="chair" ? C.chair : ev.role==="gov" ? C.gov : (ev.faction || C.nonaff).toUpperCase();
+  const chip = `<span class="chip" style="background:${ev.kind==="heckle"?"#C24B18":(COLOUR[ev.faction]||"#3A4658")}">${chipText}</span>`;
+  const txt = ev.kind==="vote" ? t("halls_votes") : ev.kind==="presence" ? t("presence_check") : ev.text || who(ev);
+  el.innerHTML = chip + `<span class="txt">${ev.kind==="speech" && ev.role!=="chair" ? who(ev)+": " : ""}${txt}</span>`;
   ticker.appendChild(el); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild);
 }
 function onEvent(i){
   const ev = D.events[i]; if (!ev) return;
   clock(ev); itemEl.textContent = ev.item;
   // the real chair's marks live on chair events, which carry no frames: surface them first
-  for (let j = lastEv+1; j < i; j++){ const c = D.events[j]; if (c && c.role==="chair"){ if (c.real_chair) line({...c, text: c.real_chair==="bell" ? "(rings the bell)" : c.real_chair==="order" ? "calls for order: "+c.text : "calls time: "+c.text}, "chair"); else if (c.text) line(c, "chair"); } }
+  for (let j = lastEv+1; j < i; j++){ const c = D.events[j]; if (c && c.role==="chair"){ if (c.real_chair) line({...c, text: c.real_chair==="bell" ? t("ringsBell") : c.real_chair==="order" ? t("callsOrder")+c.text : t("callsTime")+c.text}, "chair"); else if (c.text) line(c, "chair"); } }
   line(ev, ev.kind);
   if (ev.seat) lit[ev.seat] = {t: performance.now(), kind: ev.kind};
+  if (ev.role === "gov") lit.__gov = {t: performance.now()};
   if (ev.kind==="vote" || ev.kind==="presence") for (const s of D.seats) lit[s.place] = {t: performance.now(), kind: "vote"};
-  if (ev.gf >= D.bell_gf){ ding(); coach("bell"); flash = 1; jolt = {x: ev.side==="L" ? 16 : ev.side==="R" ? -16 : 0, y: -8, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
-    const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">FLY</span><span class="txt">rings the bell${ev.gf_first_ms!=null ? " after "+ev.gf_first_ms.toFixed(0)+" ms" : ""} — giant fibre ×${ev.gf}, ${ev.side==="L"?"throws itself right":ev.side==="R"?"throws itself left":"flinches"}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
+  if (ev.gf >= D.bell_gf){ ding(); coach("bell"); flash = 1; jolt = {x: ev.side==="L" ? 34 : ev.side==="R" ? -34 : 0, y: -18, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
+    const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">${t("chip").fly}</span><span class="txt">${t("rings")}${ev.gf_first_ms!=null ? t("after")(ev.gf_first_ms.toFixed(0)) : ""} — ${t("giant")} ×${ev.gf}, ${ev.side==="L"?t("throwR"):ev.side==="R"?t("throwL"):t("flinch")}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
   remember(i);
   lastEv = i;
 }
@@ -341,12 +427,13 @@ function remember(i){
 }
 function renderMemo(){
   const order = ["civil speech","hostile speech","heckle","vote","presence"], mx = Math.max(1, ...order.map(k => (M.kinds[k]||{}).n ? M.kinds[k].gf/M.kinds[k].n : 0));
-  let h = order.filter(k => M.kinds[k]).map(k => { const v = M.kinds[k], g = v.gf/v.n; return `<div class="row"><span>${k} ×${v.n}</span><span class="bar"><i style="width:${100*g/mx}%;background:${g>=D.bell_gf?"#FFD36E":"#3A4658"}"></i></span><b>${g.toFixed(0)}</b></div>`; }).join("");
-  h += `<div class="two"><span>giant fibre, mean spikes per kind ↑</span><span></span>`
-     + `<span>fly rang the bell <b>${M.flyBells}</b>× · thrown left <b>${M.thrown.left}</b>, right <b>${M.thrown.right}</b>${M.rt.length ? " · reaction time <b>"+(M.rt.reduce((a,b)=>a+b,0)/M.rt.length).toFixed(0)+" ms</b>" : ""}</span>`
-     + `<span>real chair: order <b>${M.chair.order}</b>, bell <b>${M.chair.bell}</b>, time <b>${M.chair.time}</b> · coincided <b>${M.coincide}</b></span>`
-     + `<span>rang at the same seat again <b>${M.repeatBells}</b>× — it does not remember the first</span>`
-     + `<span>greeted <i>Aitäh!</i> as new <b>${M.ritual}</b>×</span></div>`;
+  let h = order.filter(k => M.kinds[k]).map(k => { const v = M.kinds[k], g = v.gf/v.n; return `<div class="row"><span>${t("kinds")[k]||k} ×${v.n}</span><span class="bar"><i style="width:${100*g/mx}%;background:${g>=D.bell_gf?"#FFD36E":"#3A4658"}"></i></span><b>${g.toFixed(0)}</b></div>`; }).join("");
+  const rt = M.rt.length ? t("memoRT")((M.rt.reduce((a,b)=>a+b,0)/M.rt.length).toFixed(0)) : "";
+  h += `<div class="two"><span>${t("memoGF")}</span><span></span>`
+     + `<span>${t("memoBells")(M.flyBells, M.thrown.left, M.thrown.right, rt)}</span>`
+     + `<span>${t("memoChair")(M.chair.order, M.chair.bell, M.chair.time, M.coincide)}</span>`
+     + `<span>${t("memoRepeat")(M.repeatBells)}</span>`
+     + `<span>${t("memoRitual")(M.ritual)}</span></div>`;
   document.getElementById("memobody").innerHTML = h;
 }
 
@@ -398,29 +485,29 @@ tl.addEventListener("click", e => { const r = tl.getBoundingClientRect(); frame 
 
 /* ---------- controls ---------- */
 const playBtn = document.getElementById("play");
-function setPlay(p){ playing = p; playBtn.textContent = p ? "❚❚ pause" : "▶ play"; }
+function setPlay(p){ playing = p; playBtn.textContent = p ? t("pause") : t("play"); }
 playBtn.onclick = () => setPlay(!playing);
-document.getElementById("mute").onclick = () => { muted = !muted; document.getElementById("mute").textContent = muted ? "🔕 muted" : "🔔 sound"; };
+document.getElementById("mute").onclick = () => { muted = !muted; document.getElementById("mute").textContent = muted ? t("muted") : t("sound"); };
 for (const [id, s] of [["sp1",1],["sp4",4],["sp12",12]]) document.getElementById(id).onclick = () => { speed = s; for (const b of ["sp1","sp4","sp12"]) document.getElementById(b).classList.toggle("on", b===id); };
 document.getElementById("start").onclick = () => { document.getElementById("veil").classList.add("gone"); sizeHall(); sizeBrain(); setPlay(true); };
 function resetMemory(){ for (const k of Object.keys(M.kinds)) delete M.kinds[k]; M.rt=[]; M.bellsBySide={L:0,R:0,"":0}; M.thrown={left:0,right:0}; M.ritual=0; M.seen={}; M.repeatBells=0; M.chair={order:0,bell:0,time:0}; M.flyBells=0; M.coincide=0; M.lastBellIdx=-99; renderMemo(); }
 document.getElementById("again").onclick = () => { document.getElementById("end").classList.remove("on"); frame=0; curEv=-1; lastEv=-1; ticker.innerHTML=""; lit={}; resetMemory(); setPlay(true); };
 addEventListener("resize", () => { sizeHall(); sizeBrain(); });
 function finish(){
-  const S = D.summary;
-  document.getElementById("figs").innerHTML = [
-    [S.stimuli, "things happened in the hall"], [S.fly_bells, "times the fly rang the bell"],
-    [S.chair_order + S.chair_bell, "times the real chair called for order or rang it"], [S.coincide, "of the fly's bells fell within two events of the chair's"]
-  ].map(([n,t])=>`<div class="fig"><b>${n}</b><span>${t}</span></div>`).join("");
-  const K = S.by_kind || {}; const kinds = ["civil speech","hostile speech","heckle","vote"].filter(k => K[k]);
-  document.getElementById("figs").innerHTML += kinds.map(k => `<div class="fig"><b>${K[k].gf}</b><span>giant-fibre spikes, mean, per <i>${k}</i> (×${K[k].n}; ${K[k].bells} bells)</span></div>`).join("");
-  document.getElementById("verdict").textContent = `A speech's own scent on the same side damps the escape: mid-hostility speeches barely ring, confident insults and heckles always do — the network, busy with the speaker, bolts only at a real threat. ${S.hostile} speeches read as hostile; ${S.heckles} disturbances in the record; ${S.ritual} speeches opened with a thank-you, each greeted as new. The real chair also called time ${S.chair_time} times — the fly has no clock. ${S.bio_seconds} seconds of biological time for ${Math.round((D.events[D.events.length-1].t)/60)} minutes of sitting, ${new Date(t0).toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"})} to ${new Date(t0 + D.events[D.events.length-1].t*1000).toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"})}${D.events[D.events.length-1].t >= 86400 ? " two days later" : D.events[D.events.length-1].t >= 30000 ? " the next day" : ""}.`;
-  document.getElementById("credit").innerHTML = `Simulated, wiring-constrained, engineered I/O mapping. Connectome: MaleCNS v1.0 (CC BY 4.0). Engine: mlx-lif-engine (MIT), Shiu et al. 2024. Transcript, seating and votes: Riigikogu open data (CC BY-SA 3.0); members shown by faction only. Hostility per speech: one calibrated question to a typed classifier; side from the seating chart; seat positions reconstructed from seat numbers and the photograph. The brain image is a rendering of 126,104 measured cell-body positions. Fly photograph: André Karwath, CC BY-SA 2.5.`;
-  if (D.others && D.others.length){ const o = D.others[0];
-    document.getElementById("verdict").textContent += ` For comparison, on ${o.date} — ${o.stimuli} things happened, ${o.hostile} speeches read as hostile, ${o.heckles} disturbances — the fly rang ${o.fly_bells} times and the real chair called for order ${o.chair_order} times; ${o.coincide} of the fly's bells fell within two events of the chair's.`;
-    const a = document.createElement("a"); a.href = o.url; a.className = "go"; a.style.cssText = "display:inline-block;margin-left:10px;text-decoration:none;background:#131924;color:#E9EEF6;border:1px solid #1C2430"; a.textContent = "Watch " + o.date; document.getElementById("again").after(a); }
+  const S = D.summary, K = S.by_kind || {}, kinds = ["civil speech","hostile speech","heckle","vote"].filter(k => K[k]);
+  document.getElementById("figs").innerHTML = t("figs")(S).map(([n,tx])=>`<div class="fig"><b>${n}</b><span>${tx}</span></div>`).join("") + kinds.map(k => `<div class="fig">${t("figKind")(k, K[k])}</div>`).join("");
+  const fmt = ms => new Date(ms).toLocaleTimeString("et-EE",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Tallinn"});
+  const last = D.events[D.events.length-1].t, day = last >= 86400 ? t("twoDays") : last >= 30000 ? t("nextDay") : "";
+  let v = t("verdict")(S, Math.round(last/60), fmt(t0), fmt(t0 + last*1000), day);
+  const old = document.querySelector("#end .go + .go"); if (old) old.remove();
+  if (D.others && D.others.length){ const o = D.others[0]; v += t("compare")(o);
+    const a = document.createElement("a"); a.href = o.url; a.className = "go"; a.style.cssText = "display:inline-block;margin-left:10px;text-decoration:none;background:#131924;color:#E9EEF6;border:1px solid #1C2430"; a.textContent = t("watch") + " " + (lang==="et" ? o.date_et : o.date); document.getElementById("again").after(a); }
+  document.getElementById("verdict").textContent = v;
+  document.getElementById("credit").innerHTML = t("credit");
   document.getElementById("end").classList.add("on");
 }
+document.getElementById("lang").onclick = () => { lang = lang === "et" ? "en" : "et"; applyLang(); };
+applyLang();
 requestAnimationFrame(step);
 </script>
 </body>

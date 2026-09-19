@@ -30,6 +30,11 @@ HALL_PHOTO = Path("page/assets/hall.jpg")
 ROLE_LABEL = {"member": "a member", "gov": "a minister", "floor": "the floor", "chair": "the chair"}
 
 
+def _excerpt(e) -> str:
+    """The ticker text, verbatim. The verbatim record is public and names its hecklers."""
+    return e.text
+
+
 def _who(e) -> str:
     if e.role == "gov":
         return "the Prime Minister" if e.speaker.startswith("Peaminister") else "a minister"
@@ -38,6 +43,16 @@ def _who(e) -> str:
     if e.kind == "heckle":
         return f"{e.faction} member, from the floor" if e.faction else "a voice from the floor"
     return ROLE_LABEL.get(e.role, e.role)
+
+
+def _who_et(e) -> str:
+    if e.role == "gov":
+        return "peaminister" if e.speaker.startswith("Peaminister") else "minister"
+    if e.role == "member":
+        return f"{e.faction} saadik" if e.faction else "fraktsioonitu saadik"
+    if e.kind == "heckle":
+        return f"{e.faction} saadik, saalist" if e.faction else "hääl saalist"
+    return {"member": "saadik", "gov": "minister", "floor": "saal", "chair": "juhataja"}.get(e.role, e.role)
 
 
 def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
@@ -66,6 +81,7 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
                 "kind": e.kind,
                 "role": e.role,
                 "who": _who(e),
+                "who_et": _who_et(e),
                 "faction": e.faction,
                 "side": e.side,
                 "seat": e.seat,
@@ -130,6 +146,7 @@ def bundle(s: Sitting, rec: Recording, atlas: Atlas, start_iso: str) -> dict:
     return {
         "schema": "karbes-chair/2",
         "date": s.date,
+        "date_et": s.date_et,
         "title": s.title,
         "start": start_iso,
         "fps": FPS,
@@ -196,17 +213,17 @@ def build(b: dict, others: dict[str, dict] | None = None) -> str:
     links, and the one-line comparison the end card makes with the other sitting."""
     t = TEMPLATE.read_text(encoding="utf-8")
     others = others or {}
-    links = "".join(f'<a href="{o["url"]}">{html.escape(d)}</a>' for d, o in others.items())
+    links = "".join(f'<a href="{o["url"]}" data-en="{html.escape(d)}" data-et="{html.escape(o.get("date_et", d))}">{html.escape(o.get("date_et", d))}</a>' for d, o in others.items())
     compare = [
-        {"date": d, "url": o["url"], "stimuli": o["summary"]["stimuli"], "fly_bells": o["summary"]["fly_bells"],
+        {"date": d, "date_et": o.get("date_et", d), "url": o["url"], "stimuli": o["summary"]["stimuli"], "fly_bells": o["summary"]["fly_bells"],
          "chair_order": o["summary"]["chair_order"] + o["summary"]["chair_bell"], "heckles": o["summary"]["heckles"],
          "hostile": o["summary"]["hostile"], "coincide": o["summary"]["coincide"]}
         for d, o in others.items() if o.get("summary")
     ]
     b = dict(b, others=compare)
     tokens = {
-        "__DATE__": html.escape(b["date"]),
-        "__OTHERS__": ("other sitting:" + links) if links else "",
+        "__DATE__": html.escape(b["date_et"]),
+        "__OTHERS__": ('<span data-i18n="other">teine istung:</span>' + links) if links else "",
         "__BUNDLE_JSON__": json.dumps(b, ensure_ascii=False).replace("</", "<\\/"),
         "__BRAIN_B64__": base64.b64encode(BRAIN.read_bytes()).decode(),
         "__FLY_B64__": base64.b64encode(FLY.read_bytes()).decode(),
