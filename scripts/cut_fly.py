@@ -7,6 +7,7 @@ We estimate B per pixel from the image border, take a from how far C sits from B
 their soft edge, and there is no white fringe over a dark desk.
 
     uv run python scripts/cut_fly.py data/raw/assets/karwath_top.jpg page/assets/fly.png [--preview /tmp/fly_preview.png]
+    uv run python scripts/cut_fly.py data/raw/assets/orkin_house_fly.png page/assets/fly.png --white   # illustration on white
 """
 
 import sys
@@ -32,9 +33,26 @@ def grow(seed: np.ndarray, allowed: np.ndarray) -> np.ndarray:
     return cur
 
 
-def main(src: Path, out: Path, preview: Path | None) -> None:
+def matte_white(im: np.ndarray) -> np.ndarray:
+    """An illustration on pure white: coverage is how far a pixel drops below white in its
+    lightest channel (a translucent grey wing is a light grey; a red eye is dark in green and
+    blue), and the colour is what remains once that much white is taken out."""
+    dark = 255.0 - im.min(axis=2)
+    a = np.clip((dark - 8.0) / 80.0, 0, 1)  # wing membrane stays thin, a thorax highlight is solid
+    a = a * a * (3 - 2 * a)
+    a3 = a[:, :, None]
+    F = np.where(a3 > 0.02, (im - (1 - a3) * 255.0) / np.maximum(a3, 0.02), im)
+    return np.dstack([np.clip(F, 0, 255), a * 255]).astype(np.uint8)
+
+
+def main(src: Path, out: Path, preview: Path | None, white: bool = False) -> None:
     im = np.asarray(Image.open(src).convert("RGB")).astype(np.float64)
     h, w, _ = im.shape
+    if white:
+        rgba = matte_white(im)
+        a = rgba[:, :, 3] / 255.0
+        finish(rgba, a, out, preview)
+        return
     # background: bilinear plane through the mean colour of each edge band
     band = 6
     top, bot = im[:band].mean(axis=(0, 1)), im[-band:].mean(axis=(0, 1))
@@ -100,6 +118,11 @@ def main(src: Path, out: Path, preview: Path | None) -> None:
     F = np.where(holes[:, :, None], im, F)
     F = np.clip(F, 0, 255)
     rgba = np.dstack([F, a * 255]).astype(np.uint8)
+    finish(rgba, a, out, preview)
+
+
+def finish(rgba: np.ndarray, a: np.ndarray, out: Path, preview: Path | None) -> None:
+    h, w = a.shape
     # crop to the fly with a margin
     ys, xs = np.where(a > 0.03)
     m = 10
@@ -142,4 +165,4 @@ def main(src: Path, out: Path, preview: Path | None) -> None:
 if __name__ == "__main__":
     args = sys.argv[1:]
     prev = Path(args[args.index("--preview") + 1]) if "--preview" in args else None
-    main(Path(args[0]), Path(args[1]), prev)
+    main(Path(args[0]), Path(args[1]), prev, white="--white" in args)
