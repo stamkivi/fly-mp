@@ -32,11 +32,12 @@ canvas{display:block;width:100%;height:100%}
 .line .txt{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .line.heckle .txt{color:#B8471A;font-style:italic}.line.chair .txt{color:var(--mute)}
 .line.bell .txt{color:var(--gold);font-weight:600}
-.coach{position:absolute;z-index:6;max-width:300px;background:rgba(27,26,24,.94);color:#F6F4EF;border-radius:8px;
-  padding:10px 12px;font-size:12.5px;line-height:1.45;box-shadow:0 10px 30px -10px rgba(0,0,0,.45);opacity:0;transform:translateY(6px);
-  transition:opacity .35s,transform .35s;pointer-events:none}
-.coach.on{opacity:1;transform:none}.coach b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#B9B3A8;margin-bottom:3px}
-.coach:after{content:"";position:absolute;left:18px;bottom:-7px;border:7px solid transparent;border-top-color:rgba(27,26,24,.94);border-bottom:0}
+.help{position:fixed;right:18px;bottom:18px;width:400px;max-width:calc(100vw - 20px);background:rgba(27,26,24,.96);color:#F6F4EF;border-radius:10px;
+  padding:14px 16px 10px;font-size:12.5px;line-height:1.45;box-shadow:0 14px 34px -12px rgba(0,0,0,.5);z-index:7;display:none}
+.help.on{display:block}.help p{margin:0 0 9px}.help b{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#D9A21B;margin-right:8px}
+.help .x{position:absolute;right:8px;top:6px;background:none;border:0;color:#B9B3A8;font-size:14px;cursor:pointer;padding:4px 6px}
+.help i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 4px 0 2px;vertical-align:middle}
+#help{font-weight:600;min-width:34px}
 .bellmark{position:absolute;right:16px;top:14px;z-index:3;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
   color:var(--gold);opacity:0;transition:opacity .15s;text-transform:uppercase}
 .bellmark.on{opacity:1}
@@ -83,7 +84,7 @@ canvas{display:block;width:100%;height:100%}
   #brainpanel{min-height:420px}
   .ticker{top:40px;gap:2px}.line{font-size:11px}.line:nth-child(-n+2){display:none}
   .item{display:none}.tag{font-size:9px}
-  .coach{left:14px!important;right:14px!important;top:50px!important;max-width:none;font-size:11.5px}
+  .help{left:10px;right:10px;bottom:10px;width:auto}
   .memo{font-size:9.5px;bottom:56px}.memo .row{grid-template-columns:110px 1fr 36px}.memo .two{grid-template-columns:1fr}
   .regions{gap:4px 10px;flex-wrap:wrap;font-size:9px}
   .veil,.end{position:fixed}
@@ -100,7 +101,7 @@ canvas{display:block;width:100%;height:100%}
     <div class="clock" id="clock"><a class="repo" href="__REPO__" target="_blank" rel="noopener" data-i18n="repo">code on GitHub</a><select id="sitting" class="sel" aria-label="Sitting"></select>Riigikogu, <b id="date">—</b> <b id="time">--:--</b></div>
   </div>
   <div class="nav">
-    <div class="ctl"><button id="play">▶ play</button><button id="sp1">1×</button><button id="sp4" class="on">4×</button><button id="sp12">12×</button><button id="mute">🔔 sound</button><span class="seg"><button id="lang-en" class="on">EN</button><button id="lang-et">ET</button></span></div>
+    <div class="ctl"><button id="play">▶ play</button><button id="sp1">1×</button><button id="sp4" class="on">4×</button><button id="sp12">12×</button><button id="mute">🔔 sound</button><span class="seg"><button id="lang-en" class="on">EN</button><button id="lang-et">ET</button></span><button id="help" aria-expanded="false" title="?">?</button></div>
     <canvas id="timeline" role="slider" aria-label="Position in the sitting. Yellow ticks: the fly rang the bell. Blue: the real chair called for order. Grey: the real chair called time."></canvas>
     <div class="legend" data-i18n-html="legend"></div>
   </div>
@@ -115,12 +116,11 @@ canvas{display:block;width:100%;height:100%}
     <div class="panel" id="brainpanel">
       <div class="tag" data-i18n="tagBrain">Its brain, 166,700 neurons</div>
       <canvas id="brain" role="img" aria-label="The fly brain, rendered from real cell-body positions, with the neurons firing at this moment of the sitting drawn over it."></canvas>
-      <div class="coach" id="coach-wave" style="left:24px;top:40%" data-i18n-html="coachWave"></div>
-      <div class="coach" id="coach-bell" style="right:24px;top:40%" data-i18n-html="coachBell"></div>
       <div class="memo" id="memo"><div class="tag" style="position:static;margin-bottom:6px" data-i18n="tagMemo">The sitting so far</div><div id="memobody"></div></div>
       <div class="regions" id="regions"></div>
     </div>
   </div>
+  <div class="help" id="helpbox" role="dialog" aria-labelledby="helptitle"><button class="x" id="helpx" aria-label="close">✕</button><div class="tag" id="helptitle" style="position:static;margin-bottom:8px;color:#B9B3A8" data-i18n="helpTitle">What you are watching</div><div id="helpbody"></div></div>
   <div class="veil" id="veil"><div class="open">
     <img class="hallphoto" src="data:image/jpeg;base64,__HALL_B64__" alt="The Riigikogu session hall from the Speaker's desk">
     <img class="flyimg" src="data:image/png;base64,__FLY_B64__" alt="">
@@ -160,8 +160,11 @@ const T = {
   start:"Open the sitting", repo:"code on GitHub", loading:"loading the sitting…", loadFail:"could not load the sitting", introHint:"About a minute at 4×, four minutes at 1×. Sound on: there is a bell.",
   creditHall:"Photo: Paul Kuimet, Riigikogu. The photograph is unaltered; the lights, the bell's glow and the fly are drawn on a layer above it.",
   endTitle:"Sitting closed", again:"Watch again", watch:"Watch", play:"▶ play", pause:"❚❚ pause", sound:"🔔 sound", muted:"🔕 muted",
-  coachWave:"<b>the wave</b>Every speech wakes the brain from silence: the smell centre lights at 5 ms, the memory centre at 15 ms. Shown here fourteen times slower than life.",
-  coachBell:"<b>the bell</b>Something came at the chair. The fly's escape reflex fired and it threw itself away from that side of the hall. That is its bell. A hundred milliseconds later it has forgotten.",
+  helpTitle:"What you are watching",
+  help:[["lamps","Whoever is speaking gets a lamp on their seat, in their faction's colour. A heckle lights orange."],
+        ["wave","Each speech wakes the brain from silence: the smell centre at 5 ms, the memory centre at 15 ms. Shown 14× slower than life."],
+        ["bell","A hostile speech or a heckle rushes at the fly. When its escape reflex fires it rings the bell and throws itself away from that side. 100 ms later it has forgotten."],
+        ["timeline",`<i style="background:#D9A21B"></i>the fly rang &nbsp;<i style="background:#1B6B8C"></i>the real chair called for order or rang &nbsp;<i style="background:#C9C3B8"></i>time is up. Click to jump.`]],
   legend:`<i style="background:#D9A21B"></i>fly rings the bell &nbsp;<i style="background:#1B6B8C"></i>real chair calls for order or rings &nbsp;<i style="background:#C9C3B8"></i>real chair: time is up`,
   chip:{chair:"CHAIR", gov:"GOV", heckle:"HECKLE", vote:"VOTE", presence:"ROLL CALL", fly:"FLY", nonaff:"NON-AFF"},
   halls_votes:"the hall votes", presence_check:"presence check",
@@ -188,8 +191,11 @@ const T = {
   start:"Ava istung", repo:"kood GitHubis", loading:"istung laeb…", loadFail:"istungit ei õnnestunud laadida", introHint:"Kiirusel 4× kestab umbes minuti, kiirusel 1× neli. Pane heli sisse, kell heliseb.",
   creditHall:"Foto: Paul Kuimet, Riigikogu. Fotot pole muudetud: tuled, kella kuma ja kärbes on joonistatud eraldi kihile selle peale.",
   endTitle:"Istung on lõppenud", again:"Vaata uuesti", watch:"Vaata", play:"▶ esita", pause:"❚❚ paus", sound:"🔔 heli", muted:"🔕 heli väljas",
-  coachWave:"<b>laine</b>Iga kõne äratab aju vaikusest: haistmiskeskus süttib 5 ms, mälukeskus 15 ms pärast. Siin näed seda neliteist korda aeglasemalt kui päriselt.",
-  coachBell:"<b>kell</b>Miski sööstis juhataja poole. Kärbse põgenemisrefleks käivitus ja ta viskus saali sellest servast eemale. See ongi tema kellahelin. Sada millisekundit hiljem on kõik unustatud.",
+  helpTitle:"Mida sa vaatad",
+  help:[["tuled","Kõneleja istekohal süttib tuli tema fraktsiooni värvis. Vahelehüüe süttib oranžilt."],
+        ["laine","Iga kõne äratab aju vaikusest: haistmiskeskus 5 ms, mälukeskus 15 ms pärast. Näidatud 14× aeglasemalt kui päriselt."],
+        ["kell","Vaenulik kõne või vahelehüüe sööstab kärbse poole. Kui põgenemisrefleks käivitub, helistab ta kella ja viskub sellest servast eemale. 100 ms hiljem on kõik unustatud."],
+        ["ajajoon",`<i style="background:#D9A21B"></i>kärbes helistas &nbsp;<i style="background:#1B6B8C"></i>päris juhataja kutsus korrale või helistas &nbsp;<i style="background:#C9C3B8"></i>aeg läbi. Klõpsa, et hüpata.`]],
   legend:`<i style="background:#D9A21B"></i>kärbes helistab kella &nbsp;<i style="background:#1B6B8C"></i>päris juhataja kutsub korrale või helistab kella &nbsp;<i style="background:#C9C3B8"></i>päris juhataja: aeg läbi`,
   chip:{chair:"JUHATAJA", gov:"VALITSUS", heckle:"VAHELEHÜÜE", vote:"HÄÄLETUS", presence:"KOHALOLEK", fly:"KÄRBES", nonaff:"FRAKTSIOONITU"},
   halls_votes:"saal hääletab", presence_check:"kohaloleku kontroll",
@@ -219,6 +225,7 @@ function applyLang(){
   const vd = document.getElementById("vdate"); if (vd) vd.textContent = dateStr();
   document.getElementById("date").textContent = dateStr(); document.title = t("title")(dateStr());
   document.getElementById("lang-en").classList.toggle("on", lang === "en"); document.getElementById("lang-et").classList.toggle("on", lang === "et");
+  document.getElementById("helpbody").innerHTML = t("help").map(([b, x]) => `<p><b>${b}</b>${x}</p>`).join("");
   document.getElementById("play").textContent = playing ? t("pause") : t("play");
   document.getElementById("mute").textContent = muted ? t("muted") : t("sound");
   if (!booted) return;
@@ -233,6 +240,10 @@ function applyLang(){
     sel.onchange = () => { const x = SITTINGS.find(y => y.iso === sel.value); if (x && x.href) location.href = x.href; };
   } else sel.style.display = "none";
   document.getElementById("lang-en").onclick = () => { lang = "en"; applyLang(); }; document.getElementById("lang-et").onclick = () => { lang = "et"; applyLang(); };
+  const helpbox = document.getElementById("helpbox"), helpbtn = document.getElementById("help");
+  const showHelp = on => { helpbox.classList.toggle("on", on); helpbtn.setAttribute("aria-expanded", String(on)); helpbtn.classList.toggle("on", on); };
+  helpbtn.onclick = () => showHelp(!helpbox.classList.contains("on")); document.getElementById("helpx").onclick = () => showHelp(false);
+  addEventListener("keydown", e => { if (e.key === "Escape") showHelp(false); });
   applyLang(); const c = current(); if (c) sel.value = c.iso;
   if (!D){
     const btn = document.getElementById("start"); btn.disabled = true; btn.dataset.i18n = "loading"; applyLang();
@@ -460,7 +471,7 @@ function onEvent(i){
   if (ev.seat) lit[ev.seat] = {t: performance.now(), kind: ev.kind};
   if (ev.role === "gov") lit.__gov = {t: performance.now()};
   if (ev.kind==="vote" || ev.kind==="presence") for (const s of D.seats) lit[s.place] = {t: performance.now(), kind: "vote"};
-  if (ev.gf >= D.bell_gf){ ding(); coach("bell"); flash = 1; jolt = {x: ev.side==="L" ? 34 : ev.side==="R" ? -34 : 0, y: -18, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
+  if (ev.gf >= D.bell_gf){ ding(); flash = 1; jolt = {x: ev.side==="L" ? 34 : ev.side==="R" ? -34 : 0, y: -18, t: performance.now()}; bellmark.classList.add("on"); setTimeout(()=>bellmark.classList.remove("on"), 1400);
     const b = document.createElement("div"); b.className="line bell"; b.innerHTML = `<span class="chip" style="background:#B8902E">${t("chip").fly}</span><span class="txt">${t("bellLine")(ev.gf_first_ms!=null ? ev.gf_first_ms.toFixed(0) : null, ev.side)}</span>`; ticker.appendChild(b); while (ticker.children.length > 5) ticker.removeChild(ticker.firstChild); }
   remember(i);
   lastEv = i;
@@ -495,11 +506,6 @@ function renderMemo(){
 }
 let memoH = 0;
 
-/* ---------- one-time captions ---------- */
-const coached = {};
-function coach(what){ if (coached[what]) return; coached[what] = true; const el = document.getElementById("coach-"+what); if (!el) return;
-  setTimeout(() => { el.classList.add("on"); setTimeout(() => el.classList.remove("on"), what==="wave" ? 5200 : 6500); }, what==="wave" ? 900 : 150); }
-
 /* ---------- sound ---------- */
 let AC = null;
 function ding(){ if (muted) return; try { AC = AC || new (window.AudioContext||window.webkitAudioContext)(); const t = AC.currentTime;
@@ -513,7 +519,7 @@ function step(ts){
   if (playing){ acc += (ts - lastT)/1000 * FPS * speed; while (acc >= 1){ frame++; acc -= 1; } if (frame >= N){ frame = N-1; playing = false; finish(); } }
   lastT = ts;
   const evi = D.frame_event[frame];
-  if (evi >= 0 && evi !== curEv){ curEv = evi; onEvent(evi); if (onsetOf[evi] !== undefined){ wave = {t: performance.now(), k: onsetOf[evi]}; coach("wave"); } }
+  if (evi >= 0 && evi !== curEv){ curEv = evi; onEvent(evi); if (onsetOf[evi] !== undefined){ wave = {t: performance.now(), k: onsetOf[evi]}; } }
   drawBrain(frame, acc);
   drawHall();
   for (const g of D.atlas.groups){ const el = document.getElementById("hz-"+g); if (el) el.textContent = (D.group_hz[g][frame]||0).toFixed(1); }
