@@ -35,23 +35,36 @@ def _excerpt(e) -> str:
     return e.text
 
 
+FACTION_EN = {"I": "Isamaa"}
+FACTION_ET_GEN = {
+    "REF": "Reformierakonna",
+    "E200": "Eesti 200",
+    "SDE": "SDE",
+    "EKRE": "EKRE",
+    "I": "Isamaa",
+    "KESK": "Keskerakonna",
+}
+
+
 def _who(e) -> str:
+    f = FACTION_EN.get(e.faction, e.faction)
     if e.role == "gov":
         return "the Prime Minister" if e.speaker.startswith("Peaminister") else "a minister"
     if e.role == "member":
-        return f"{e.faction} member" if e.faction else "a non-affiliated member"
+        return f"{f} member" if e.faction else "a non-affiliated member"
     if e.kind == "heckle":
-        return f"{e.faction} member, from the floor" if e.faction else "a voice from the floor"
+        return f"{f} member, from the floor" if e.faction else "a voice from the floor"
     return ROLE_LABEL.get(e.role, e.role)
 
 
 def _who_et(e) -> str:
+    f = FACTION_ET_GEN.get(e.faction, e.faction)
     if e.role == "gov":
         return "peaminister" if e.speaker.startswith("Peaminister") else "minister"
     if e.role == "member":
-        return f"{e.faction} saadik" if e.faction else "fraktsioonitu saadik"
+        return f"{f} saadik" if e.faction else "fraktsioonitu saadik"
     if e.kind == "heckle":
-        return f"{e.faction} saadik, saalist" if e.faction else "hääl saalist"
+        return f"{f} saadik, saalist" if e.faction else "hääl saalist"
     return {"member": "saadik", "gov": "minister", "floor": "saal", "chair": "juhataja"}.get(e.role, e.role)
 
 
@@ -222,8 +235,8 @@ def build(b: dict, others: dict[str, dict] | None = None) -> str:
     ]
     b = dict(b, others=compare)
     tokens = {
-        "__DATE__": html.escape(b["date_et"]),
-        "__OTHERS__": ('<span data-i18n="other">teine istung:</span>' + links) if links else "",
+        "__DATE__": html.escape(b["date"]),
+        "__OTHERS__": ('<span data-i18n="other">see also:</span>' + links) if links else "",
         "__BUNDLE_JSON__": json.dumps(b, ensure_ascii=False).replace("</", "<\\/"),
         "__BRAIN_B64__": base64.b64encode(BRAIN.read_bytes()).decode(),
         "__FLY_B64__": base64.b64encode(FLY.read_bytes()).decode(),

@@ -1,6 +1,7 @@
 # Assets
 
-- `fly.png` — André Karwath, dorsal *Drosophila melanogaster*, CC BY-SA 2.5, soft-alpha cut-out.
+- `fly.png` — André Karwath, dorsal *Drosophila melanogaster*, CC BY-SA 2.5. Matted off its
+  background by `scripts/cut_fly.py` (the source photograph is kept under `data/raw/assets/`).
 - `brain.jpg` / `brain.json` — rendered by `karbes/plate.py` from MaleCNS v1.0 `somaLocation`
   coordinates (CC BY 4.0). Not a photograph of a specimen. `brain.json` records the voxel
   frame it was drawn in so the soma atlas can be projected onto it.
